@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="home_skeleton_note">このビルドはリポジトリの骨格です. 加工, タイムライン編集, Studio の録音は今後のビルドで提供されます.</string>
+    <string name="home_skeleton_note">このビルドはスクリプト向けに動画と音声を加工できます. タイムライン編集と Studio の録音は今後のビルドで提供されます.</string>
     <string name="home_storage_denied">すべてのファイルへのアクセスが許可されていません. 許可するまで加工タスクは STORAGE_PERMISSION_DENIED を返します.</string>
     <string name="home_storage_grant">許可する</string>
     <string name="home_storage_granted">すべてのファイルへのアクセスが許可されています. スクリプトと Studio の画面は選んだパスを読み書きできます.</string>
     <string name="home_storage_title">ファイルアクセス</string>
+    <string name="notification_channel_tasks">加工タスク</string>
+    <string name="notification_tasks_text">実行中: %1$d, 待機中: %2$d</string>
+    <string name="notification_tasks_title">メディアを加工中</string>
     <string name="plugin_description">動画と音声の加工, マルチトラックのタイムライン編集, トランジションと字幕, 画面の操作からスクリプトコードを生成</string>
+    <string name="storage_guide_close">閉じる</string>
+    <string name="storage_guide_note">スクリプトがプラグインのフォルダー外のパスの読み書きを要求しました. すべてのファイルへのアクセスを許可してから, スクリプトをもう一度実行してください.</string>
 </resources>

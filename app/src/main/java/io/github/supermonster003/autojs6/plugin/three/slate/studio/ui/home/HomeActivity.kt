@@ -1,18 +1,9 @@
 package io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.home
 
-import android.Manifest
-import android.content.ActivityNotFoundException
-import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
-import android.os.Environment
-import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,21 +15,17 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.R
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.service.StorageAccess
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.SlateTheme
 
 /**
  * Skeleton home screen (roadmap P0.1): the plugin description and the all files access grant of roadmap D9. Roadmap
@@ -62,45 +49,21 @@ class HomeActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        storageGranted = hasStorageAccess(this)
+        storageGranted = StorageAccess.isGranted(this)
     }
 
-    private fun requestStorageAccess() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val appPage = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, "package:$packageName".toUri())
-            try {
-                startActivity(appPage)
-            } catch (_: ActivityNotFoundException) {
-                // Some ROMs only offer the list page. zh-CN: 部分 ROM 只提供列表页.
-                startActivity(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
-            }
-        } else {
-            @Suppress("DEPRECATION")
-            requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_STORAGE)
-        }
-    }
+    private fun requestStorageAccess() = StorageAccess.request(this, REQUEST_STORAGE)
 
     @Deprecated("Deprecated in Java")
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         @Suppress("DEPRECATION")
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_STORAGE) storageGranted = hasStorageAccess(this)
+        if (requestCode == REQUEST_STORAGE) storageGranted = StorageAccess.isGranted(this)
     }
 
-    internal companion object {
+    private companion object {
 
-        private const val REQUEST_STORAGE = 1
-
-        /**
-         * All files access on Android 11+, the legacy storage permissions below (roadmap D9).
-         * zh-CN: Android 11 及以上为所有文件访问, 以下为旧版存储权限 (路线图 D9).
-         */
-        fun hasStorageAccess(context: Context): Boolean {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) return Environment.isExternalStorageManager()
-            return listOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE).all {
-                context.checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED
-            }
-        }
+        const val REQUEST_STORAGE = 1
 
     }
 
@@ -138,18 +101,4 @@ private fun HomeScreen(storageGranted: Boolean, onGrantStorage: () -> Unit) {
             )
         }
     }
-}
-
-@Composable
-private fun SlateTheme(content: @Composable () -> Unit) {
-    val dark = isSystemInDarkTheme()
-    val colorScheme = when {
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        dark -> darkColorScheme()
-        else -> lightColorScheme()
-    }
-    MaterialTheme(colorScheme = colorScheme, content = content)
 }

@@ -23,8 +23,8 @@
 
     <!--
         Long tasks run in a data sync foreground service with a progress notification (roadmap P2.1); the Studio
-        recorder records the microphone and the playback capture (roadmap D41, P4.5). P0.1 only reserves the
-        permissions, the foreground service components come with P2.1 and P4.5.
+        recorder records the microphone and the playback capture (roadmap D41, P4.5). The processing service is
+        declared below; the recorder service comes with P4.5.
     -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -89,6 +89,14 @@
             android:name=".ui.home.HomeActivity"
             android:exported="false"
             android:launchMode="singleTask" />
+
+        <!-- Opened on STORAGE_PERMISSION_DENIED (roadmap P2.1, D9). -->
+        <activity
+            android:name=".ui.storage.StorageAccessActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:taskAffinity="" />
 
         <!--
             Launcher icon modes (roadmap D16, P0.2): exactly one alias is enabled at a time; the settings screen of
@@ -175,6 +183,12 @@
                 <category android:name="media-studio" />
             </intent-filter>
         </service>
+
+        <!-- Tasks running longer than 10 s (roadmap P2.1). -->
+        <service
+            android:name=".service.ProcessingForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
     </application>
 

@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="home_skeleton_note">当前构建为仓库骨架: 加工, 时间线剪辑与 Studio 录音将在后续构建中提供.</string>
+    <string name="home_skeleton_note">当前构建可为脚本加工视频与音频. 时间线剪辑与 Studio 录音将在后续构建中提供.</string>
     <string name="home_storage_denied">尚未授予所有文件访问权限. 授权前加工任务会报告 STORAGE_PERMISSION_DENIED.</string>
     <string name="home_storage_grant">去授权</string>
     <string name="home_storage_granted">已授予所有文件访问权限. 脚本与 Studio 界面可以读写你选择的路径.</string>
     <string name="home_storage_title">文件访问</string>
+    <string name="notification_channel_tasks">加工任务</string>
+    <string name="notification_tasks_text">运行中: %1$d, 排队中: %2$d</string>
+    <string name="notification_tasks_title">正在加工媒体</string>
     <string name="plugin_description">视频与音频加工, 多轨时间线剪辑, 转场与字幕, 界面操作可生成脚本代码</string>
+    <string name="storage_guide_close">关闭</string>
+    <string name="storage_guide_note">有脚本请求读写插件目录之外的路径. 请授予所有文件访问权限, 然后重新运行脚本.</string>
 </resources>

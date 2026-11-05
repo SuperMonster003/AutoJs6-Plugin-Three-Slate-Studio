@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="home_skeleton_note">Эта сборка - каркас репозитория: обработка, редактор таймлайна и запись в Studio появятся в следующих сборках.</string>
+    <string name="home_skeleton_note">Эта сборка обрабатывает видео и аудио для скриптов. Редактор таймлайна и запись в Studio появятся в следующих сборках.</string>
     <string name="home_storage_denied">Доступ ко всем файлам не предоставлен. Пока вы его не предоставите, задачи обработки возвращают STORAGE_PERMISSION_DENIED.</string>
     <string name="home_storage_grant">Предоставить доступ</string>
     <string name="home_storage_granted">Доступ ко всем файлам предоставлен. Скрипты и экраны Studio могут читать и записывать выбранные пути.</string>
     <string name="home_storage_title">Доступ к файлам</string>
+    <string name="notification_channel_tasks">Задачи обработки</string>
+    <string name="notification_tasks_text">Выполняется: %1$d, в очереди: %2$d</string>
+    <string name="notification_tasks_title">Обработка медиа</string>
     <string name="plugin_description">Обработка видео и аудио, многодорожечный монтаж на таймлайне, переходы и субтитры, генерация кода скриптов из действий в интерфейсе</string>
+    <string name="storage_guide_close">Закрыть</string>
+    <string name="storage_guide_note">Скрипт запросил чтение или запись пути вне папок плагина. Предоставьте доступ ко всем файлам, затем запустите скрипт снова.</string>
 </resources>

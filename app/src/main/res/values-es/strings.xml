@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="home_skeleton_note">Esta compilación es el esqueleto del repositorio: el procesamiento, el editor de línea de tiempo y la grabadora de Studio llegarán en compilaciones posteriores.</string>
+    <string name="home_skeleton_note">Esta compilación procesa video y audio para los scripts. El editor de línea de tiempo y la grabadora de Studio llegarán en compilaciones posteriores.</string>
     <string name="home_storage_denied">El acceso a todos los archivos no está concedido. Las tareas de procesamiento devuelven STORAGE_PERMISSION_DENIED hasta que lo concedas.</string>
     <string name="home_storage_grant">Conceder acceso</string>
     <string name="home_storage_granted">El acceso a todos los archivos está concedido. Los scripts y las pantallas de Studio pueden leer y escribir las rutas que elijas.</string>
     <string name="home_storage_title">Acceso a archivos</string>
+    <string name="notification_channel_tasks">Tareas de procesamiento</string>
+    <string name="notification_tasks_text">En curso: %1$d, en cola: %2$d</string>
+    <string name="notification_tasks_title">Procesando multimedia</string>
     <string name="plugin_description">Procesamiento de vídeo y audio, edición multipista con línea de tiempo, transiciones y subtítulos, con código de script generado desde las pantallas</string>
+    <string name="storage_guide_close">Cerrar</string>
+    <string name="storage_guide_note">Un script pidió leer o escribir una ruta fuera de las carpetas del complemento. Concede el acceso a todos los archivos y vuelve a ejecutar el script.</string>
 </resources>

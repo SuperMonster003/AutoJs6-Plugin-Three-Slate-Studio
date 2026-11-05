@@ -4,6 +4,7 @@ import android.media.Image
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaCodecList
+import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMuxer
 import java.io.File
@@ -16,10 +17,12 @@ import kotlin.math.sin
 
 /**
  * Media fixtures generated on the device at test time (roadmap P0.3), so the repository carries no binary media:
- * 3 seconds of eight vertical color bars as H.264 in MP4, and 3 seconds of a 440 Hz sine as AAC in M4A and as 16 bit
- * PCM in WAV. `.python/generate_media_fixtures.py` runs [MediaFixturesTest] and pulls the files for manual checks.
- * zh-CN: 在测试运行时于设备上生成的媒体夹具 (路线图 P0.3), 仓库因此不含二进制媒体: 3 秒八条竖向彩条的 H.264 MP4, 以及 3 秒
- * 440 Hz 正弦波的 AAC M4A 与 16 位 PCM WAV. `.python/generate_media_fixtures.py` 运行 [MediaFixturesTest] 并拉取文件供人工检查.
+ * 3 seconds of eight vertical color bars as H.264 in MP4, 3 seconds of a 440 Hz sine as AAC in M4A and as 16 bit PCM in
+ * WAV, and both remuxed into one MP4 with a video and an audio track (roadmap P2.2). `.python/generate_media_fixtures.py`
+ * runs [MediaFixturesTest] and pulls the files for manual checks.
+ * zh-CN: 在测试运行时于设备上生成的媒体夹具 (路线图 P0.3), 仓库因此不含二进制媒体: 3 秒八条竖向彩条的 H.264 MP4, 3 秒 440 Hz
+ * 正弦波的 AAC M4A 与 16 位 PCM WAV, 以及把两者重新封装成一个含视频与音频轨的 MP4 (路线图 P2.2).
+ * `.python/generate_media_fixtures.py` 运行 [MediaFixturesTest] 并拉取文件供人工检查.
  */
 object MediaFixtures {
 
@@ -29,6 +32,7 @@ object MediaFixtures {
     const val COLOR_BARS_MP4 = "color-bars-3s.mp4"
     const val SINE_M4A = "sine-440hz-3s.m4a"
     const val SINE_WAV = "sine-440hz-3s.wav"
+    const val BARS_TONE_MP4 = "color-bars-tone-3s.mp4"
 
     const val DURATION_US = 3_000_000L
     const val WIDTH = 320
@@ -45,14 +49,17 @@ object MediaFixtures {
     private const val TIMEOUT_US = 10_000L
     private const val CHUNK_SAMPLES = 1024
 
-    data class Fixtures(val colorBarsMp4: File, val sineM4a: File, val sineWav: File)
+    data class Fixtures(val colorBarsMp4: File, val sineM4a: File, val sineWav: File, val barsToneMp4: File)
 
     fun generate(directory: File): Fixtures {
         check(directory.isDirectory || directory.mkdirs()) { "Cannot create $directory" }
+        val colorBars = colorBars(File(directory, COLOR_BARS_MP4))
+        val sineM4a = sineAac(File(directory, SINE_M4A))
         return Fixtures(
-            colorBarsMp4 = colorBars(File(directory, COLOR_BARS_MP4)),
-            sineM4a = sineAac(File(directory, SINE_M4A)),
+            colorBarsMp4 = colorBars,
+            sineM4a = sineM4a,
             sineWav = sineWav(File(directory, SINE_WAV)),
+            barsToneMp4 = remux(listOf(colorBars, sineM4a), File(directory, BARS_TONE_MP4)),
         )
     }
 
@@ -77,17 +84,18 @@ object MediaFixtures {
         return output
     }
 
-    fun sineAac(output: File): File {
+    fun sineAac(output: File, durationUs: Long = DURATION_US): File {
+        val total = (SAMPLE_RATE * durationUs / 1_000_000L).toInt()
         val format = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, SAMPLE_RATE, 1).apply {
             setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)
             setInteger(MediaFormat.KEY_BIT_RATE, 96_000)
             setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, CHUNK_SAMPLES * 2)
         }
         var cursor = 0
-        encode(format, output, DURATION_US) { codec, index ->
-            if (cursor == TOTAL_SAMPLES) return@encode false
+        encode(format, output, durationUs) { codec, index ->
+            if (cursor == total) return@encode false
             val buffer = requireNotNull(codec.getInputBuffer(index)).also { (it as Buffer).clear() }.order(ByteOrder.LITTLE_ENDIAN)
-            val count = minOf(CHUNK_SAMPLES, TOTAL_SAMPLES - cursor, buffer.remaining() / 2)
+            val count = minOf(CHUNK_SAMPLES, total - cursor, buffer.remaining() / 2)
             repeat(count) { buffer.putShort(sample(cursor + it)) }
             codec.queueInputBuffer(index, 0, count * 2, cursor * 1_000_000L / SAMPLE_RATE, 0)
             cursor += count
@@ -106,6 +114,35 @@ object MediaFixtures {
             repeat(TOTAL_SAMPLES) { putShort(sample(it)) }
         }
         output.writeBytes(bytes.array())
+        return output
+    }
+
+    /**
+     * Copies the first track of each source into one MP4 without re-encoding, interleaved by presentation time.
+     * zh-CN: 不重新编码, 把每个来源的第一条轨道按呈现时间交错复制到一个 MP4.
+     */
+    fun remux(sources: List<File>, output: File): File {
+        val extractors = sources.map { file -> MediaExtractor().apply { setDataSource(file.path); selectTrack(0) } }
+        val muxer = MediaMuxer(output.path, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
+        try {
+            val tracks = extractors.map { muxer.addTrack(it.getTrackFormat(0)) }
+            muxer.start()
+            val buffer = ByteBuffer.allocate(4 shl 20)
+            val info = MediaCodec.BufferInfo()
+            while (true) {
+                val next = extractors.indices.filter { extractors[it].sampleTime >= 0 }.minByOrNull { extractors[it].sampleTime } ?: break
+                val extractor = extractors[next]
+                val size = extractor.readSampleData(buffer, 0)
+                val flags = if (extractor.sampleFlags and MediaExtractor.SAMPLE_FLAG_SYNC != 0) MediaCodec.BUFFER_FLAG_KEY_FRAME else 0
+                info.set(0, size, extractor.sampleTime, flags)
+                muxer.writeSampleData(tracks[next], buffer, info)
+                extractor.advance()
+            }
+            muxer.stop()
+        } finally {
+            muxer.release()
+            extractors.forEach { it.release() }
+        }
         return output
     }
 
@@ -148,7 +185,7 @@ object MediaFixtures {
      * is exhausted, then the end of stream follows.
      * zh-CN: 把一个编码器写成 MP4 的一条轨道: [queue] 填充并提交一个输入缓冲区, 输入耗尽时返回 false, 随后提交流结束.
      */
-    private fun encode(format: MediaFormat, output: File, endUs: Long, queue: (MediaCodec, Int) -> Boolean) {
+    fun encode(format: MediaFormat, output: File, endUs: Long, queue: (MediaCodec, Int) -> Boolean) {
         val name = requireNotNull(MediaCodecList(MediaCodecList.REGULAR_CODECS).findEncoderForFormat(format)) {
             "No encoder for $format"
         }

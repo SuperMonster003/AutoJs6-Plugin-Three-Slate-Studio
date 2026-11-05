@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="home_skeleton_note">目前建置為倉庫骨架: 處理, 時間線剪輯與 Studio 錄音將在後續建置中提供.</string>
+    <string name="home_skeleton_note">目前建置可為腳本處理影片與音訊. 時間線剪輯與 Studio 錄音將在後續建置中提供.</string>
     <string name="home_storage_denied">尚未授予所有檔案存取權限. 授權前處理工作會回報 STORAGE_PERMISSION_DENIED.</string>
     <string name="home_storage_grant">前往授權</string>
     <string name="home_storage_granted">已授予所有檔案存取權限. 腳本與 Studio 介面可以讀寫你選擇的路徑.</string>
     <string name="home_storage_title">檔案存取</string>
+    <string name="notification_channel_tasks">處理工作</string>
+    <string name="notification_tasks_text">執行中: %1$d, 排隊中: %2$d</string>
+    <string name="notification_tasks_title">正在處理媒體</string>
     <string name="plugin_description">影片與音訊處理, 多軌時間線剪輯, 轉場與字幕, 介面操作可生成腳本程式碼</string>
+    <string name="storage_guide_close">關閉</string>
+    <string name="storage_guide_note">有腳本要求讀寫插件目錄以外的路徑. 請授予所有檔案存取權限, 然後重新執行腳本.</string>
 </resources>

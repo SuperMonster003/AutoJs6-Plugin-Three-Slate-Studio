@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="home_skeleton_note">이 빌드는 저장소 골격입니다. 가공, 타임라인 편집, Studio 녹음은 이후 빌드에서 제공됩니다.</string>
+    <string name="home_skeleton_note">이 빌드는 스크립트용 동영상과 오디오 가공을 지원합니다. 타임라인 편집과 Studio 녹음은 이후 빌드에서 제공됩니다.</string>
     <string name="home_storage_denied">모든 파일 접근 권한이 허용되지 않았습니다. 허용하기 전까지 가공 작업은 STORAGE_PERMISSION_DENIED를 반환합니다.</string>
     <string name="home_storage_grant">권한 허용</string>
     <string name="home_storage_granted">모든 파일 접근 권한이 허용되었습니다. 스크립트와 Studio 화면에서 선택한 경로를 읽고 쓸 수 있습니다.</string>
     <string name="home_storage_title">파일 접근</string>
+    <string name="notification_channel_tasks">가공 작업</string>
+    <string name="notification_tasks_text">실행 중: %1$d, 대기 중: %2$d</string>
+    <string name="notification_tasks_title">미디어 가공 중</string>
     <string name="plugin_description">동영상과 오디오 가공, 멀티트랙 타임라인 편집, 전환 효과와 자막, 화면 조작으로 스크립트 코드 생성</string>
+    <string name="storage_guide_close">닫기</string>
+    <string name="storage_guide_note">스크립트가 플러그인 폴더 밖의 경로를 읽거나 쓰도록 요청했습니다. 모든 파일 접근 권한을 허용한 뒤 스크립트를 다시 실행하세요.</string>
 </resources>

@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="home_skeleton_note">هذا الإصدار هو الهيكل الأولي للمستودع: المعالجة ومحرر الخط الزمني ومسجل Studio ستأتي في إصدارات لاحقة.</string>
+    <string name="home_skeleton_note">يعالج هذا الإصدار الفيديو والصوت للسكربتات. سيأتي محرر الخط الزمني ومسجل Studio في إصدارات لاحقة.</string>
     <string name="home_storage_denied">لم يتم منح الوصول إلى جميع الملفات. ستعيد مهام المعالجة STORAGE_PERMISSION_DENIED حتى تمنحه.</string>
     <string name="home_storage_grant">منح الوصول</string>
     <string name="home_storage_granted">تم منح الوصول إلى جميع الملفات. يمكن للسكربتات وشاشات Studio قراءة المسارات التي تختارها والكتابة فيها.</string>
     <string name="home_storage_title">الوصول إلى الملفات</string>
+    <string name="notification_channel_tasks">مهام المعالجة</string>
+    <string name="notification_tasks_text">قيد التشغيل: %1$d, في الانتظار: %2$d</string>
+    <string name="notification_tasks_title">جارٍ معالجة الوسائط</string>
     <string name="plugin_description">معالجة الفيديو والصوت, تحرير متعدد المسارات على خط زمني, انتقالات وترجمات, مع توليد شيفرة السكربت من شاشات التطبيق</string>
+    <string name="storage_guide_close">إغلاق</string>
+    <string name="storage_guide_note">طلب سكربت قراءة مسار خارج مجلدات الإضافة أو الكتابة فيه. امنح الوصول إلى جميع الملفات, ثم شغّل السكربت مرة أخرى.</string>
 </resources>

@@ -7,9 +7,10 @@ import java.util.TimeZone
 
 /**
  * Default output paths of roadmap D14: videos go to `Movies/3-Slate Studio/`, audio to `Music/3-Slate Studio/`, named
- * `<source>-<op>-<timestamp>.<ext>`. Roadmap P2.1 adds the collision suffix and the MediaStore registration.
+ * `<source>-<op>-<timestamp>.<ext>`; a taken name gets the suffix `-<n>` (roadmap P2.1, [uniquePath]). MediaStoreRegistrar
+ * registers the finished file.
  * zh-CN: 路线图 D14 的默认输出路径: 视频放 `Movies/3-Slate Studio/`, 音频放 `Music/3-Slate Studio/`, 文件名为
- * `<源名>-<操作>-<时间戳>.<ext>`. 路线图 P2.1 再加重名后缀与 MediaStore 登记.
+ * `<源名>-<操作>-<时间戳>.<ext>`; 重名时加后缀 `-<n>` (路线图 P2.1, [uniquePath]). 完成的文件由 MediaStoreRegistrar 登记.
  */
 internal object OutputPaths {
 
@@ -51,6 +52,29 @@ internal object OutputPaths {
         timestampMillis: Long,
         zone: TimeZone,
     ): String = defaultDirectory(storageRoot, audio) + "/" + defaultFileName(sourcePath, op, extension, timestampMillis, zone)
+
+    /** Highest collision suffix tried before giving up. zh-CN: 放弃前尝试的最大重名序号. */
+    const val MAX_COLLISION_SUFFIX = 9999
+
+    /**
+     * [path] when [taken] says it is free, otherwise the first free `<base>-<n>.<ext>` with n from 1. Only default
+     * outputs get a suffix; an explicit output that exists is IO_ERROR (host contract).
+     * zh-CN: [taken] 表明 [path] 空闲时返回它, 否则返回第一个空闲的 `<base>-<n>.<ext>` (n 从 1 起). 只有默认输出会加后缀;
+     * 显式给出且已存在的输出为 IO_ERROR (宿主契约).
+     */
+    fun uniquePath(path: String, taken: (String) -> Boolean): String {
+        if (!taken(path)) return path
+        val directory = path.substringBeforeLast('/', "")
+        val name = path.substringAfterLast('/')
+        val dot = name.lastIndexOf('.')
+        val base = if (dot > 0) name.substring(0, dot) else name
+        val extension = if (dot > 0) name.substring(dot) else ""
+        for (n in 1..MAX_COLLISION_SUFFIX) {
+            val candidate = "$directory/$base-$n$extension"
+            if (!taken(candidate)) return candidate
+        }
+        throw MediaStudioException.io("no free output name for $path")
+    }
 
     internal fun sanitize(name: String): String = UNSAFE.replace(name, "_").trim().trimEnd('.')
 

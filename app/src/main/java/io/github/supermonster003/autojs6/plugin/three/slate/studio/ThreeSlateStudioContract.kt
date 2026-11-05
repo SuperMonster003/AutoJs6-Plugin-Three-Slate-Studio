@@ -1,6 +1,7 @@
 package io.github.supermonster003.autojs6.plugin.three.slate.studio
 
 import org.autojs.plugin.mediastudio.api.MediaStudioContract
+import org.autojs.plugin.mediastudio.api.MediaStudioOps
 import org.autojs.plugin.mediastudio.api.MediaStudioPluginActions
 
 /**
@@ -32,11 +33,22 @@ object ThreeSlateStudioContract {
     const val CONTRACT_VERSION = MediaStudioContract.CONTRACT_VERSION
 
     /**
-     * Operations the plugin implements; empty until roadmap P2 lands the processing core, so every submit answers
+     * Operations the plugin implements (roadmap P2.1 / P2.2): `probe` and `audioProbe` through `probe()`, the others
+     * through `submit`; every other contract operation answers `INVALID_OPTIONS: NOT_IMPLEMENTED`.
+     * zh-CN: 插件已实现的操作 (路线图 P2.1 / P2.2): `probe` 与 `audioProbe` 经 `probe()`, 其余经 `submit`; 其他契约操作回答
      * `INVALID_OPTIONS: NOT_IMPLEMENTED`.
-     * zh-CN: 插件已实现的操作; 路线图 P2 落地加工核心之前为空, 因此每次 submit 都返回 `INVALID_OPTIONS: NOT_IMPLEMENTED`.
      */
-    val IMPLEMENTED_OPS: List<String> = emptyList()
+    val IMPLEMENTED_OPS: List<String> = listOf(
+        MediaStudioOps.PROBE,
+        MediaStudioOps.TRIM,
+        MediaStudioOps.CONCAT,
+        MediaStudioOps.SPEED,
+        MediaStudioOps.TRANSFORM,
+        MediaStudioOps.EXTRACT_AUDIO,
+        MediaStudioOps.REMOVE_AUDIO,
+        MediaStudioOps.TRANSCODE,
+        MediaStudioOps.AUDIO_PROBE,
+    )
 
     /** Detail prefix of operations not implemented yet. zh-CN: 尚未实现的操作的详情前缀. */
     const val NOT_IMPLEMENTED = "NOT_IMPLEMENTED"

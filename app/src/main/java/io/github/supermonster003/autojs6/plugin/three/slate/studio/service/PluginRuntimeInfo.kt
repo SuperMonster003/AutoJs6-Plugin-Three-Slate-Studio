@@ -1,13 +1,19 @@
 package io.github.supermonster003.autojs6.plugin.three.slate.studio.service
 
+import android.app.ActivityManager
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.os.StatFs
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.R
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ThreeSlateStudioContract
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.CodecSupport
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.EncoderIds
 import org.autojs.plugin.common.api.PluginInfo
 import org.autojs.plugin.mediastudio.api.MediaStudioCapabilityKeys
+import org.autojs.plugin.mediastudio.api.MediaStudioLimits
 
 /**
  * The PluginInfo fields as plain values, so JVM tests can freeze the mapping without Android.
@@ -35,6 +41,17 @@ internal data class PluginRuntimeFields(
     /** Media studio contract version and implemented operations (roadmap D28). zh-CN: 媒体工坊契约版本与已实现的操作 (路线图 D28). */
     val contractVersion: Int,
     val ops: List<String>,
+    /**
+     * Encoders and output formats of this device (roadmap D29, Q7), scanned by [CodecSupport]; empty in JVM tests.
+     * zh-CN: 本机的编码器与输出格式 (路线图 D29, Q7), 由 [CodecSupport] 扫描; JVM 测试中为空.
+     */
+    val videoEncoders: List<String> = emptyList(),
+    val audioEncoders: List<String> = emptyList(),
+    val videoOutputFormats: List<String> = emptyList(),
+    val audioOutputFormats: List<String> = emptyList(),
+    /** Ceilings of roadmap D28. zh-CN: 路线图 D28 的上限. */
+    val maxConcurrentEncodes: Int = MediaStudioLimits.MAX_CONCURRENT_ENCODES,
+    val maxTasksPerToken: Int = MediaStudioLimits.MAX_TASKS_PER_TOKEN,
 )
 
 /**
@@ -52,6 +69,10 @@ internal fun pluginRuntimeFields(
     versionName: String,
     versionCode: Long,
     versionDate: String,
+    videoEncoders: List<String> = emptyList(),
+    audioEncoders: List<String> = emptyList(),
+    videoOutputFormats: List<String> = emptyList(),
+    audioOutputFormats: List<String> = emptyList(),
 ): PluginRuntimeFields = PluginRuntimeFields(
     name = name,
     description = description,
@@ -67,18 +88,61 @@ internal fun pluginRuntimeFields(
     requiredHostVersion = ThreeSlateStudioContract.REQUIRED_HOST_VERSION,
     contractVersion = ThreeSlateStudioContract.CONTRACT_VERSION,
     ops = ThreeSlateStudioContract.IMPLEMENTED_OPS,
+    videoEncoders = videoEncoders,
+    audioEncoders = audioEncoders,
+    videoOutputFormats = videoOutputFormats,
+    audioOutputFormats = audioOutputFormats,
 )
 
 /**
- * The capability bundle of PluginInfo and of `IMediaStudioPlugin.getCapabilities` (roadmap P2.1 adds encoders, formats
- * and the storage permission state).
- * zh-CN: PluginInfo 与 `IMediaStudioPlugin.getCapabilities` 共用的能力 Bundle (路线图 P2.1 再加编码器, 格式与存储权限状态).
+ * The static capability bundle of PluginInfo: contract version, operations, encoders, output formats and ceilings.
+ * zh-CN: PluginInfo 的静态能力 Bundle: 契约版本, 操作, 编码器, 输出格式与上限.
  */
 internal fun PluginRuntimeFields.capabilities(): Bundle = Bundle().apply {
     putLong(MediaStudioCapabilityKeys.REQUIRES_HOST_VERSION, requiredHostVersion)
     putInt(MediaStudioCapabilityKeys.CONTRACT_VERSION, contractVersion)
     putStringArray(MediaStudioCapabilityKeys.OPS, ops.toTypedArray())
+    putStringArray(MediaStudioCapabilityKeys.VIDEO_ENCODERS, videoEncoders.toTypedArray())
+    putStringArray(MediaStudioCapabilityKeys.AUDIO_ENCODERS, audioEncoders.toTypedArray())
+    putStringArray(MediaStudioCapabilityKeys.VIDEO_OUTPUT_FORMATS, videoOutputFormats.toTypedArray())
+    putStringArray(MediaStudioCapabilityKeys.AUDIO_OUTPUT_FORMATS, audioOutputFormats.toTypedArray())
+    putInt(MediaStudioCapabilityKeys.MAX_CONCURRENT_ENCODES, maxConcurrentEncodes)
+    putInt(MediaStudioCapabilityKeys.MAX_TASKS_PER_TOKEN, maxTasksPerToken)
 }
+
+/**
+ * The live bundle of `IMediaStudioPlugin.getCapabilities`: the static keys plus the storage permission state and
+ * free-text warnings (no H.265 encoder, low shared storage, background restriction).
+ * zh-CN: `IMediaStudioPlugin.getCapabilities` 的实时 Bundle: 静态键加上存储权限状态与自由文本警告 (没有 H.265 编码器, 共享存储
+ * 空间不足, 后台受限).
+ */
+internal fun PluginRuntimeFields.liveCapabilities(context: Context): Bundle = capabilities().apply {
+    putBoolean(MediaStudioCapabilityKeys.STORAGE_PERMISSION, StorageAccess.isGranted(context))
+    putStringArray(MediaStudioCapabilityKeys.WARNINGS, runtimeWarnings(context).toTypedArray())
+}
+
+private fun PluginRuntimeFields.runtimeWarnings(context: Context): List<String> = buildList {
+    // HyperOS restricts newly installed apps in the background (RUN_ANY_IN_BACKGROUND ignore), and the system then
+    // ignores startForeground() without an exception (seen on the Xiaomi Pad, API 35, 2026-11-06).
+    // zh-CN: HyperOS 默认限制新装应用的后台 (RUN_ANY_IN_BACKGROUND ignore), 此时系统忽略 startForeground() 且不抛异常
+    // (2026-11-06 在小米平板 API 35 上观察到).
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && context.getSystemService(ActivityManager::class.java)?.isBackgroundRestricted == true) {
+        add("the system restricts 3-Slate Studio in the background; tasks longer than 10 s run without the foreground service and its progress notification; allow unrestricted battery use for the plugin")
+    }
+    if (videoEncoders.isEmpty()) {
+        add("this device has no H.264 or H.265 encoder; video operations answer UNSUPPORTED_FORMAT")
+    } else if (EncoderIds.H265 !in videoEncoders) {
+        add("this device has no H.265 encoder; codec h265 answers UNSUPPORTED_FORMAT")
+    }
+    @Suppress("DEPRECATION")
+    val free = runCatching { StatFs(Environment.getExternalStorageDirectory().path).availableBytes }.getOrNull()
+    if (free != null && free < LOW_STORAGE_BYTES) {
+        add("shared storage has ${free / (1024 * 1024)} MiB free, below ${LOW_STORAGE_BYTES / (1024 * 1024)} MiB")
+    }
+}
+
+/** Free shared storage below this adds a warning. zh-CN: 共享存储可用空间低于此值时加入警告. */
+private const val LOW_STORAGE_BYTES = 1024L * 1024 * 1024
 
 /**
  * The identity answered by the INFO service and by `IMediaStudioPlugin.getInfo`.
@@ -118,6 +182,10 @@ internal fun Context.pluginRuntimeFields(): PluginRuntimeFields {
         versionName = packageInfo.versionName.orEmpty(),
         versionCode = packageInfo.versionCodeCompat(),
         versionDate = appContext.getString(R.string.plugin_version_date),
+        videoEncoders = CodecSupport.videoEncoders(),
+        audioEncoders = CodecSupport.audioEncoders(),
+        videoOutputFormats = CodecSupport.videoOutputFormats(),
+        audioOutputFormats = CodecSupport.audioOutputFormats(),
     )
 }
 

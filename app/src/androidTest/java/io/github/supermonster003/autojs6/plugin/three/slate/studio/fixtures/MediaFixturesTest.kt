@@ -49,6 +49,10 @@ class MediaFixturesTest {
                 assertEquals(MediaFixtures.SAMPLE_RATE, format.getInteger(MediaFormat.KEY_SAMPLE_RATE))
                 assertThreeSeconds(format)
             }
+            tracks(fixtures.barsToneMp4).let { formats ->
+                assertEquals(listOf(MediaFormat.MIMETYPE_VIDEO_AVC, MediaFormat.MIMETYPE_AUDIO_AAC), formats.map { it.getString(MediaFormat.KEY_MIME) })
+                formats.forEach(::assertThreeSeconds)
+            }
             val wav = fixtures.sineWav.readBytes()
             assertEquals(44 + MediaFixtures.TOTAL_SAMPLES * 2, wav.size)
             assertArrayEquals("RIFF".toByteArray(Charsets.US_ASCII), wav.copyOfRange(0, 4))
@@ -60,12 +64,13 @@ class MediaFixturesTest {
         }
     }
 
-    private fun single(file: File): MediaFormat {
+    private fun single(file: File): MediaFormat = tracks(file).also { assertEquals("${file.name} has one track", 1, it.size) }.single()
+
+    private fun tracks(file: File): List<MediaFormat> {
         val extractor = MediaExtractor()
         try {
             extractor.setDataSource(file.path)
-            assertEquals("${file.name} has one track", 1, extractor.trackCount)
-            return extractor.getTrackFormat(0)
+            return (0 until extractor.trackCount).map(extractor::getTrackFormat)
         } finally {
             extractor.release()
         }

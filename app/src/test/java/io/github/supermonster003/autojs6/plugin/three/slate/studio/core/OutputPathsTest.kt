@@ -63,4 +63,20 @@ class OutputPathsTest {
         )
     }
 
+    @Test
+    fun `a taken default name gets the first free numeric suffix`() {
+        val taken = setOf("/m/a.mp4", "/m/a-1.mp4", "/m/a-2.mp4")
+        assertEquals("/m/b.mp4", OutputPaths.uniquePath("/m/b.mp4") { it in taken })
+        assertEquals("/m/a-3.mp4", OutputPaths.uniquePath("/m/a.mp4") { it in taken })
+        assertEquals("/m/noext-1", OutputPaths.uniquePath("/m/noext") { it == "/m/noext" })
+        assertEquals("/m/.hidden-1", OutputPaths.uniquePath("/m/.hidden") { it == "/m/.hidden" })
+    }
+
+    @Test
+    fun `uniquePath gives up after 9999 suffixes`() {
+        val error = assertThrows(MediaStudioException::class.java) { OutputPaths.uniquePath("/m/a.mp4") { true } }
+        assertEquals("IO_ERROR", error.code)
+        assertEquals(9999, OutputPaths.MAX_COLLISION_SUFFIX)
+    }
+
 }

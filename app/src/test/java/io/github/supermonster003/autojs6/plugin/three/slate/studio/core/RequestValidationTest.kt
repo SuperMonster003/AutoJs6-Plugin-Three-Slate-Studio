@@ -9,10 +9,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The envelope checks of a submit request and the `NOT_IMPLEMENTED` answer of the skeleton (roadmap D28, P0.3; host
- * contract P1.1). Roadmap P2.1 adds the per operation option checks.
- * zh-CN: submit 请求外层字段的检查与骨架的 `NOT_IMPLEMENTED` 回答 (路线图 D28, P0.3; 宿主契约 P1.1). 路线图 P2.1 再加按操作的
- * 选项检查.
+ * The envelope checks of a submit request and the `NOT_IMPLEMENTED` answer of operations later stages add (roadmap D28,
+ * P0.3, P2.1; host contract P1.1). [RequestPlannerTest] covers the per operation checks.
+ * zh-CN: submit 请求外层字段的检查与后续阶段才加入的操作的 `NOT_IMPLEMENTED` 回答 (路线图 D28, P0.3, P2.1; 宿主契约 P1.1).
+ * 按操作的检查见 [RequestPlannerTest].
  */
 class RequestValidationTest {
 
@@ -39,7 +39,7 @@ class RequestValidationTest {
             MediaStudioErrorCodes.encode(MediaStudioErrorCodes.LIMIT_EXCEEDED, "${max + 1} inputs, at most $max"),
             RequestValidation.rejection(MediaStudioOps.CONCAT, List(max + 1) { "" }, null),
         )
-        assertEquals(RequestValidation.notImplemented(MediaStudioOps.CONCAT), RequestValidation.rejection(MediaStudioOps.CONCAT, List(max) { path }, null))
+        assertEquals(null, RequestValidation.rejection(MediaStudioOps.CONCAT, List(max) { path }, null))
     }
 
     @Test
@@ -62,16 +62,28 @@ class RequestValidationTest {
             invalid("hostToken longer than $max characters"),
             RequestValidation.rejection(MediaStudioOps.TRIM, listOf(path), "t".repeat(max + 1)),
         )
-        assertEquals(RequestValidation.notImplemented(MediaStudioOps.TRIM), RequestValidation.rejection(MediaStudioOps.TRIM, listOf(path), "t".repeat(max)))
+        assertEquals(null, RequestValidation.rejection(MediaStudioOps.TRIM, listOf(path), "t".repeat(max)))
     }
 
     @Test
-    fun `every contract operation answers NOT_IMPLEMENTED in the skeleton`() {
-        assertEquals(emptyList<String>(), ThreeSlateStudioContract.IMPLEMENTED_OPS)
-        assertTrue(MediaStudioOps.ALL.isNotEmpty())
+    fun `P2 implements probe and the basic operations, later operations answer NOT_IMPLEMENTED`() {
+        val implemented = listOf(
+            MediaStudioOps.PROBE,
+            MediaStudioOps.TRIM,
+            MediaStudioOps.CONCAT,
+            MediaStudioOps.SPEED,
+            MediaStudioOps.TRANSFORM,
+            MediaStudioOps.EXTRACT_AUDIO,
+            MediaStudioOps.REMOVE_AUDIO,
+            MediaStudioOps.TRANSCODE,
+            MediaStudioOps.AUDIO_PROBE,
+        )
+        assertEquals(implemented, ThreeSlateStudioContract.IMPLEMENTED_OPS)
+        assertTrue(MediaStudioOps.ALL.containsAll(implemented))
         MediaStudioOps.ALL.forEach { op ->
             assertTrue(MediaStudioOps.isKnown(op))
-            assertEquals(RequestValidation.notImplemented(op), RequestValidation.rejection(op, listOf(path), "host"))
+            val expected = if (op in implemented) null else RequestValidation.notImplemented(op)
+            assertEquals(op, expected, RequestValidation.rejection(op, listOf(path), "host"))
         }
     }
 

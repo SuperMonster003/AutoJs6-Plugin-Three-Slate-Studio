@@ -99,11 +99,21 @@ class ManifestContractTest {
     }
 
     @Test
-    fun `the activities are the wake and home screens`() {
-        assertEquals(listOf(".WakeActivity", ".ui.home.HomeActivity"), application.children("activity").map { it.android("name") })
+    fun `the activities are the wake, home and storage guide screens`() {
+        assertEquals(
+            listOf(".WakeActivity", ".ui.home.HomeActivity", ".ui.storage.StorageAccessActivity"),
+            application.children("activity").map { it.android("name") },
+        )
         val home = activity(".ui.home.HomeActivity")
         assertEquals("false", home.android("exported"))
         assertTrue("the launcher reaches the home screen through the aliases only", home.children("intent-filter").isEmpty())
+        // Opened by the plugin itself when a request needs all files access (roadmap P2.1).
+        val guide = activity(".ui.storage.StorageAccessActivity")
+        assertEquals("false", guide.android("exported"))
+        assertEquals("true", guide.android("excludeFromRecents"))
+        assertEquals("singleTask", guide.android("launchMode"))
+        assertEquals("", guide.android("taskAffinity"))
+        assertTrue(guide.children("intent-filter").isEmpty())
     }
 
     @Test
@@ -132,7 +142,7 @@ class ManifestContractTest {
     @Test
     fun `the INFO and MEDIA_STUDIO services match the discovery constants`() {
         assertEquals(
-            listOf(".service.ThreeSlateStudioInfoService", ".service.ThreeSlateStudioService"),
+            listOf(".service.ThreeSlateStudioInfoService", ".service.ThreeSlateStudioService", ".service.ProcessingForegroundService"),
             application.children("service").map { it.android("name") },
         )
         val info = service(".service.ThreeSlateStudioInfoService")
@@ -148,9 +158,19 @@ class ManifestContractTest {
             assertEquals("true", service.android("exported"))
             assertEquals(PLUGIN_PERMISSION, service.android("permission"))
             assertNull("services run in the plugin's default process", service.androidOrNull("process"))
-            // The task and recorder foreground services arrive with roadmap P2.1 / P4.5.
             assertNull("discovery services are not foreground services", service.androidOrNull("foregroundServiceType"))
         }
+    }
+
+    @Test
+    fun `the processing service is a private data sync foreground service`() {
+        // Roadmap P2.1; the recorder foreground service arrives with P4.5.
+        val processing = service(".service.ProcessingForegroundService")
+        assertEquals("false", processing.android("exported"))
+        assertEquals("dataSync", processing.android("foregroundServiceType"))
+        assertNull("the plugin starts it itself", processing.androidOrNull("permission"))
+        assertNull("services run in the plugin's default process", processing.androidOrNull("process"))
+        assertTrue(processing.children("intent-filter").isEmpty())
     }
 
     @Test

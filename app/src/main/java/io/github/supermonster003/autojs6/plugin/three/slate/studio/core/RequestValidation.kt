@@ -6,10 +6,11 @@ import org.autojs.plugin.mediastudio.api.MediaStudioLimits
 import org.autojs.plugin.mediastudio.api.MediaStudioOps
 
 /**
- * First checks of a submit request, shared by the Binder service and the Studio screens. Roadmap P2.1 extends it with
- * the per operation option schemas; the skeleton only checks the envelope and then reports `NOT_IMPLEMENTED`.
- * zh-CN: submit 请求的首轮检查, 由 Binder 服务与 Studio 界面共用. 路线图 P2.1 再按操作扩展选项模式; 骨架只检查外层字段,
- * 然后报告 `NOT_IMPLEMENTED`.
+ * Envelope checks of a submit request (op, input count and paths, host token), shared by the Binder service and the
+ * Studio screens; operations this build does not implement answer `NOT_IMPLEMENTED`. [RequestPlanner] then checks the
+ * options ([OperationOptions]), the files and the encoders.
+ * zh-CN: submit 请求外层字段的检查 (op, 输入个数与路径, 宿主 token), 由 Binder 服务与 Studio 界面共用; 本构建未实现的操作回答
+ * `NOT_IMPLEMENTED`. 之后由 [RequestPlanner] 检查选项 ([OperationOptions]), 文件与编码器.
  */
 internal object RequestValidation {
 

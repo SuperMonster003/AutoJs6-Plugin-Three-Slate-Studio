@@ -19,7 +19,7 @@ import org.junit.Test
 class PluginRuntimeInfoTest {
 
     @Test
-    fun `runtime fields keep the identity, the package version, no ABI and the skeleton capabilities`() {
+    fun `runtime fields keep the identity, the package version, no ABI and the implemented operations`() {
         val fields = pluginRuntimeFields(
             name = "3-Slate Studio",
             description = "Media",
@@ -48,7 +48,9 @@ class PluginRuntimeInfoTest {
         assertEquals(6641L, fields.requiredHostVersion)
         assertEquals(ThreeSlateStudioContract.REQUIRED_HOST_VERSION, fields.requiredHostVersion)
         assertEquals(1, fields.contractVersion)
-        assertEquals("no operation is implemented before roadmap P2", emptyList<String>(), fields.ops)
+        assertEquals("P2.1 / P2.2 implement probe and the basic operations", ThreeSlateStudioContract.IMPLEMENTED_OPS, fields.ops)
+        assertTrue(fields.ops.containsAll(listOf(MediaStudioOps.PROBE, MediaStudioOps.TRIM, MediaStudioOps.TRANSCODE, MediaStudioOps.AUDIO_PROBE)))
+        assertFalse("compose comes with P3", MediaStudioOps.COMPOSE in fields.ops)
     }
 
     @Test
