@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_skeleton_note">Cette version est le squelette du dépôt: le traitement, la timeline et l\'enregistreur Studio arrivent dans les versions suivantes.</string>
+    <string name="home_storage_denied">L\'accès à tous les fichiers n\'est pas accordé. Les tâches de traitement renvoient STORAGE_PERMISSION_DENIED tant que vous ne l\'accordez pas.</string>
+    <string name="home_storage_grant">Accorder l\'accès</string>
+    <string name="home_storage_granted">L\'accès à tous les fichiers est accordé. Les scripts et les écrans Studio peuvent lire et écrire les chemins choisis.</string>
+    <string name="home_storage_title">Accès aux fichiers</string>
+    <string name="plugin_description">Traitement vidéo et audio, montage multipiste sur une timeline, transitions et sous-titres, avec du code de script généré depuis les écrans</string>
+</resources>

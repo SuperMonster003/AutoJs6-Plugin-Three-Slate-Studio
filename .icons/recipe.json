@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "generatorVersion": "1.4.0",
+  "profile": "neutral-v1",
+  "repository": "AutoJs6-Plugin-Three-Slate-Studio",
+  "packages": [
+    "io.github.supermonster003.autojs6.plugin.three.slate.studio"
+  ],
+  "launcher": true,
+  "params": {
+    "sources": {
+      "day": "52e527682ceb14ed107a861ef456766e96c499b5cf03d4ee5def3fc0b31eb1a3",
+      "night": "e9a089ce26845c7f4ffd6321a8947079c12a648f6b5bfd9b27b397d4b59dac28",
+      "alphaMode": "alpha"
+    },
+    "geometry": {
+      "mode": "normalized",
+      "scale": 1.0,
+      "offsetX": 0.0,
+      "offsetY": 0.0
+    },
+    "day": {
+      "mode": "grayscale",
+      "foreground": "#272727",
+      "brightness": 1.0,
+      "contrast": 1.0,
+      "gamma": 1.0,
+      "threshold": 128,
+      "invert": false
+    },
+    "night": {
+      "mode": "grayscale",
+      "foreground": "#d8d8d8",
+      "brightness": 1.0,
+      "contrast": 1.0,
+      "gamma": 1.0,
+      "threshold": 128,
+      "invert": false
+    },
+    "backgrounds": {
+      "day": "#fafafa",
+      "night": "#212121"
+    }
+  },
+  "baseline": {
+    "params": {
+      "sources": {
+        "day": "52e527682ceb14ed107a861ef456766e96c499b5cf03d4ee5def3fc0b31eb1a3",
+        "night": "e9a089ce26845c7f4ffd6321a8947079c12a648f6b5bfd9b27b397d4b59dac28",
+        "alphaMode": "alpha"
+      },
+      "geometry": {
+        "mode": "normalized",
+        "scale": 1.0,
+        "offsetX": 0.0,
+        "offsetY": 0.0
+      },
+      "day": {
+        "mode": "grayscale",
+        "foreground": "#272727",
+        "brightness": 1.0,
+        "contrast": 1.0,
+        "gamma": 1.0,
+        "threshold": 128,
+        "invert": false
+      },
+      "night": {
+        "mode": "grayscale",
+        "foreground": "#d8d8d8",
+        "brightness": 1.0,
+        "contrast": 1.0,
+        "gamma": 1.0,
+        "threshold": 128,
+        "invert": false
+      },
+      "backgrounds": {
+        "day": "#fafafa",
+        "night": "#212121"
+      }
+    },
+    "day": "52e527682ceb14ed107a861ef456766e96c499b5cf03d4ee5def3fc0b31eb1a3",
+    "night": "e9a089ce26845c7f4ffd6321a8947079c12a648f6b5bfd9b27b397d4b59dac28"
+  },
+  "outputs": {
+    "app/src/main/res/mipmap/ic_plugin_center.png": {
+      "role": "ui-day"
+    },
+    "app/src/main/res/mipmap-night/ic_plugin_center.png": {
+      "role": "ui-night"
+    },
+    "app/src/main/res/raw/keep_plugin_center_icon.xml": {
+      "role": "keep-rule"
+    },
+    "app/src/main/res/mipmap/ic_launcher.png": {
+      "role": "ui-day"
+    },
+    "app/src/main/res/mipmap-night/ic_launcher.png": {
+      "role": "ui-night"
+    },
+    "app/src/main/res/values/icon_studio_backgrounds.xml": {
+      "role": "background-color",
+      "theme": "day"
+    },
+    "app/src/main/res/values-night/icon_studio_backgrounds.xml": {
+      "role": "background-color",
+      "theme": "night"
+    },
+    "app/src/main/res/raw/keep_icon_studio_background.xml": {
+      "role": "background-keep"
+    },
+    "app/src/main/res/mipmap/ic_icon_studio_application.png": {
+      "role": "legacy-day"
+    },
+    "app/src/main/res/mipmap-night/ic_icon_studio_application.png": {
+      "role": "legacy-night"
+    },
+    "app/src/main/res/mipmap/ic_icon_studio_application_foreground.png": {
+      "role": "adaptive-day"
+    },
+    "app/src/main/res/mipmap-night/ic_icon_studio_application_foreground.png": {
+      "role": "adaptive-night"
+    },
+    "app/src/main/res/mipmap/ic_icon_studio_application_monochrome.png": {
+      "role": "mono"
+    },
+    "app/src/main/res/mipmap-anydpi-v26/ic_icon_studio_application.xml": {
+      "role": "application-adaptive"
+    },
+    "app/src/main/res/mipmap-night-anydpi-v26/ic_icon_studio_application.xml": {
+      "role": "application-adaptive"
+    },
+    "app/src/main/res/raw/keep_icon_studio_application.xml": {
+      "role": "application-keep"
+    },
+    "app/src/main/res/mipmap/ic_launcher_monochrome.png": {
+      "role": "mono"
+    },
+    "app/src/main/res/mipmap/ic_launcher_system.png": {
+      "role": "legacy-night"
+    },
+    "app/src/main/res/mipmap/ic_launcher_system_foreground.png": {
+      "role": "adaptive-night"
+    },
+    "app/src/main/res/mipmap/ic_launcher_system_light.png": {
+      "role": "legacy-day"
+    },
+    "app/src/main/res/mipmap/ic_launcher_system_light_foreground.png": {
+      "role": "adaptive-day"
+    },
+    "app/src/main/res/mipmap/ic_launcher_system_auto.xml": {
+      "role": "keep",
+      "original": "2c9efc6043b903444f129a018e04f8b72198ae97bca3984fb22be9d02dec3bcd"
+    },
+    "app/src/main/res/mipmap-notnight/ic_launcher_system_auto.xml": {
+      "role": "keep",
+      "original": "e9f59c22fb4537122a8fadc90a4c0e88b5e2e9452eb138b1676e96a45f4e0e0e"
+    },
+    "app/src/main/res/mipmap-anydpi-v26/ic_launcher_system.xml": {
+      "role": "adaptive-background",
+      "original": "5a6b777b2031a6c70b7164e5a089ffd2dffcd20049d8a152a38beca94d6dfe84",
+      "theme": "night"
+    },
+    "app/src/main/res/mipmap-anydpi-v26/ic_launcher_system_auto.xml": {
+      "role": "adaptive-background",
+      "original": "5a6b777b2031a6c70b7164e5a089ffd2dffcd20049d8a152a38beca94d6dfe84",
+      "theme": "night"
+    },
+    "app/src/main/res/mipmap-anydpi-v26/ic_launcher_system_light.xml": {
+      "role": "adaptive-background",
+      "original": "dfc65ffef5957316aa345af6c3d5a53216b89b998a692519533bf8c6eccb5fa1",
+      "theme": "day"
+    },
+    "app/src/main/res/mipmap-notnight-anydpi-v26/ic_launcher_system_auto.xml": {
+      "role": "adaptive-background",
+      "original": "dfc65ffef5957316aa345af6c3d5a53216b89b998a692519533bf8c6eccb5fa1",
+      "theme": "day"
+    }
+  },
+  "assets": [
+    "2c9efc6043b903444f129a018e04f8b72198ae97bca3984fb22be9d02dec3bcd",
+    "52e527682ceb14ed107a861ef456766e96c499b5cf03d4ee5def3fc0b31eb1a3",
+    "5a6b777b2031a6c70b7164e5a089ffd2dffcd20049d8a152a38beca94d6dfe84",
+    "dfc65ffef5957316aa345af6c3d5a53216b89b998a692519533bf8c6eccb5fa1",
+    "e9a089ce26845c7f4ffd6321a8947079c12a648f6b5bfd9b27b397d4b59dac28",
+    "e9f59c22fb4537122a8fadc90a4c0e88b5e2e9452eb138b1676e96a45f4e0e0e"
+  ],
+  "legacyGenerator": null,
+  "backgroundDefaults": {
+    "day": "#fafafa",
+    "night": "#212121"
+  },
+  "systemIcon": true,
+  "originalSources": {},
+  "systemIconMinSdk": 24,
+  "systemIconObsolete": []
+}

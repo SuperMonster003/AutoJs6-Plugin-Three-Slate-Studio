@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_skeleton_note">This build is the repository skeleton: processing, the timeline editor and the Studio recorder come in later builds.</string>
+    <string name="home_storage_denied">All files access is not granted. Processing tasks report STORAGE_PERMISSION_DENIED until you grant it.</string>
+    <string name="home_storage_grant">Grant access</string>
+    <string name="home_storage_granted">All files access is granted. Scripts and the Studio screens can read and write the paths you choose.</string>
+    <string name="home_storage_title">File access</string>
+    <string name="plugin_description">Video and audio processing, multi-track timeline editing, transitions and subtitles, with script code generated from the app screens</string>
+</resources>

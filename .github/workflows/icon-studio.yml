@@ -1,0 +1,36 @@
+name: Icon Studio recipe
+
+on:
+  push:
+    branches: [master]
+    paths: [".icons/**", ".python/*icon*.py", ".python/icons/**", "app/src/**/res/**", "app/src/main/AndroidManifest.xml", "version.properties", ".gitattributes", ".github/workflows/icon-studio.yml"]
+  pull_request:
+    paths: [".icons/**", ".python/*icon*.py", ".python/icons/**", "app/src/**/res/**", "app/src/main/AndroidManifest.xml", "version.properties", ".gitattributes", ".github/workflows/icon-studio.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Reproduce icon resources (${{ matrix.os }})
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install Pillow
+        run: python -m pip install Pillow==12.3.0
+
+      - name: Verify the committed recipe reproduces every resource
+        run: python .python/generate_icon_studio.py --check

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_skeleton_note">このビルドはリポジトリの骨格です. 加工, タイムライン編集, Studio の録音は今後のビルドで提供されます.</string>
+    <string name="home_storage_denied">すべてのファイルへのアクセスが許可されていません. 許可するまで加工タスクは STORAGE_PERMISSION_DENIED を返します.</string>
+    <string name="home_storage_grant">許可する</string>
+    <string name="home_storage_granted">すべてのファイルへのアクセスが許可されています. スクリプトと Studio の画面は選んだパスを読み書きできます.</string>
+    <string name="home_storage_title">ファイルアクセス</string>
+    <string name="plugin_description">動画と音声の加工, マルチトラックのタイムライン編集, トランジションと字幕, 画面の操作からスクリプトコードを生成</string>
+</resources>

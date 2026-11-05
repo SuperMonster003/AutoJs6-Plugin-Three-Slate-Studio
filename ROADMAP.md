@@ -1,6 +1,6 @@
 # 3-Slate Studio 插件路线图
 
-更新: 2026-10-22 (立项). 本文件是 `AutoJs6-Plugin-Three-Slate-Studio` (显示名 `3-Slate Studio`, 录屏 + 媒体加工方向, 插件选题分析 2026-10 的第 3 优先级候选) 的唯一进度与决策记录. 立项基线: 宿主 AutoJs6 `master` `63d1cb259` (2026-10-22, `VERSION_NAME` 6.8.0 未发布, `VERSION_BUILD` 4183, versionCode 5835), 宿主 Node 桥接录屏内核 `bd522f8a7` / `e8f8edb7a` (2026-10-17), 3-Macaw Speech `ROADMAP.md` 作为版式与流程模板.
+更新: 2026-10-22 (立项). 本文件是 `AutoJs6-Plugin-Three-Slate-Studio` (显示名 `3-Slate Studio`, 录屏 + 媒体加工方向, 插件选题分析 2026-10 的第 3 优先级候选) 的唯一进度与决策记录. 立项基线: 宿主 AutoJs6 `master` `63d1cb259` (2026-10-22, `VERSION_NAME` 6.8.0 未发布, `VERSION_BUILD` 4183, versionCode 5835), 宿主 Node 桥接录屏内核 `bd522f8a7` / `e8f8edb7a` (2026-10-17), 3-Macaw Speech `ROADMAP.md` 作为版式与流程模板. 2026-11-05: 维护者拍板 Q1 / Q4 / Q6 (均选推荐项) 并补充 Studio 录音需求 (Q8, D41, P4.5); 宿主基线改为公开历史重写后的 6.8.1 (附录 F).
 
 使用方式:
 
@@ -47,15 +47,15 @@
 
 ## 2. 派生技术决策
 
-D25-D40 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条), 之后视同固定.
+D25-D40 据第 1 节派生, D41 据维护者 2026-11-05 补充需求 (附录 D Q8) 派生; 进入对应阶段前可推翻 (推翻点见各条), 之后视同固定.
 
 | 编号 | 决策 | 含义 | 推翻点 |
 | --- | --- | --- | --- |
 | D25 | 工具链基线 | 按 `AUTOJS6_PLUGIN_NEW_REPO_AGENTS.md` 的占位符表与 3-Maple Image 的当前依赖线: compileSdk / targetSdk 37, minSdk 24, Kotlin 2.x, Compose BOM 2026.09.00, navigation 2.10.2, media3 1.10.1 (`media3-transformer`, `media3-effect`, `media3-muxer`, `media3-exoplayer`, `media3-ui`), `PLATFORM_VERSIONS_PLUGIN_VERSION` 1.9.1; 版本号起 1.0.0, `VERSION_BUILD` 在骨架阶段为提交数 + 1. 1.0.0 APK 为 universal 单包 (无原生库, 不拆 ABI); 16 KB 页校验在 1.0.0 只需确认依赖 AAR 内无 `.so`. | P0.1 |
-| D26 | 宿主录屏 / 录音内核泛化 | 把 `engine/NodeScreenRecording.kt`, `ScreenRecordingAudio.kt`, `ScreenRecordingFrames.kt`, `ScreenRecordingMuxer` 与 Node 的纯音频录制从 `engine/` 抽到 `core/record/` (类名 `ScreenRecorder`, `AudioRecorder`), Node 桥接与 Rhino `video.record` / `audio.record` 共用; 行为与 Node 版一致 (H.264 MP4, 宽高须为偶数且同时给出, `frameRate` 1-120 默认 30, `bitRate` 默认 8 Mbps, `audio` none / mic / playback / mixed, AAC 48 kHz 128 kbps, playback / mixed 需 API 29+), Rhino 侧增加 `maxDuration` 与 `onStop`. 同一宿主进程同时只有一个录屏; 录屏期间 `images.captureScreen` 由帧分发回读 (宿主已实现). 内录声道数是否改立体声见附录 D Q1. | P1.2 |
+| D26 | 宿主录屏 / 录音内核泛化 | 把 `engine/NodeScreenRecording.kt`, `ScreenRecordingAudio.kt`, `ScreenRecordingFrames.kt`, `ScreenRecordingMuxer` 与 Node 的纯音频录制从 `engine/` 抽到 `core/record/` (类名 `ScreenRecorder`, `AudioRecorder`), Node 桥接与 Rhino `video.record` / `audio.record` 共用; 行为与 Node 版一致 (H.264 MP4, 宽高须为偶数且同时给出, `frameRate` 1-120 默认 30, `bitRate` 默认 8 Mbps, `audio` none / mic / playback / mixed, AAC 48 kHz 128 kbps, playback / mixed 需 API 29+), Rhino 侧增加 `maxDuration` 与 `onStop`. 同一宿主进程同时只有一个录屏; 录屏期间 `images.captureScreen` 由帧分发回读 (宿主已实现). 内录声道数见附录 D Q1 (已决: Rhino `audio.record` / `video.record` 的 playback / mixed 默认 2 声道 48 kHz, `channels` 可改 1, AAC 默认 192 kbps; 麦克风与 Node 桥接保持单声道 128 kbps). | P1.2 |
 | D27 | 宿主绑定与能力声明 | `MediaStudioPluginHost` 基于 `core/plugin/AidlPluginHost.kt`, 绑定 flags 同 `SpeechPluginHost` (含 API 34 `BIND_ALLOW_ACTIVITY_STARTS`, 以便插件在宿主后台时弹出 "所有文件访问" 授权页与 MediaStore 写入确认); 脚本能力声明: `video.record` 需 `screen_capture`, 带音频的录屏与 `audio.record` 需 `media.recording` + `RECORD_AUDIO`, 加工类方法需 `media`; 裸脚本能力声明与 MCP / Node 的声明保持一致. | P1.3 |
 | D28 | 契约请求模型 | `IMediaStudioPlugin.submit(request, callback)` 返回任务 ID, 请求与结果用 `Bundle` (不走 JSON 字符串; 选项像 `JSON.stringify` 一样序列化, 函数被忽略), `IMediaStudioCallback.onProgress / onComplete / onError`; `cancel(taskId)`, `probe(path)`, `listTasks(hostToken)`; 宿主回调 Binder 死亡即取消其全部任务并删除未完成的输出文件; 同一宿主 Binder token 最多 4 个并发任务 (超出 `TASK_LIMIT`), 全插件最多 2 个同时编码 (其余排队). 草案见附录 C. | P1.1 |
-| D29 | 加工管线 | 单输入单输出的操作 (裁剪, 变速, 变换, 叠加, 转码, 去音轨, 抽音频) 走 `Transformer` + `EditedMediaItem` + `Effects`; 拼接与多轨走 `Composition` (多 `EditedMediaItemSequence`); 裁剪无需重编码时启用 `experimentalSetTrimOptimizationEnabled`; 默认视频编码 H.264 (`h265` 可选, 设备不支持时报 `UNSUPPORTED_FORMAT`), 默认码率按分辨率估算 (1080p 8 Mbps); 音频处理用 `media3-effect` 的 `AudioProcessor` (音量 / 变速 / 声道) 与 `Composition` 多序列混音; 超过 2 GB 或 60 分钟的单输入返回 `warnings[]` 但不拒绝. | P2.1 |
+| D29 | 加工管线 | 单输入单输出的操作 (裁剪, 变速, 变换, 叠加, 转码, 去音轨, 抽音频) 走 `Transformer` + `EditedMediaItem` + `Effects`; 拼接与多轨走 `Composition` (多 `EditedMediaItemSequence`); 裁剪无需重编码时启用 `experimentalSetTrimOptimizationEnabled`; 默认视频编码 H.264 (`h265` 可选, 设备不支持时报 `UNSUPPORTED_FORMAT`), 默认码率按分辨率估算 (1080p 8 Mbps); 音频处理用 `media3-effect` 的 `AudioProcessor` (音量 / 变速 / 声道) 与 `Composition` 多序列混音; 超过 2 GB 或 60 分钟的单输入返回 `warnings[]` (`OUTPUT_LARGE` / `DURATION_LONG`) 但不拒绝, 无硬上限 (附录 D Q6 已决). | P2.1 |
 | D30 | 转场 | 7 种: `cut`, `fade` (经黑场), `dissolve` (叠化), `slide` (推移, 方向参数), `wipe` (擦除, 方向参数), `zoom` (缩放), `blur` (模糊叠化). 除 `cut` / `fade` 外均为重叠区间双序列合成 (`VideoCompositorSettings` + 自写 GLSL 效果, 两段各延长重叠时长); 转场时长 100-3000 ms 默认 500 ms; 时间线 JSON 与界面共用同一转场表. | P3.2 |
 | D31 | 字幕 | SRT 完整解析 / 导出 (UTF-8, 含 BOM 与 CRLF 容错); ASS 1.0.0 基础子集: `[V4+ Styles]` 的字体 / 字号 / 主色 / 描边色 / 粗斜 / 描边 / 阴影 / 对齐 / 边距, Dialogue 的时间 / 图层 / 换行, 内联标签只认 b, i, c, fs, an, pos (ASS 写法为反斜杠加标签名), 其余标签 (卡拉 OK, 动画, 绘图) 忽略并返回 `warnings[]`; 烧录用 `media3-effect` `TextOverlay` 逐帧渲染 (Android `StaticLayout`), 字体用系统字体或脚本指定的 TTF 路径. 1.1.0 大库装好后 ASS 自动改走 libass. | P3.3 |
 | D32 | GIF | 自带纯 Kotlin 编码器: 全局或逐帧调色板 (中位切分, 最多 256 色), 可选 Floyd-Steinberg 抖动, LZW 编码, 循环与帧延时; 默认 10 fps, 宽度 480, 单次上限 600 帧 (超出报 `LIMIT_EXCEEDED`, 建议先裁剪或降帧率). 不引入第三方 GIF 库 (附录 D Q2 可改). | P2.4 |
@@ -64,9 +64,10 @@ D25-D40 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条),
 | D35 | 工具箱向导 | 每个脚本 API 一个表单页 (选文件, 填参数, 预览结果, 执行入队), 表单字段即 API 选项, 执行后结果页显示输出路径, 媒体信息, 生成的代码 (D11); 向导与脚本共用插件内同一执行器, 任务队列页显示两者的任务. | P4.2 |
 | D36 | 代码生成与宿主入口 | 代码生成器以 API 选项对象为输入输出 JS 源码 (字符串转义, 路径用原值), 与 d.ts 同源维护; "在 AutoJs6 中打开" 调用 D19 的 `CREATE_SCRIPT`, 宿主未装或版本过低时只提供复制. | P4.4 |
 | D37 | Studio 首页与存储 | 首页列出 `Movies/3-Slate Studio`, `Movies/AutoJs6`, `Music/3-Slate Studio`, `Music/AutoJs6` 与用户添加的目录 (MediaStore 查询, 不扫全盘); 文件操作 (重命名, 删除, 分享) 限于这些目录; 设置项: 默认输出目录, 默认编码 (H.264 / H.265), 默认码率策略, 硬件编码器偏好, 任务并发数, 启动器图标模式 (黑白图标规范第 1 节的四个选项). | P4.1 |
-| D38 | 插件中心与向导目录 | `ThreeSlateStudioInfoService` (action `org.autojs.plugin.INFO`, category `three-slate-studio`), 能力服务受 `org.autojs.permission.PLUGIN` 保护; 向导目录 `PluginInstallWizardCatalog` 放 `TOOLS` 分类 `official("three.slate.studio")`, 回退标题 `Three Slate Studio` (附录 D Q4 可改为新分类). | P1.5 |
+| D38 | 插件中心与向导目录 | `ThreeSlateStudioInfoService` (action `org.autojs.plugin.INFO`, category `three-slate-studio`), 能力服务受 `org.autojs.permission.PLUGIN` 保护; 向导目录 `PluginInstallWizardCatalog` 放 `TOOLS` 分类 `official("three.slate.studio")`, 回退标题 `Three Slate Studio` (附录 D Q4 已决: 沿用 `TOOLS`). | P1.5 |
 | D39 | 许可证与声明 | 源码 MPL-2.0 (`LICENSE` 完整文本); 1.0.0 依赖均为 Apache-2.0 (media3, Compose, Kotlin), `THIRD_PARTY_NOTICES.md` 由脚本生成; 1.1.0 FFmpeg 大库按 LGPL-2.1-or-later 独立分发 (不打进 APK, 动态加载), 大库自身的 `NOTICES` 随大库包分发, 专利风险说明写进 README "FFmpeg 大库" 节. | P0.1 |
 | D40 | 文档与声明同步 | 文档站新增 `video.md` 与 `audio.md` (10 种语言, 半角标点), 宿主录屏 / 录音也写在这两页 (不写进 `images.md`); d.ts 新增 `video.d.ts` / `audio.d.ts`; Ace 补全与 Offline Docs 同步; 四仓库均只落本地提交, 推送由维护者决定. | P5.1 |
+| D41 | Studio 录音 | 插件自持录音内核 (维护者 2026-11-05 补充, 附录 D Q8): 麦克风用 `AudioRecord`; 内录 / 混合 (API 29+) 用 `AudioPlaybackCaptureConfiguration` + 插件自己的 MediaProjection 授权 + `mediaProjection` 类型前台服务; 内核照宿主 `core/record/AudioRecorder` (P1.2 产出) 复制, 在文件头注明同步来源 (宿主提交与文件路径, 与 P7.1 约定一致); 选项与默认值同脚本 `audio.record` (附录 B.2, 含 Q1 的内录 / 混合默认值); 默认输出 `Music/3-Slate Studio/` (D14); 1.2.0 P7.1 复用这套投影授权与前台服务. | P4.5 |
 
 ---
 
@@ -78,13 +79,13 @@ D25-D40 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条),
 - 宿主契约 `media-studio-api`, 绑定与能力声明, 插件中心注册, 向导条目, `CREATE_SCRIPT` 入口, 官方索引登记.
 - 插件加工核心: 裁剪, 拼接, 变速, 变换, 叠加, 抽帧, GIF, 抽音频, 去音轨, 转码, 音频加工, 探测.
 - 多轨合成: 时间线 JSON, 7 种转场, SRT / ASS (基础子集) 字幕烧录.
-- 独立界面: 首页与任务队列, 工具箱向导, 多轨时间线剪辑器 (预览, 转场, 字幕, 叠加), 代码生成与宿主入口, 设置, 发行历史, 更新检查, Icon Studio 图标与四种启动器模式.
+- 独立界面: 首页与任务队列, 工具箱向导, 多轨时间线剪辑器 (预览, 转场, 字幕, 叠加), Studio 录音 (麦克风 + 内录, D41), 代码生成与宿主入口, 设置, 发行历史, 更新检查, Icon Studio 图标与四种启动器模式.
 - 文档, d.ts, Ace, Offline Docs, README, changelog, 宿主样例脚本, 兼容矩阵, 1.0.0 发布.
 
 非目标 (不做或排到 1.1.0 之后, 评估记录见附录 G):
 
 - 1.0.0 不含任何原生库: FFmpeg, libass, MP3 编码, WebM / MKV 输出均为 1.1.0 (D4, D13, D24).
-- 插件自持投影的录屏, 悬浮控制条, Shizuku 免确认均为 1.2.0 (D2, D13).
+- 插件自持投影的录屏, 悬浮控制条, Shizuku 免确认均为 1.2.0 (D2, D13); 1.0.0 的 Studio 录音只把投影授权用于内录 / 混合音频 (D41).
 - 在线服务 (云转码, 云字幕), AI 字幕生成 (可由 3-Macaw Speech 的识别结果经脚本生成 SRT, 本插件不内置).
 - 相机拍摄, 直播推流, 画中画播放器, 多设备同步.
 - 完整 ASS 特效 (卡拉 OK, 动画, 绘图) 在 1.0.0 忽略 (D31).
@@ -162,9 +163,9 @@ io.github.supermonster003.autojs6.plugin.three.slate.studio
   core/        TaskRunner, TaskRegistry, OutputPaths (D14), MediaStoreRegistrar, Probe
   pipeline/    TransformerPipeline, CompositionBuilder, Transitions (GLSL), Overlays, Subtitles (Srt, AssSubset, Burner), Frames, GifEncoder, AudioPipeline
   codegen/     CodeGenerator, OptionSchemas (与 d.ts 同源)
-  ui/          home, tasks, toolbox/<op>, timeline (editor, preview, tracks), settings, releases, update, launcher icon
+  ui/          home, tasks, toolbox/<op>, timeline (editor, preview, tracks), record (P4.5), settings, releases, update, launcher icon
   bigrun/      (1.1.0) LibraryManager, FfmpegRunner, AssRenderer
-  recording/   (1.2.0) ProjectionRecorder, FloatingControls, ShizukuRecorder
+  recording/   (1.0.0 P4.5, D41) AudioRecorder (宿主内核副本), ProjectionPermission, RecordingService; (1.2.0) ProjectionRecorder, FloatingControls, ShizukuRecorder
 ```
 
 ### 5.5 身份派生表
@@ -183,14 +184,14 @@ io.github.supermonster003.autojs6.plugin.three.slate.studio
 | 宿主契约包 | `org.autojs.plugin.mediastudio.api` |
 | 宿主桥接包 | `org.autojs.autojs.core.plugin.mediastudio` |
 | 脚本 API | `video` 与 `audio` (`$video` / `$audio` 同对象) |
-| `{REQUIRES_HOST_VERSION}` | 基线 5835 (宿主 `63d1cb259`), P1.5 写临时值, P5.4 回填为含全部宿主条目的本地构建号 (D23) |
-| 向导目录 | `PluginInstallWizardCatalog` `TOOLS` 分类, `official("three.slate.studio")`, 回退标题 `Three Slate Studio` (附录 D Q4) |
+| `{REQUIRES_HOST_VERSION}` | 基线 6640 (宿主 master `340a0b511e`, 6.8.1 未发布, 附录 F); P0.1 先写临时值 6641 (基线后的第一个本地构建号), P1.5 改为含契约的本地构建号, P5.4 回填为含全部宿主条目的本地构建号 (D23) |
+| 向导目录 | `PluginInstallWizardCatalog` `TOOLS` 分类, `official("three.slate.studio")`, 回退标题 `Three Slate Studio` (附录 D Q4 已决) |
 | `plugin_description` (zh-Hans) | `视频与音频加工, 多轨时间线剪辑, 转场与字幕, 界面操作可生成脚本代码` (句尾无点号, 不含 "AutoJs6"; P0.1 定稿, 10 语言见 `values*/strings.xml`) |
 | GitHub 仓库描述 | `Video and audio processing, multi-track timeline editing and screen recording companion for AutoJs6 scripts` |
 | 发布文件名 | `autojs6-plugin-three-slate-studio-v{VERSION_NAME}-{CRC32}.apk` (1.0.0 universal 单包, D25) |
 | 索引清单 | `release-manifests/io.github.supermonster003.autojs6.plugin.three.slate.studio/<versionCode>.json` |
 | 图标 | `.python/icons/three-slate-ic-launcher-light.png` / `-dark.png` (D16), Icon Studio 合成 (P0.2) |
-| 权限 | `org.autojs.permission.PLUGIN`, `MANAGE_EXTERNAL_STORAGE` (+ API 32 及以下的 `READ/WRITE_EXTERNAL_STORAGE`), `READ_MEDIA_VIDEO` / `READ_MEDIA_AUDIO` (API 33+, 首页列表), `POST_NOTIFICATIONS` (任务进度通知), `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_DATA_SYNC` (长任务前台服务), `INTERNET` + `ACCESS_NETWORK_STATE` (更新检查, 1.1.0 大库下载); 1.2.0 再加投影与悬浮窗相关权限 |
+| 权限 | `org.autojs.permission.PLUGIN`, `MANAGE_EXTERNAL_STORAGE` (+ API 32 及以下的 `READ/WRITE_EXTERNAL_STORAGE`), `READ_MEDIA_VIDEO` / `READ_MEDIA_AUDIO` (API 33+, 首页列表), `POST_NOTIFICATIONS` (任务进度通知), `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_DATA_SYNC` (长任务前台服务), `RECORD_AUDIO` + `FOREGROUND_SERVICE_MICROPHONE` + `FOREGROUND_SERVICE_MEDIA_PROJECTION` (Studio 录音, D41; P0.1 预留权限, 前台服务组件到 P2.1 / P4.5 再加), `INTERNET` + `ACCESS_NETWORK_STATE` (更新检查, 1.1.0 大库下载); 1.2.0 再加悬浮窗相关权限 |
 | 许可证 | 源码 MPL-2.0; 依赖 Apache-2.0; 1.1.0 FFmpeg 大库 LGPL-2.1-or-later 独立分发 (D39) |
 
 ---
@@ -199,11 +200,11 @@ io.github.supermonster003.autojs6.plugin.three.slate.studio
 
 | 阶段 | 版本 | 主题 | 状态 |
 | --- | --- | --- | --- |
-| P0 | 1.0.0 | 仓库骨架: 构建链与身份, Icon Studio 图标, 测试与 CI | 未开始 |
-| P1 | 宿主 6.8.0 | 契约 `media-studio-api`, 录屏 / 录音内核泛化, 脚本模块 `video` / `audio`, `CREATE_SCRIPT` 入口, 注册与协议文档 | 未开始 |
+| P0 | 1.0.0 | 仓库骨架: 构建链与身份, Icon Studio 图标, 测试与 CI | 已完成 (2026-11-05; 剩真机图标目视 E4 待维护者, Q9 - Q11 已按推荐先行待确认) |
+| P1 | 宿主 6.8.1 (本地构建号, D23) | 契约 `media-studio-api`, 录屏 / 录音内核泛化, 脚本模块 `video` / `audio`, `CREATE_SCRIPT` 入口, 注册与协议文档 | 未开始 |
 | P2 | 1.0.0 | 插件加工核心: 执行器与任务模型, 视频基础加工, 叠加, 抽帧与 GIF, 音频加工, 设备矩阵 | 未开始 |
 | P3 | 1.0.0 | 多轨合成: 时间线 JSON 与 `video.compose`, 转场, 字幕 | 未开始 |
-| P4 | 1.0.0 | Studio 界面: 应用骨架, 工具箱向导, 时间线剪辑器, 代码生成与宿主入口 | 未开始 |
+| P4 | 1.0.0 | Studio 界面: 应用骨架, 工具箱向导, 时间线剪辑器, 代码生成与宿主入口, Studio 录音 | 未开始 |
 | P5 | 1.0.0 | 文档, 声明, 四仓库同步, 样例, 兼容矩阵, 发布与索引登记 | 未开始 |
 | P6 | 1.1.0 | FFmpeg + libass 大库: 自建或选型, Shared-Assets 类别, 下载 / 校验 / 加载, 命令透传, 新格式, 完整 ASS, 发布 | 未开始 |
 | P7 | 1.2.0 | 录屏增强: 插件自持投影, 悬浮控制条与 Studio 录屏入口, Shizuku 免确认, 发布 | 未开始 |
@@ -214,7 +215,7 @@ io.github.supermonster003.autojs6.plugin.three.slate.studio
 P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同仓库, P1.1 契约 AAR 产出后 P0.1 把它放进 libs/
  -> P2 (加工核心)                          依赖 P0.1, P0.3 与 P1.1 的契约常量; 真机脚本测试依赖 P1.3
      -> P3 (多轨合成)                      依赖 P2.1-P2.3 (管线, 叠加) 与 P2.5 (混音)
-         -> P4 (界面)                      P4.1 / P4.2 依赖 P2; P4.3 依赖 P3; P4.4 依赖 P1.4 与 P4.2 / P4.3
+         -> P4 (界面)                      P4.1 / P4.2 依赖 P2; P4.3 依赖 P3; P4.4 依赖 P1.4 与 P4.2 / P4.3; P4.5 依赖 P4.1 与 P1.2
              -> P5 (文档, 发布)            依赖 P1-P4 全部通过
                  -> P6 (1.1.0) -> P7 (1.2.0)   P6 与 P7 互不依赖, 维护者按 D13 顺序安排
 ```
@@ -225,13 +226,13 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 - 批次 2: P1.3 + P1.4 + P1.5 (宿主模块与入口); P2.1 + P2.2 (插件执行器与视频基础加工).
 - 批次 3: P2.3 + P2.4 (叠加, 抽帧与 GIF); P2.5 (音频加工); 两者可并行.
 - 批次 4: P3.1 + P3.2 (时间线与转场); P3.3 (字幕) 可并行; P2.6 设备矩阵在 P2 全部完成后.
-- 批次 5: P4.1 + P4.2 (应用骨架与向导); 之后 P4.3 (时间线剪辑器) 与 P4.4 (代码生成) 并行.
+- 批次 5: P4.1 + P4.2 (应用骨架与向导); 之后 P4.3 (时间线剪辑器), P4.4 (代码生成), P4.5 (Studio 录音) 并行.
 - 批次 6: P5.1 + P5.2 (文档与声明) 与 P5.3 (README, 样例, 兼容矩阵) 并行; P5.4 发布.
 
 发布门禁 (每个阶段的 "(发布)" 条目都指向本清单):
 
 1. 插件 `./gradlew test connectedDebugAndroidTest` 通过 (API 35 AVD), 宿主涉及模块的单元测试通过.
-2. 真机脚本回归: 附录 F 设备矩阵中的 Sony API 28 / 31 / 33, Xiaomi Pad API 35 四台通过, OnePlus API 35 (ColorOS) 至少跑一次; Samsung 16 KB 设备在引入原生库的版本 (1.1.0 起) 必跑.
+2. 真机脚本回归: 附录 F 设备矩阵中的 Sony API 28 / 31 / 33, Xiaomi Pad API 35 四台通过, OnePlus API 35 (ColorOS) 至少跑一次; Studio 录音在两台真机 (含 API 29+ 内录) 通过 (D41, P4.5); Samsung 16 KB 设备在引入原生库的版本 (1.1.0 起) 必跑.
 3. 10 种语言资源与文档只用半角标点 (`COMMON_AGENTS.md` 规则), `prepush_check.py` 通过, `THIRD_PARTY_NOTICES.md` 与依赖一致.
 4. 发布 APK 为 release 签名, 用宿主插件中心安装并跑 `samples/` 冒烟脚本; versionCode, 文件名 CRC32 与索引清单一致.
 5. changelog 10 种语言同步 (zh-Hans 由子会话写, 其他语言由维护者同步或子会话按 `AUTOJS6_PLUGIN_NEW_REPO_AGENTS.md` 规则翻译后由维护者复核).
@@ -240,27 +241,30 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 
 ## P0: 仓库骨架
 
-状态: 未开始. 设备: 无 (构建与单元测试); P0.3 的仪器测试用 API 35 AVD.
+状态: 已完成 (2026-11-05, 子会话 3-slate-p0); 剩 P0.2 验收的真机图标目视 (E4, 待维护者). 设备: 无 (构建与单元测试); P0.3 的仪器测试用 API 35 AVD.
 
 ### P0.1 构建链与身份 (D25, D39)
 
-- [ ] (插件) 按 `AUTOJS6_PLUGIN_NEW_REPO_AGENTS.md` 建立 Gradle 工程 (`settings.gradle.kts`, `build-logic`, `gradle/libs.versions.toml`, `version.properties`, `app/`), 填入 5.5 节身份; `libs/common-plugin-api.aar` 与 `libs/media-studio-api.aar` (P1.1 产出, 未产出前用 P1.1 的常量草案本地构建 AAR 顶替并在 `locks/host-api-aars.lock` 标注临时) 入库.
-- [ ] (插件) 依赖线: Compose BOM 2026.09.00, navigation 2.10.2, media3 1.10.1 全套 (`transformer`, `effect`, `muxer`, `exoplayer`, `ui`, `common`), 无原生库; `./gradlew assembleDebug` 产出 universal APK; 检查依赖 AAR 内无 `.so` (有则记录并评估 16 KB).
-- [ ] (插件) `ThreeSlateStudioApplication`, `ThreeSlateStudioInfoService`, `ThreeSlateStudioService` 空实现 (返回 `getInfo` 与 `NOT_IMPLEMENTED`), `ThreeSlateStudioContract` (ID, engine, 契约版本), Manifest (权限, 服务, `MANAGE_EXTERNAL_STORAGE` 授权页), 10 种语言 `strings.xml` (`app_name` 不可翻译, `plugin_description` 定稿).
-- [ ] (插件) `LICENSE` (MPL-2.0), `README.md` 骨架 (含 "FFmpeg 大库" 节的占位与专利说明), `THIRD_PARTY_NOTICES.md` 生成脚本, `.gitattributes` (已入库), `.editorconfig`, `prepush_check.py` 接入.
+- [x] (插件) 按 `AUTOJS6_PLUGIN_NEW_REPO_AGENTS.md` 建立 Gradle 工程 (`settings.gradle.kts`, `build-logic`, `gradle/libs.versions.toml`, `version.properties`, `app/`), 填入 5.5 节身份; `libs/common-plugin-api.aar` 与 `libs/media-studio-api.aar` (P1.1 产出, 未产出前用 P1.1 的常量草案本地构建 AAR 顶替并在 `locks/host-api-aars.lock` 标注临时) 入库. 证据 (E1, 2026-11-05): 提交 (本笔); 平台插件 1.9.1, AGP 9.3.3, Kotlin 2.3.20, Gradle 9.5.0, Temurin 21.0.12.1+1; `libs/` 直接用 P1.1 的正式 AAR (`media-studio-api` 1.0.0, 宿主本地提交 `ddc91edf4f`, 没有用临时 AAR) 与 `common-plugin-api` 1.1.1 (宿主 `1676e7489d`), `HostApiAarLockTest` 5 例核对 SHA-256.
+- [x] (插件) 依赖线: Compose BOM 2026.09.00, navigation 2.10.2, media3 1.10.1 全套 (`transformer`, `effect`, `muxer`, `exoplayer`, `ui`, `common`), 无原生库; `./gradlew assembleDebug` 产出 universal APK; 检查依赖 AAR 内无 `.so` (有则记录并评估 16 KB). 证据 (E1 + E5, 2026-11-05): 提交 (本笔); `locks/runtime-dependencies.lock` 锁定 88 个运行时模块, `verifyRuntimeDependencyLock` 接入 `check` 与 `preReleaseBuild`; 依赖里唯一的原生库是 Compose UI graphics 带入的 `androidx.graphics:graphics-path` 1.0.1 (`libandroidx.graphics.path.so`, 4 个 ABI), 与 D25 "无原生库" 不符, 登记附录 D Q9 (已按推荐保留, 构建与 CI 校验 4 个文件均 STORED 且 16 KB 对齐); universal release APK 1,143,250 B.
+- [x] (插件) `ThreeSlateStudioApplication`, `ThreeSlateStudioInfoService`, `ThreeSlateStudioService` 空实现 (返回 `getInfo` 与 `NOT_IMPLEMENTED`), `ThreeSlateStudioContract` (ID, engine, 契约版本), Manifest (权限, 服务, `MANAGE_EXTERNAL_STORAGE` 授权页; 为 D41 预留 `RECORD_AUDIO`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`, `FOREGROUND_SERVICE_MICROPHONE`, `FOREGROUND_SERVICE_MEDIA_PROJECTION` 权限, 前台服务组件到 P2.1 / P4.5 再加), 10 种语言 `strings.xml` (`app_name` 不可翻译, `plugin_description` 定稿). 证据 (E1 + E2, 2026-11-05): 提交 (本笔); `ManifestContractTest` 9 例, `PluginRuntimeInfoTest` 5 例, `StringResourceParityTest` 6 例, `ApplicationTextPunctuationTest` 2 例; 仪器测试 `ThreeSlateStudioContractTest` 7 例在 AVD_API_35_16K 通过 (WAKE 激活契约, 身份服务 `getInfo`, 契约服务 `getInfo` / `getCapabilities`, `submit` 对全部 `MediaStudioOps` 抛 `INVALID_OPTIONS: NOT_IMPLEMENTED: <op>`, 未知操作与空回调抛 `IllegalArgumentException`, `probe` / `cancel` / `listTasks` 骨架应答, 重复绑定身份一致); 契约服务按 P1.1 实际 AIDL (看板 Q20) 实现.
+- [x] (插件) `LICENSE` (MPL-2.0), `README.md` 骨架 (含 "FFmpeg 大库" 节的占位与专利说明), `THIRD_PARTY_NOTICES.md` 生成脚本, `.gitattributes` (已入库), `.editorconfig`, `prepush_check.py` 接入. 证据 (E1, 2026-11-05): 提交 (本笔); `generate_third_party_notices.py --check` 输出 `NOTICES_OK host=2 maven=88`, `ThirdPartyNoticesTest` 3 例; guava 带入的 `org.checkerframework:checker-qual` 3.43.0 为 MIT, 与 D39 "依赖均为 Apache-2.0" 不符, 登记附录 D Q10 (已按推荐在声明里附 MIT 全文); `generate_markdown.py --check` 与 `check_repository.py` 通过, `prepush_check.py` 6 / 6 通过.
 - 验收: `./gradlew assembleDebug test` 通过; APK 安装到 API 35 AVD 后插件中心能识别 `three-slate-studio` (身份服务) 并显示未启用; 提交前 `VERSION_BUILD` = 提交数 + 1.
+- 结果 (2026-11-05): 通过. `assembleDebug testDebugUnitTest` 通过 (单元测试 51 例); AVD_API_35_16K (API 35, x86_64, 16 KB 页, 只读启动) 装宿主 debug 6.8.1 (versionCode 6640) 后, 插件中心列出 "3-Slate Studio 1.0.0 (2)", 开关为关闭; 骨架提交 `VERSION_BUILD` = 2 = 提交数 + 1.
 
 ### P0.2 图标与启动器模式 (D16)
 
-- [ ] (插件) 用 Icon Studio (`D:/webstorm-projects/AutoJs6-Icon-Studio`, 内核 1.4.0) 从 `.python/icons/three-slate-ic-launcher-light.png` / `-dark.png` 生成全套资源 (`ic_plugin_center`, `ic_launcher`, `ic_launcher_system*`, monochrome, 四个 launcher alias, `.icons/recipe.json`, `.python/icon_studio_runtime.py` / `generate_icon_studio.py`), 视觉尺寸 V = 0.52, 安全圆断言通过.
-- [ ] (插件) 设置页的启动器图标四选项 (自适应自动 / 固定亮 / 固定暗 / 透明) 与规范提示文案 (可先在 P4.1 的设置页落地, 本条只要求资源与组件 alias 就绪).
+- [x] (插件) 用 Icon Studio (`D:/webstorm-projects/AutoJs6-Icon-Studio`, 内核 1.4.0) 从 `.python/icons/three-slate-ic-launcher-light.png` / `-dark.png` 生成全套资源 (`ic_plugin_center`, `ic_launcher`, `ic_launcher_system*`, monochrome, 四个 launcher alias, `.icons/recipe.json`, `.python/icon_studio_runtime.py` / `generate_icon_studio.py`), 视觉尺寸 V = 0.52, 安全圆断言通过. 证据 (E1, 2026-11-05): 提交 (本笔); `IconResourcesTest` 4 例 (14 个 PNG 均为 432x432 且四角透明; `ic_plugin_center` 亮 / 暗 V = 0.52 ± 0.006, 半径 <= 216, 灰阶且亮暗 alpha 相同; 前景与 monochrome 层在 132 px 安全圆内; alias 与 adaptive XML 指向), `generate_icon_studio.py --check` 通过.
+- [x] (插件) 设置页的启动器图标四选项 (自适应自动 / 固定亮 / 固定暗 / 透明) 与规范提示文案 (可先在 P4.1 的设置页落地, 本条只要求资源与组件 alias 就绪). 证据 (E1 + E2, 2026-11-05): 提交 (本笔); 四个 alias (`AdaptiveAutoIconAlias` 默认启用, `AdaptiveLightIconAlias` / `AdaptiveDarkIconAlias` / `TransparentIconAlias` 默认停用) 与资源就绪, 仪器测试 `launcherResolvesTheAutomaticIconAliasOnly` 通过; 设置页四选项与提示文案随 P4.1 设置页落地.
 - 验收: 工程测试中的图标尺寸 / 透明度 / 安全圆断言通过; API 35 AVD 与一台真机的启动器与插件中心亮暗主题下图标可辨.
+- 结果 (2026-11-05): 断言通过; AVD_API_35_16K 亮 / 暗主题下启动器与插件中心的图标都可辨 (插件中心对未启用插件统一半去饱和, 宿主 `colorFilterWithDesaturateOrNull(isOn, 0.5F)`, 属预期); 启动器图标在亮暗两种主题下与 3-Macaw Speech 表现一致. 真机目视 (E4) 待维护者: 装 debug 包后看启动器与插件中心的亮暗图标.
 
 ### P0.3 测试与 CI
 
-- [ ] (插件) 单元测试骨架 (选项校验, 输出路径, 代码生成器), 仪器测试骨架 (服务绑定, `getInfo`), 测试夹具生成脚本 `.python/generate_media_fixtures.py` (用 MediaCodec 在测试运行时生成 3 秒彩条 MP4 与正弦波 M4A / WAV, 不入库二进制).
-- [ ] (插件) GitHub Actions: `build.yml` (assemble + test), `android-test.yml` (API 35 AVD 仪器测试, 与 CI 同款 AVD 配方), `release.yml` (tag 触发, 产出 `autojs6-plugin-three-slate-studio-v{VERSION_NAME}-{CRC32}.apk` 与索引清单草稿).
+- [x] (插件) 单元测试骨架 (选项校验, 输出路径, 代码生成器), 仪器测试骨架 (服务绑定, `getInfo`), 测试夹具生成脚本 `.python/generate_media_fixtures.py` (用 MediaCodec 在测试运行时生成 3 秒彩条 MP4 与正弦波 M4A / WAV, 不入库二进制). 证据 (E1 + E2, 2026-11-05): 提交 (本笔); 单元测试 `RequestValidationTest` 7 例, `OutputPathsTest` 6 例, `CodeGeneratorTest` 4 例 (lint 指出 `OutputPaths` 用的 `java.time` 在 API 24 / 25 不可用, 已改 `SimpleDateFormat`); 仪器测试 8 例在 AVD_API_35_16K 通过 (`ThreeSlateStudioContractTest` 7, `MediaFixturesTest` 1: MediaCodec 生成 320x240 30 fps 3 秒 8 色彩条 H.264 MP4, 440 Hz AAC M4A 与 PCM16 WAV, 首帧每条彩条颜色误差 <= 48); `generate_media_fixtures.py --serial emulator-5610` 输出 `FIXTURES_OK` (MP4 3.000 s, M4A 2.995 s, WAV 3.000 s), 拉取到被忽略的 `app/build/media-fixtures/` 并删除设备副本.
+- [x] (插件) GitHub Actions: `build.yml` (assemble + test), `android-test.yml` (API 35 AVD 仪器测试, 与 CI 同款 AVD 配方), `release.yml` (tag 触发, 产出 `autojs6-plugin-three-slate-studio-v{VERSION_NAME}-{CRC32}.apk` 与索引清单草稿). 证据 (E1, 2026-11-05): 提交 (本笔); 5 个工作流: `build.yml` (仓库契约, 文档 / 声明检查, 依赖锁, 单元测试, debug / androidTest / release 打包, lint, release 包原生库检查), `android-test.yml` (API 35 x86_64 google_apis pixel_7, `reactivecircus/android-emulator-runner` v2.38.0), `release.yml` (tag `v*`: 核对 tag 与 `VERSION_NAME`, 签名, `appendDigestToReleasedFiles`, apksigner, `SHA256SUMS`, `.python/release_manifest.py` 写索引清单草稿, 不自动建 GitHub Release, 见 Q11), `markdown.yml`, `icon-studio.yml`; `release_manifest.py` 用本地 release 包试跑 `MANIFEST_OK` (字段与顺序同官方索引 Macaw `81.json`, `supportedAbis` 4 个 ABI), tag 不符时报 `MANIFEST_ERROR`.
 - 验收: 本地 `./gradlew test connectedDebugAndroidTest` 通过; 工作流文件经 `prepush_check.py` 检查 (远端运行待首次推送).
+- 结果 (2026-11-05): 通过. `testDebugUnitTest` 51 例与 `connectedDebugAndroidTest` 8 例 (AVD_API_35_16K, `ANDROID_SERIAL` 限定单台) 通过; 本地 AVD 是 16 KB 页变体, CI 用 4 KB 页的 google_apis 镜像; `prepush_check.py` 6 / 6 通过; 远端工作流待首次推送.
 
 ---
 
@@ -360,7 +364,7 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 
 ## P4: Studio 界面
 
-状态: 未开始. 设备: API 24 AVD (最低版本布局), API 35 AVD, Sony XQ-AT72 API 31, Xiaomi Pad API 35 (大屏), OnePlus API 35 (ColorOS).
+状态: 未开始. 设备: API 24 AVD (最低版本布局), API 35 AVD, Sony XQ-AT72 API 31, Xiaomi Pad API 35 (大屏), OnePlus API 35 (ColorOS); P4.5 另需 Sony XQ-DQ72 API 33 与 G8441 API 28.
 
 ### P4.1 应用骨架, 首页, 任务队列, 设置, 发行历史 (D37)
 
@@ -382,6 +386,13 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 
 - [ ] (插件) `CodeGenerator` (向导选项 -> `video.*` / `audio.*` 代码; 时间线 -> `video.compose({...})` 代码), 复制按钮, "在 AutoJs6 中打开" (P1.4 入口, 宿主不可用时隐藏).
 - 验收: 单元测试: 生成的代码经 Rhino 解析无语法错误且选项对象与输入相等; 真机上从向导到宿主编辑器新建文件走通一次.
+
+### P4.5 Studio 录音 (D41)
+
+- [ ] (插件) 录音页: 音源 mic / playback / mixed (后两者仅 API 29+ 显示), 格式 M4A / WAV, 采样率 / 声道 / 码率 (默认值同 `audio.record`, 附录 B.2 与 Q1), 电平表, 计时, 暂停 / 恢复 / 停止, 最长时长.
+- [ ] (插件) 投影授权流程与 `mediaProjection` / `microphone` 类型前台服务 (通知含停止按钮, 熄屏可继续); 录音内核照宿主 `core/record/AudioRecorder` (P1.2 产出) 复制, 文件头注明同步来源.
+- [ ] (插件) 产物进首页列表并可 "送进工具箱" 继续加工; 代码生成 (等价 `audio.record` 代码, D11).
+- 验收: Sony API 31 / 33 真机麦克风与内录各录一段并能被 `probe`; G8441 API 28 内录选项隐藏且麦克风可用; OnePlus ColorOS 后台授权弹窗一次; 单元测试覆盖选项校验与输出命名. 依赖 P4.1 与 P1.2, 可与 P4.3 / P4.4 并行.
 
 ---
 
@@ -603,19 +614,25 @@ oneway interface IMediaStudioCallback {
 
 `PLUGIN_UNAVAILABLE`, `PLUGIN_DISABLED`, `PLUGIN_INCOMPATIBLE`, `INVALID_OPTIONS`, `LIMIT_EXCEEDED`, `TASK_LIMIT`, `UNSUPPORTED_FORMAT`, `CODEC_ERROR`, `IO_ERROR`, `STORAGE_PERMISSION_DENIED`, `TASK_CANCELLED`, `TASK_NOT_FOUND`, `LIBRARY_MISSING` (1.1.0), `PERMISSION_DENIED` (1.2.0 投影 / 悬浮窗), `INTERNAL_ERROR`.
 
+警告码 (结果的 `warnings[]`, 不中断任务, 附录 D Q6): `OUTPUT_LARGE` (输出或单输入超过 2 GB), `DURATION_LONG` (超过 60 分钟).
+
 ## 附录 D. 待决事项
 
 格式: 编号 | 事项 | 选项 (推荐项标 "(推荐)") | 拍板时点 | 状态.
 
 | 编号 | 事项 | 选项 | 拍板时点 | 状态 |
 | --- | --- | --- | --- | --- |
-| Q1 | 内录 / 混合音频的声道数 | (a) 立体声 48 kHz (推荐, 内录多为立体声, 文件约大 1 倍) / (b) 沿用 Node 的单声道 | P1.2 | 需拍板 |
+| Q1 | 内录 / 混合音频的声道数 | (a) 立体声 48 kHz (推荐, 内录多为立体声, 文件约大 1 倍) / (b) 沿用 Node 的单声道 | P1.2 | 已决 (2026-11-05, 维护者选 a): Rhino `audio.record` / `video.record` 的内录 (playback) 与混合 (mixed) 默认 2 声道 48 kHz (`channels` 可改 1), AAC 默认码率 192 kbps; 麦克风与 Node 桥接的默认值保持单声道 128 kbps 不变 |
 | Q2 | GIF 编码器 | (a) 自带纯 Kotlin (推荐, D32) / (b) 第三方 Apache-2.0 或 MIT 库 | P2.4 | 需拍板 |
 | Q3 | 时间线预览引擎 | (a) media3 `CompositionPlayer` (推荐, 实验 API, 由 spike 决定) / (b) 自写预览 | P4.3 spike 后 | 待 spike |
-| Q4 | 向导目录分类 | (a) `TOOLS` (推荐, 现有分类) / (b) 新增 `MEDIA` 分类 (需宿主改向导目录与 10 语言标题) | P1.5 | 需拍板 |
+| Q4 | 向导目录分类 | (a) `TOOLS` (推荐, 现有分类) / (b) 新增 `MEDIA` 分类 (需宿主改向导目录与 10 语言标题) | P1.5 | 已决 (2026-11-05, 维护者选 a): `TOOLS` 现有分类 |
 | Q5 | 1.1.0 FFmpeg 来源 | (a) 自建 (推荐, 许可与 16 KB 可控, 需交叉编译链) / (b) 社区分支 `dev.ffmpegkit-maintained` (省构建, 许可审查与补丁跟进由我们承担) | P6.1 | 需拍板 |
-| Q6 | 单任务上限 | (a) 无硬上限, 超过 2 GB 或 60 分钟返回 warning (推荐, D29) / (b) 硬上限 4 GB | P2.1 | 需拍板 |
+| Q6 | 单任务上限 | (a) 无硬上限, 超过 2 GB 或 60 分钟返回 warning (推荐, D29) / (b) 硬上限 4 GB | P2.1 | 已决 (2026-11-05, 维护者选 a): 无硬上限, 超 2 GB 或 60 分钟在 `warnings[]` 返回 `OUTPUT_LARGE` / `DURATION_LONG` (附录 C.3) |
 | Q7 | H.265 默认 | (a) 默认 H.264, H.265 可选 (推荐, 兼容性) / (b) 设备支持时默认 H.265 | P2.2 | 需拍板 |
+| Q8 | Studio 录音归属 (维护者 2026-11-05 补充: Studio 应用本身支持麦克风 + 内录) | (a) 进 1.0.0, 插件自持录音内核 (推荐, D41, 条目 P4.5) / (b) 随 1.2.0 录屏增强 (P7) / (c) 不做, 只靠脚本 `audio.record` | P4.5 | 已决 (2026-11-05, 维护者选 a): 进 1.0.0, 见 D41 与 P4.5 |
+| Q9 | Compose 带入原生库: `androidx.graphics:graphics-path` 1.0.1 为 4 个 ABI 打包 `libandroidx.graphics.path.so`, 与 D25 "1.0.0 APK 无原生库" 不符 (影响 D25, P0.1, README / changelog 的原生库说明, P5.4 索引 `supportedAbis`) | (a) 保留 Compose, 构建与 CI 校验 4 个文件 STORED 且 16 KB 对齐, 索引 `supportedAbis` 列 4 个 ABI, D25 改为 "仅 Compose 自带的 graphics-path" (推荐, 已先行; 改选返工: 无) / (b) 界面改用 View, 去掉 Compose (P4 全部界面重写, 返工大) | P0.1 | 已按推荐先行待确认 (2026-11-05, 3-slate-p0) |
+| Q10 | D39 写 "1.0.0 依赖均为 Apache-2.0", 实际 guava 带入的 `org.checkerframework:checker-qual` 3.43.0 为 MIT (影响 D39, `THIRD_PARTY_NOTICES.md`) | (a) 声明里列出 MIT 并附全文, D39 改为 "Apache-2.0 为主, checker-qual 为 MIT" (推荐, 已先行; 改选返工: 无) / (b) 从运行时依赖排除 checker-qual (仅注解, 改依赖排除与锁文件, 返工小, 有缺类风险) | P0.1 | 已按推荐先行待确认 (2026-11-05, 3-slate-p0) |
+| Q11 | `release.yml` 只把 APK, `SHA256SUMS` 与索引清单草稿存为 workflow artifact, 不自动建 GitHub Release (影响 P0.3, P5.4) | (a) 保持, 建 Release 与索引登记在 P5.4 手动做 (推荐, 已先行; 改选返工: 无) / (b) 照 ImGui 由 tag 工作流自动建 Release 并上传附件 (加一个发布步骤与 `contents: write`, 返工小) | P5.4 | 已按推荐先行待确认 (2026-11-05, 3-slate-p0) |
 
 ## 附录 E. 证据等级
 
@@ -634,6 +651,12 @@ oneway interface IMediaStudioCallback {
 - 宿主 AutoJs6 `master` `63d1cb259`, `VERSION_NAME` 6.8.0 (未发布), `VERSION_BUILD` 4183, versionCode 5835 (偏移 1652), minSdk 24, compile / target 37; Node 录屏内核 `bd522f8a7` / `e8f8edb7a` (2026-10-17); Shizuku 13.1.5 已依赖.
 - 插件平台: `PLATFORM_VERSIONS_PLUGIN_VERSION` 1.9.1; 3-Maple Image: Compose BOM 2026.09.00, navigation 2.10.2, `MANAGE_EXTERNAL_STORAGE`; 3-Terra Player: media3 1.10.1; 3-Macaw Speech 1.0.0 发布时 `REQUIRES_HOST_VERSION` 5456 (宿主未公开, D23 先例); MediaInfo 2.1.4; Icon Studio 内核 1.4.0.
 - 外部: media3 1.10.1; FFmpeg 7.x (1.1.0 时再定); libass 0.17.x.
+
+基线更新 (2026-11-05, 取代上文宿主部分):
+
+- 宿主 6.8.0 已于 2026-11-03 公开, 公开历史经过重写, 上文 2026-10-22 基线中的宿主 hash (`63d1cb259`, `bd522f8a7`, `e8f8edb7a`) 已失效, 只作历史.
+- 宿主 AutoJs6 当前 `master` `340a0b511e` (2026-11-05), `VERSION_NAME` 6.8.1 (未发布), `VERSION_BUILD` 6640; 宿主的 `VERSION_BUILD` 就是完整的 versionCode (不再有偏移, `COMMON_AGENTS.md` 构建号一节), P1 的宿主改动随 6.8.1.
+- `common-plugin-api` 1.1.1 (宿主 `1676e7489d` 的 release AAR, 含设置迁移契约 v1), P0.1 入库; `media-studio-api` 1.0.0 是 P1.1 的正式 AAR (宿主本地提交 `ddc91edf4f`, 契约版本 1, AIDL 与附录 C 草案的差异见看板 Q20), P0.1 直接入库, 未用临时 AAR (见 `libs/README.md` 与 `locks/host-api-aars.lock`).
 
 设备矩阵 (`COMMON_AGENTS.md`):
 

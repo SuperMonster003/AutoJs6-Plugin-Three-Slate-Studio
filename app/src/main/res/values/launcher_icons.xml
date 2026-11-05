@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Fixed backgrounds of the light and dark launcher icons (icon specification section 3, roadmap P0.2): they never
+        follow the app theme, so this file has no night variant.
+    -->
+    <color name="launcher_icon_background_dark">#212121</color>
+    <color name="launcher_icon_background_light">#FAFAFA</color>
+</resources>

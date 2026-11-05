@@ -1,0 +1,28 @@
+{
+  "changelog_label_hint": "تلميح",
+  "changelog_label_feature": "ميزة",
+  "changelog_label_fix": "إصلاح",
+  "changelog_label_improvement": "تحسين",
+  "changelog_label_dependency": "تبعية",
+  "$data": {
+    "v1.0.0": {
+      "released_date": "2026/11/05",
+      "hint": [
+        "معاينة للتطوير: يستطيع مركز الإضافات في AutoJs6 اكتشاف الإضافة, ولم تُسلَّم بعد ميزات المعالجة وشاشات Studio وطرق المعالجة في وحدتي السكربت video و audio",
+        "يتطلب AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) أو أحدث (سيُحدَّد الحد الأدنى الدقيق للإصدار بعد اكتمال تغييرات المضيف)"
+      ],
+      "feature": [
+        "هيكل الإضافة: بروتوكول التفعيل Wake, وخدمة الهوية في مركز الإضافات, وخدمة قدرات معالجة الوسائط (إصدار العقد 1)",
+        "شاشة رئيسية لمنح الوصول إلى جميع الملفات",
+        "ملف APK واحد لجميع واجهات ABI: المكتبة الأصلية الوحيدة تأتي من Jetpack Compose وهي محاذاة على صفحات ذاكرة بحجم 16 KB",
+        "ملفات README وتعليمات مركز الإضافات وسجلات التغييرات بعشر لغات, مولَّدة من مصادر JSON"
+      ],
+      "dependency": [
+        "إرفاق Jetpack Compose BOM 2026.09.00 (شاشات الإضافة)",
+        "إرفاق Navigation Compose 2.10.2",
+        "إرفاق Jetpack Media3 1.10.1 (Transformer و Effect و Muxer و ExoPlayer و UI للمعالجة والمعاينة)",
+        "إرفاق AndroidX Core KTX 1.18.0"
+      ]
+    }
+  }
+}

@@ -1,0 +1,96 @@
+name: Build integrity
+
+# Roadmap P0.3: pushes to master, pull requests and manual runs assemble the APKs and run the JVM tests; the emulator
+# tests live in android-test.yml and the tagged release in release.yml.
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-build:
+    name: Repository checks, unit tests and APKs
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          # check_repository.py compares VERSION_BUILD with the full commit count.
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Verify the repository contract and generated documents
+        run: |
+          python .python/check_repository.py
+          python .python/generate_markdown.py --check
+          python .python/generate_third_party_notices.py --check
+          python -m py_compile .python/generate_media_fixtures.py
+
+      - name: Run unit tests, assemble APKs and lint
+        run: |
+          chmod +x gradlew
+          # The release APK is built explicitly: R8 and resource shrinking failures only surface there. It stays unsigned
+          # on CI; the signed collection task (appendDigestToReleasedFiles) runs locally and in release.yml.
+          ./gradlew :app:verifyRuntimeDependencyLock :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest :app:assembleRelease :app:lintDebug -Pautojs.gradle.build.number.auto.increment.enabled=false -Pautojs.gradle.build.time.update.enabled=false --console=plain --stacktrace
+
+      # Roadmap D25 / appendix D Q9: exactly one release APK whose only native code is the graphics-path library of
+      # Compose, stored uncompressed (the rule appendDigestToReleasedFiles enforces locally).
+      - name: Check the release artifact
+        shell: python
+        run: |
+          import pathlib, sys, zipfile
+          apks = sorted(pathlib.Path("app/build/outputs/apk/release").glob("*.apk"))
+          if len(apks) != 1:
+              sys.exit(f"expected exactly one release APK, found {[apk.name for apk in apks]}")
+          expected = sorted(f"lib/{abi}/libandroidx.graphics.path.so" for abi in ("arm64-v8a", "armeabi-v7a", "x86_64", "x86"))
+          with zipfile.ZipFile(apks[0]) as archive:
+              natives = sorted(info for info in archive.infolist() if info.filename.startswith("lib/") or info.filename.endswith(".so"))
+          names = sorted(info.filename for info in natives)
+          if names != expected:
+              sys.exit(f"{apks[0].name}: unexpected native libraries {names}")
+          compressed = [info.filename for info in natives if info.compress_type != zipfile.ZIP_STORED]
+          if compressed:
+              sys.exit(f"{apks[0].name}: native libraries must be stored uncompressed: {compressed}")
+          print(f"RELEASE_OK {apks[0].name} {apks[0].stat().st_size} bytes, {len(names)} stored graphics-path libraries")
+
+      - name: Upload debug, release and test APKs
+        uses: actions/upload-artifact@v7
+        with:
+          name: three-slate-studio-apks
+          path: app/build/outputs/apk
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+      - name: Upload test and lint reports after failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: reports
+          path: |
+            app/build/reports/
+            app/build/test-results/
+          if-no-files-found: ignore
+          retention-days: 7

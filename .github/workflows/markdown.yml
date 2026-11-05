@@ -1,0 +1,30 @@
+name: Markdown integrity
+
+# Roadmap P0.3: pushes to master, pull requests and manual runs.
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-markdown:
+    name: Check generated documentation
+    runs-on: windows-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Validate localized Markdown artifacts
+        shell: cmd
+        run: .python\check_markdown.bat

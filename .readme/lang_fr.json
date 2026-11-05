@@ -1,0 +1,77 @@
+{
+  "$name": "Français",
+  "text_current_lowercase": "actuel",
+  "text_plugin_synopsis": "Traitement vidéo et audio, montage multipiste sur une timeline, transitions et sous-titres, avec du code de script généré depuis les écrans",
+  "h3_languages_with_ascii": "Langues (Languages)",
+  "p_languages_all_supported_for_readme": "Le README.md actuel prend en charge les langues suivantes",
+  "h3_introduction": "Introduction",
+  "h3_features": "Points Forts",
+  "h3_usage": "Utilisation",
+  "h3_script_api": "API De Script",
+  "h3_faq": "FAQ",
+  "h3_security": "Permissions Et Sécurité",
+  "h3_plugin_interface": "Interface Du Plugin",
+  "p_plugin_interface": "Les informations suivantes s'adressent aux développeurs de l'hôte AutoJs6 et de plugins; l'hôte utilise ces identifiants pour découvrir le plugin et négocier les capacités",
+  "h3_roadmap": "Feuille De Route",
+  "text_link_roadmap": "Voir ROADMAP.md",
+  "h3_release_history": "Historique Des Versions",
+  "h5_for_more_release_history": "Pour plus d'historique des versions",
+  "h3_build": "Compilation",
+  "p_build_intro": "Cette section s'adresse aux développeurs souhaitant compiler le plugin depuis les sources.",
+  "h3_license": "Licence",
+  "h3_links": "Liens",
+  "text_link_autojs6": "Projet AutoJs6",
+  "p_roadmap": "Les plans, décisions de conception et l'avancement sont suivis sous forme de liste à cocher dans ROADMAP.md. Les éléments non cochés sont des intentions, pas des fonctionnalités de la version actuelle.",
+  "p_introduction_what": "3-Slate Studio est le plugin vidéo et audio d'AutoJs6 et aussi une application de montage qui fonctionne sans AutoJs6. Il découpe, assemble, accélère, redimensionne, fait pivoter, recadre et filigrane les vidéos, extrait des images, crée des GIF et transcode; il découpe, assemble, mixe, applique des fondus et convertit l'audio; et son éditeur de timeline multipiste combine des clips avec des transitions, des incrustations et des sous-titres.",
+  "p_introduction_how": "Le traitement s'exécute dans le plugin avec Jetpack Media3 Transformer et les codecs matériels de l'appareil, si bien que l'hôte AutoJs6 reste léger. Les scripts AutoJs6 traitent les médias avec les modules globaux `video` et `audio`; l'enregistrement d'écran (`video.record`) et l'enregistrement audio (`audio.record`) sont intégrés à AutoJs6 et fonctionnent sans le plugin. Chaque écran d'outil du plugin affiche le code de script équivalent, que l'on peut copier ou ouvrir comme nouveau script dans AutoJs6.",
+  "p_status_note": "Il s'agit d'une préversion de développement: le centre des plugins d'AutoJs6 peut détecter le plugin, mais les fonctions de traitement, les écrans Studio et les méthodes de traitement des modules `video` et `audio` ne sont pas encore livrés. La suite décrit les objectifs de conception de chaque version; consultez la feuille de route pour l'avancement.",
+  "features": [
+    "Montage vidéo: découpe par temps, assemblage, changement de vitesse (de 0.25x à 8x), redimensionnement, rotation, recadrage et retournement, filigranes texte ou image, extraction ou suppression de la piste audio, et transcodage (H.264 par défaut, H.265 si l'appareil le prend en charge).",
+    "Images et GIF: images isolées, séquences d'images et miniatures sous forme de fichiers image ou d'objets `Image`, et animations GIF produites par l'encodeur intégré.",
+    "Audio: découpe, assemblage, mixage de plusieurs entrées, réglage du volume avec fondu d'entrée et de sortie, changement de vitesse, et conversion en M4A, WAV, FLAC ou OGG.",
+    "Timeline multipiste: pistes vidéo, audio et d'incrustation, 7 transitions (coupe, fondu, fondu enchaîné, glissement, volet, zoom, flou) et sous-titres avec import et export SRT et un sous-ensemble de base d'ASS, incrustés dans l'image à l'export.",
+    "Génération de code: chaque écran d'outil et l'export de la timeline produisent le code `video.*` / `audio.*` équivalent, prêt à être copié ou ouvert comme nouveau script dans AutoJs6.",
+    "Enregistreur Studio: enregistre le micro, l'audio interne de l'appareil (Android 10 ou ultérieur) ou les deux depuis les écrans du plugin.",
+    "Bibliothèque FFmpeg (1.1.0): un téléchargement facultatif pour la sortie MP3, WebM et MKV, le passage direct de commandes avec `video.ffmpeg` et le rendu ASS complet."
+  ],
+  "usage_steps": [
+    "Téléchargez l'APK depuis [Releases]({{ repo_url }}/releases) et installez-le. Il n'existe qu'un seul paquet pour toutes les ABI.",
+    "Ouvrez le plugin et accordez l'accès à tous les fichiers lorsqu'il est demandé, afin qu'il puisse lire et écrire les chemins que vous choisissez.",
+    "Pour utiliser les méthodes de traitement de `video` et `audio` dans les scripts, mettez à jour AutoJs6 vers la version interne {{ required_host_version_code }} ({{ required_host_version_name }}) ou ultérieure et activez le plugin dans le centre des plugins."
+  ],
+  "p_usage_note": "Le plugin prend en charge les appareils sous Android {{ min_android_version }} (API {{ android_min_sdk }}) ou ultérieur. Sa seule bibliothèque native provient de Jetpack Compose et est alignée sur des pages mémoire de 16 KB, si bien qu'un seul paquet sert toutes les ABI.",
+  "p_script_api_intro": "Les scripts utilisent ces fonctions via les modules globaux `video` et `audio` (également disponibles sous les noms `$video` et `$audio`) (projet de conception de la 1.0.0; la documentation de la version publiée fait foi)",
+  "api_points": [
+    "Chaque méthode de traitement existe sous une forme bloquante et sous une forme `xxxAsync` qui renvoie une Promise; `options.onProgress(progress)` indique `percent`, `stage` et `etaMillis`, et l'arrêt du script annule ses tâches.",
+    "Si `output` est omis, les vidéos vont dans `Movies/3-Slate Studio/` et l'audio dans `Music/3-Slate Studio/`, avec un nom formé de la source, de l'opération et de l'heure; les résultats contiennent le chemin réel et les informations du média et sont enregistrés dans la médiathèque.",
+    "`video.compose(timeline)` effectue le rendu d'une timeline multipiste décrite par un objet (pistes, clips, transitions, incrustations, sous-titres), au même format que l'export de l'éditeur de timeline.",
+    "`video.tasks()` / `audio.tasks()` listent et annulent les tâches en cours du script; les échecs lèvent une `MediaStudioError` avec un `code` stable comme `INVALID_OPTIONS` ou `STORAGE_PERMISSION_DENIED`."
+  ],
+  "faq": [
+    {
+      "q": "Puis-je l'utiliser sans AutoJs6?",
+      "a": "Oui. Les écrans d'outils, l'éditeur de timeline et l'enregistreur Studio fonctionnent seuls. AutoJs6 n'est nécessaire que lorsque des scripts traitent des médias."
+    },
+    {
+      "q": "Pourquoi le plugin demande-t-il l'accès à tous les fichiers?",
+      "a": "Les scripts transmettent des chemins de fichiers ordinaires comme `/sdcard/DCIM/...`, et le plugin les lit et les écrit directement, comme 3-Maple Image. Sans l'autorisation, le traitement renvoie `STORAGE_PERMISSION_DENIED` et l'écran du plugin explique comment l'accorder."
+    },
+    {
+      "q": "L'enregistrement d'écran nécessite-t-il le plugin?",
+      "a": "Non. `video.record` et `audio.record` sont intégrés à AutoJs6 (version interne {{ required_host_version_code }} ou ultérieure); le plugin ajoute les méthodes de traitement et son propre enregistreur Studio."
+    }
+  ],
+  "p_security_intro": "Le plugin réduit autant que possible ses autorisations:",
+  "security_points": [
+    "Entrées protégées: le service de capacité et l'entrée d'activation exigent l'autorisation de plugin d'AutoJs6 (`org.autojs.permission.PLUGIN`), les autres applications ne peuvent donc pas les appeler directement.",
+    "Stockage: l'accès à tous les fichiers ne sert qu'aux chemins choisis par les scripts et les écrans Studio; les sorties sans chemin vont dans les dossiers du plugin sous `Movies` et `Music`.",
+    "Enregistrement: le micro et l'audio interne de l'appareil ne sont capturés que pendant que l'enregistreur Studio fonctionne, avec une notification de premier plan; la capture de l'audio interne exige aussi le consentement de capture d'écran du système.",
+    "Réseau: la version 1.0.0 ne fait que vérifier les mises à jour; à partir de la 1.1.0, la bibliothèque FFmpeg est téléchargée quand vous la demandez et son SHA-256 est vérifié avant le chargement."
+  ],
+  "h3_ffmpeg_library": "Bibliothèque FFmpeg",
+  "p_ffmpeg_library": "À partir de la version 1.1.0, le plugin peut télécharger une bibliothèque FFmpeg facultative compilée sous LGPL-2.1-or-later. La bibliothèque ne fait pas partie de l'APK: elle n'est téléchargée pour votre ABI que lorsque vous la demandez, elle est chargée dynamiquement et elle est accompagnée de ses propres mentions de licence et de l'emplacement du code source correspondant. Sans elle, toutes les fonctions de la 1.0.0 restent disponibles.",
+  "p_ffmpeg_patents": "Certains codecs pris en charge par FFmpeg, comme H.265 / HEVC et AAC, peuvent être couverts par des brevets dans certains pays ou régions. La bibliothèque est proposée uniquement par commodité et n'inclut aucune licence de brevet; vérifiez les règles qui vous concernent avant de l'utiliser.",
+  "p_license": "Le code du projet est distribué sous [Mozilla Public License 2.0]({{ license_url }}). Les composants et données tiers sont répertoriés dans les mentions tierces.",
+  "text_link_third_party": "Mentions tierces (THIRD_PARTY_NOTICES.md)",
+  "p_instruction_docs": "L'avancement et la conception sont disponibles sur la [page du projet]({{ repo_url }})."
+}

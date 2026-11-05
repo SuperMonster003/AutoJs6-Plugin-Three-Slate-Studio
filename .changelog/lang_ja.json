@@ -1,0 +1,28 @@
+{
+  "changelog_label_hint": "ヒント",
+  "changelog_label_feature": "機能",
+  "changelog_label_fix": "修正",
+  "changelog_label_improvement": "改善",
+  "changelog_label_dependency": "依存関係",
+  "$data": {
+    "v1.0.0": {
+      "released_date": "2026/11/05",
+      "hint": [
+        "開発プレビュー: AutoJs6 のプラグインセンターはプラグインを検出できますが, 処理機能, Studio の画面, video / audio スクリプトモジュールの処理メソッドはまだ提供されていません",
+        "AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) 以降が必要です (正確な最低バージョンはホスト側の変更が入り次第記入します)"
+      ],
+      "feature": [
+        "プラグインの骨格: Wake 起動プロトコル, プラグインセンターの識別サービス, メディア処理の機能サービス (契約バージョン 1)",
+        "ホーム画面からすべてのファイルへのアクセスを許可できます",
+        "すべての ABI 共通の APK が 1 つ: 唯一のネイティブライブラリは Jetpack Compose のもので, 16 KB メモリページに揃えられています",
+        "10 言語の README, プラグインセンターの説明, 変更履歴を JSON ソースから生成"
+      ],
+      "dependency": [
+        "Jetpack Compose BOM 2026.09.00 を追加 (プラグインの画面)",
+        "Navigation Compose 2.10.2 を追加",
+        "Jetpack Media3 1.10.1 を追加 (処理とプレビュー用の Transformer, Effect, Muxer, ExoPlayer, UI)",
+        "AndroidX Core KTX 1.18.0 を追加"
+      ]
+    }
+  }
+}

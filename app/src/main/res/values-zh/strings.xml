@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_skeleton_note">当前构建为仓库骨架: 加工, 时间线剪辑与 Studio 录音将在后续构建中提供.</string>
+    <string name="home_storage_denied">尚未授予所有文件访问权限. 授权前加工任务会报告 STORAGE_PERMISSION_DENIED.</string>
+    <string name="home_storage_grant">去授权</string>
+    <string name="home_storage_granted">已授予所有文件访问权限. 脚本与 Studio 界面可以读写你选择的路径.</string>
+    <string name="home_storage_title">文件访问</string>
+    <string name="plugin_description">视频与音频加工, 多轨时间线剪辑, 转场与字幕, 界面操作可生成脚本代码</string>
+</resources>
