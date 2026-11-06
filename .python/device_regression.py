@@ -41,6 +41,7 @@ HOST = "org.autojs.autojs6"
 RUN_INTENT = f"{HOST}/org.autojs.autojs.external.open.RunIntentActivity"
 WORK = f"/sdcard/Android/data/{PLUGIN}/files/regression"
 REMOTE = "/sdcard/Download/slate-regression"
+STAGING = "/data/local/tmp/slate-regression"
 DEFAULT_FFMPEG = r"D:\Program Files\MeGUI_2418_x86\tools\ffmpeg\ffmpeg.exe"
 
 SRT = (
@@ -85,7 +86,7 @@ def sources(binary: str, directory: Path) -> dict[str, Path]:
 
 
 def clean(serial: str) -> None:
-    adb(serial, "shell", f"rm -rf '{WORK}' '{REMOTE}'", check=False)
+    adb(serial, "shell", f"rm -rf '{WORK}' '{REMOTE}' '{STAGING}'", check=False)
     # Deleted folders keep their MediaStore rows (and before Android 11 deleted files too).
     # zh-CN: 删除的文件夹仍留有 MediaStore 记录 (Android 11 之前删除的文件也是).
     # adb joins the arguments with spaces, so the condition is quoted for the device shell.
@@ -112,9 +113,16 @@ def run(serial: str, files: dict[str, Path], extreme: bool, timeout: int) -> dic
     # zh-CN: shell 在此创建的目录可能属于 shell 且权限 2770 (Redmi 22120RN86C), 因此对插件开放.
     adb(serial, "shell", "chmod", "777", WORK, check=False)
     remote = {}
+    # A push straight into the plugin's folder fails on some devices when adb sets the owner (XQ-DQ72, Android 13:
+    # "remote fchown() failed"), so stage the files in /data/local/tmp and copy them with the shell.
+    # zh-CN: 有的设备直接推进插件目录会在 adb 设置属主时失败 (XQ-DQ72, Android 13: "remote fchown() failed"), 因此先放
+    # /data/local/tmp, 再由 shell 复制.
+    adb(serial, "shell", f"rm -rf '{STAGING}'; mkdir -p '{STAGING}'", check=False)
     for key, path in files.items():
         remote[key] = f"{WORK}/{path.name}"
-        adb(serial, "push", str(path), remote[key])
+        adb(serial, "push", str(path), f"{STAGING}/{path.name}")
+        adb(serial, "shell", f"cp '{STAGING}/{path.name}' '{remote[key]}'")
+    adb(serial, "shell", f"rm -rf '{STAGING}'", check=False)
     adb(serial, "shell", f"chmod 666 '{WORK}'/*", check=False)
     # Outputs go to the public folder: files the plugin writes into its own folder belong to it, and the shell of some
     # devices cannot delete them (Xiaomi 23046RP50C, Android 15; run-as cannot reach /storage either).
@@ -158,6 +166,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--cache", type=Path, default=Path(tempfile.gettempdir()) / "slate-regression-sources")
     parser.add_argument("--keep", action="store_true", help="keep the pushed files and outputs on the device")
     args = parser.parse_args(argv)
+    # Error messages may be in the host language; keep them readable when the output goes to a file.
+    # zh-CN: 错误消息可能是宿主语言, 输出重定向到文件时仍保持可读.
+    sys.stdout.reconfigure(encoding="utf-8")
     args.cache.mkdir(parents=True, exist_ok=True)
     files = sources(args.ffmpeg, args.cache)
     mode = adb(args.serial, "shell", "appops", "get", PLUGIN, "MANAGE_EXTERNAL_STORAGE", check=False).partition(":")[2].split(";")[0].strip() or "default"
@@ -174,6 +185,9 @@ def main(argv: list[str] | None = None) -> int:
         args.json.write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
     device = result["device"]
     print(f"device {device['model']} API {device['sdk']}, host {device['host']}, plugin {result['plugin']}")
+    if not result["plugin"].get("available"):
+        print(f"FAIL plugin unavailable, nothing was run: {result['plugin'].get('error', '')}")
+        return 2
     for entry in result["results"]:
         detail = entry.get("value") if entry["ok"] else entry.get("error")
         print(f"{'PASS' if entry['ok'] else 'FAIL'} {entry['name']} {entry['ms']} ms {detail or ''}".rstrip())

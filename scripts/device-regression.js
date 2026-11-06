@@ -100,6 +100,14 @@ try {
     plugin = {available: false, error: String(e.message || e)};
 }
 
+if (!plugin.available) {
+    // Disabled in Plugin Center or not installed: every step would fail the same way.
+    // zh-CN: 在插件中心被关闭或未安装: 每一步都会以同样原因失败.
+    files.write(config.out, JSON.stringify({device: device, plugin: plugin, encoders: [], results: []}, null, 2));
+    console.log('[slate-regression] plugin unavailable: ' + (plugin.error || ''));
+    exit();
+}
+
 files.ensureDir(work + '/');
 var codecs = encoders();
 var hasHevc = codecs.some(function (c) { return c.type === 'video/hevc' && c.hardware; });
