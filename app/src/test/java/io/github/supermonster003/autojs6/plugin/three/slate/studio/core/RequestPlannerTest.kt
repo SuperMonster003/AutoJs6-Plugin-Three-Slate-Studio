@@ -77,7 +77,7 @@ class RequestPlannerTest {
     @Test
     fun `envelope rejections keep their code`() {
         assertRejected(MediaStudioErrorCodes.INVALID_OPTIONS, "op is required", envelope(op = null))
-        assertRejected(MediaStudioErrorCodes.INVALID_OPTIONS, "NOT_IMPLEMENTED: compose", envelope(op = MediaStudioOps.COMPOSE))
+        assertRejected(MediaStudioErrorCodes.INVALID_OPTIONS, "NOT_IMPLEMENTED: burnSubtitles", envelope(op = MediaStudioOps.BURN_SUBTITLES))
         assertRejected(MediaStudioErrorCodes.LIMIT_EXCEEDED, "257 inputs, at most 256", envelope(op = MediaStudioOps.CONCAT, inputs = List(257) { clip }))
         assertRejected(MediaStudioErrorCodes.INVALID_OPTIONS, "probe is answered by probe(), not submit", envelope(op = MediaStudioOps.PROBE))
         assertRejected(MediaStudioErrorCodes.INVALID_OPTIONS, "audioProbe is answered by probe(), not submit", envelope(op = MediaStudioOps.AUDIO_PROBE))

@@ -53,6 +53,7 @@ object ThreeSlateStudioContract {
         MediaStudioOps.FRAME,
         MediaStudioOps.THUMBNAIL,
         MediaStudioOps.TO_GIF,
+        MediaStudioOps.COMPOSE,
         MediaStudioOps.AUDIO_PROBE,
         MediaStudioOps.AUDIO_TRIM,
         MediaStudioOps.AUDIO_CONCAT,

@@ -50,7 +50,8 @@ class PluginRuntimeInfoTest {
         assertEquals(1, fields.contractVersion)
         assertEquals("P2.1 / P2.2 implement probe and the basic operations", ThreeSlateStudioContract.IMPLEMENTED_OPS, fields.ops)
         assertTrue(fields.ops.containsAll(listOf(MediaStudioOps.PROBE, MediaStudioOps.TRIM, MediaStudioOps.TRANSCODE, MediaStudioOps.AUDIO_PROBE)))
-        assertFalse("compose comes with P3", MediaStudioOps.COMPOSE in fields.ops)
+        assertTrue("compose comes with P3.1", MediaStudioOps.COMPOSE in fields.ops)
+        assertFalse("burnSubtitles comes with P3.3", MediaStudioOps.BURN_SUBTITLES in fields.ops)
     }
 
     @Test

@@ -14,6 +14,8 @@ internal data class SubmitEnvelope(
     val hostToken: String?,
     val origin: String?,
     val registerMedia: Boolean,
+    /** The `compose` timeline (contract key `timeline`). zh-CN: `compose` 的时间线 (契约键 `timeline`). */
+    val timeline: Map<String, Any?>? = null,
 )
 
 /**
@@ -101,7 +103,7 @@ internal class RequestPlanner(
         if (origin !in MediaStudioContract.ORIGINS) {
             throw MediaStudioException.invalid("origin must be one of ${MediaStudioContract.ORIGINS.joinToString()}, got $origin")
         }
-        val inputs = envelope.inputs.map { it!! }
+        var inputs = envelope.inputs.map { it!! }
         inputs.firstOrNull { !it.startsWith("/") }?.let { throw MediaStudioException.invalid("inputs must be absolute paths, got $it") }
 
         val kind = OutputKind.of(op)
@@ -116,7 +118,9 @@ internal class RequestPlanner(
             }
             options = checkExtension(kind, explicitOutput.substringAfterLast('/'), options)
         }
-        val spec = OperationOptions.parse(op, inputs.size, options)
+        val spec = OperationOptions.parse(op, inputs.size, options, envelope.timeline)
+        // compose reads the clips of its timeline; the inputs the host lists are the same files. zh-CN: compose 读取时间线中的片段; 宿主列出的输入是同样的文件.
+        if (spec is OperationSpec.Compose) inputs = spec.timeline.sources
 
         val output = explicitOutput ?: defaultOutput(op, inputs, spec, kind)
         val resources = OperationOptions.resources(spec)
@@ -206,6 +210,7 @@ internal class RequestPlanner(
             is OperationSpec.Transform -> spec.video
             is OperationSpec.Transcode -> spec.video
             is OperationSpec.Overlay -> spec.video
+            is OperationSpec.Compose -> spec.video
             else -> null
         }
         if (video?.codec == VideoCodec.H265 && EncoderIds.H265 !in encoders) {

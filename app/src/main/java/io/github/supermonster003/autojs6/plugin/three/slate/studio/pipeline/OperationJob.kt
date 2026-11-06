@@ -2,6 +2,7 @@ package io.github.supermonster003.autojs6.plugin.three.slate.studio.pipeline
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.AudioContainer
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.MediaInfo
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.MediaProbe
@@ -45,7 +46,16 @@ internal class OperationJob(private val appContext: Context, private val planned
 
     private val writtenFrames = CopyOnWriteArrayList<File>()
 
-    override fun run(context: TaskRunner.JobContext): Bundle {
+    override fun run(context: TaskRunner.JobContext): Bundle = try {
+        execute(context)
+    } catch (e: RuntimeException) {
+        // A contract error is the caller's; anything else is a bug worth a stack trace in logcat.
+        // zh-CN: 契约错误属于调用方; 其他异常是缺陷, 在 logcat 中留下堆栈.
+        if (e !is MediaStudioException) Log.e(TAG, "task ${context.taskId} (${planned.op}) failed", e)
+        throw e
+    }
+
+    private fun execute(context: TaskRunner.JobContext): Bundle {
         context.progress(0.0, MediaStudioContract.STAGE_PROBING)
         val inputs = planned.inputs.mapIndexed { index, path ->
             context.throwIfCancelled()
@@ -62,6 +72,10 @@ internal class OperationJob(private val appContext: Context, private val planned
             spec is OperationSpec.Frame || spec is OperationSpec.Thumbnail ->
                 StillOperations(context).image(spec, inputs.single(), partFile.path, PROBE_END, EXPORT_END)
             spec is OperationSpec.ToGif -> StillOperations(context).gif(spec, inputs.single(), partFile.path, PROBE_END, EXPORT_END)
+            spec is OperationSpec.Compose -> {
+                ComposeOperation(appContext, context, notes).run(spec, inputs, partFile.path, PROBE_END, EXPORT_END)
+                null
+            }
             // extractAudio to M4A remuxes or re-encodes through Transformer. zh-CN: extractAudio 到 M4A 经 Transformer 重封装或重编码.
             spec is OperationSpec.AudioOutput && !(spec is OperationSpec.ExtractAudio && spec.container == AudioContainer.M4A) -> {
                 AudioOperations(context, notes).run(spec, inputs, partFile.path, PROBE_END, EXPORT_END)
@@ -197,6 +211,7 @@ internal class OperationJob(private val appContext: Context, private val planned
     }
 
     private companion object {
+        const val TAG = "SlateStudioJob"
         const val PROBE_END = 5.0
         const val EXPORT_END = 95.0
         const val REGISTER_START = 97.0

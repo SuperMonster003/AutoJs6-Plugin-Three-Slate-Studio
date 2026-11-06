@@ -163,6 +163,12 @@ internal sealed interface OperationSpec {
     /** Text and picture overlays drawn on every frame they cover (roadmap P2.3). zh-CN: 画在所覆盖各帧上的文字与图片叠加 (路线图 P2.3). */
     data class Overlay(val items: List<OverlayItem>, val video: VideoEncoding) : OperationSpec
 
+    /**
+     * The multi-track timeline of roadmap P3.1 / P3.2 (D33, D30), encoded with [video] (`codec`, `bitRate`).
+     * zh-CN: 路线图 P3.1 / P3.2 的多轨时间线 (D33, D30), 以 [video] (`codec`, `bitRate`) 编码.
+     */
+    data class Compose(val timeline: TimelineSpec, val video: VideoEncoding) : OperationSpec
+
     /** Frames written as images into one folder (roadmap P2.4). zh-CN: 写成图片放进一个文件夹的多帧 (路线图 P2.4). */
     data class Frames(val times: FrameTimes, val image: ImageEncoding) : OperationSpec
 
@@ -280,6 +286,7 @@ internal object OperationOptions {
         MediaStudioOps.FRAME,
         MediaStudioOps.THUMBNAIL,
         MediaStudioOps.TO_GIF,
+        MediaStudioOps.COMPOSE,
         MediaStudioOps.AUDIO_TRIM,
         MediaStudioOps.AUDIO_CONCAT,
         MediaStudioOps.AUDIO_MIX,
@@ -292,7 +299,7 @@ internal object OperationOptions {
      * Parses [options] of [op] (already a known operation of [SUBMIT_OPS]) for [inputCount] inputs.
      * zh-CN: 解析 [op] (已知且属于 [SUBMIT_OPS]) 在 [inputCount] 个输入下的 [options].
      */
-    fun parse(op: String, inputCount: Int, options: Map<String, Any?>): OperationSpec {
+    fun parse(op: String, inputCount: Int, options: Map<String, Any?>, timeline: Map<String, Any?>? = null): OperationSpec {
         if (op in SINGLE_INPUT_OPS && inputCount != 1) {
             throw MediaStudioException.invalid("$op takes exactly 1 input, got $inputCount")
         }
@@ -338,6 +345,8 @@ internal object OperationOptions {
                 image = reader.imageEncoding(ImageFormat.JPG, DEFAULT_THUMBNAIL_QUALITY),
             )
             MediaStudioOps.TO_GIF -> toGif(reader)
+            // The timeline first: its field paths are more specific than the two options. zh-CN: 先解析时间线: 其字段路径比两个选项更具体.
+            MediaStudioOps.COMPOSE -> TimelineOptions.parse(timeline).let { spec -> OperationSpec.Compose(spec, reader.videoEncoding()) }
             MediaStudioOps.AUDIO_TRIM -> trim(reader, op).let { range ->
                 reader.audioOutput(op) { container, audio -> OperationSpec.AudioTrim(range.startMillis, range.endMillis, container, audio) }
             }
@@ -549,14 +558,17 @@ internal object OperationOptions {
      * zh-CN: 输入之外任务要读取的文件 (叠加图片与字体文件); 规划器像检查输入一样检查它们.
      */
     fun resources(spec: OperationSpec): List<String> = when (spec) {
-        is OperationSpec.Overlay -> spec.items.mapNotNull { item ->
-            when (item) {
-                is OverlayItem.Image -> item.src
-                is OverlayItem.Text -> item.fontFile
-            }
-        }.distinct()
+        is OperationSpec.Overlay -> overlayFiles(spec.items)
+        is OperationSpec.Compose -> overlayFiles(spec.timeline.overlays)
         else -> emptyList()
     }
+
+    private fun overlayFiles(items: List<OverlayItem>): List<String> = items.mapNotNull { item ->
+        when (item) {
+            is OverlayItem.Image -> item.src
+            is OverlayItem.Text -> item.fontFile
+        }
+    }.distinct()
 
     /** True when [options] names an explicit `format`. zh-CN: [options] 显式给出 `format` 时为 true. */
     fun hasExplicitFormat(options: Map<String, Any?>): Boolean = options["format"] != null
@@ -603,6 +615,9 @@ internal class OptionReader(private val values: Map<String, Any?>, private val p
     private val read = mutableSetOf<String>()
 
     fun name(key: String) = prefix + key
+
+    /** True when [key] holds a value (null counts as absent); does not mark it read. zh-CN: [key] 有值时为 true (null 视为未提供); 不标记为已读. */
+    fun has(key: String): Boolean = values[key] != null
 
     private fun raw(key: String): Any? {
         read += key

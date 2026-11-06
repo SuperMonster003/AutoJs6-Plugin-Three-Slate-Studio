@@ -63,17 +63,21 @@ object MediaFixtures {
         )
     }
 
-    fun colorBars(output: File): File {
+    /**
+     * Vertical bars of [bars] (RGB, equal widths; one color gives a solid frame), [durationUs] long.
+     * zh-CN: 由 [bars] (RGB, 等宽; 只有一种颜色时为纯色帧) 组成的竖条, 时长 [durationUs].
+     */
+    fun colorBars(output: File, bars: IntArray = BARS, durationUs: Long = DURATION_US): File {
         val format = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, WIDTH, HEIGHT).apply {
             setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible)
             setInteger(MediaFormat.KEY_BIT_RATE, 1_000_000)
             setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE)
             setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1)
         }
-        val frames = (DURATION_US * FRAME_RATE / 1_000_000L).toInt()
-        val planes = BARS.map(::yuv)
+        val frames = (durationUs * FRAME_RATE / 1_000_000L).toInt()
+        val planes = bars.map(::yuv)
         var frame = 0
-        encode(format, output, DURATION_US) { codec, index ->
+        encode(format, output, durationUs) { codec, index ->
             if (frame == frames) return@encode false
             val image = requireNotNull(codec.getInputImage(index)) { "The encoder offers no input image" }
             paint(image, planes)

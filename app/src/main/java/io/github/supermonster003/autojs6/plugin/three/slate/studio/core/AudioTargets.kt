@@ -55,9 +55,11 @@ internal object AudioTargets {
 /**
  * Sample arithmetic of the audio operations on interleaved 16-bit PCM: mixing with per-track volume, gain with linear
  * fades, peak normalization. Results are rounded and clamped to 16 bits; the functions return how many samples were
- * clipped (appendix D Q17 (a): the mix is a plain sum, clipping is reported as a warning).
+ * clipped. A mix runs in two passes (appendix D Q17 (c)): the first finds the peak of the sum, the second scales a sum
+ * that would clip down to -1 dBFS ([mixScale]) and leaves any other sum as it is.
  * zh-CN: 音频操作在交错 16 位 PCM 上的样本运算: 按轨音量混音, 带线性淡入淡出的增益, 峰值归一化. 结果四舍五入并截断到 16 位;
- * 函数返回被削波的样本数 (附录 D Q17 (a): 混音为直接相加, 削波以警告报告).
+ * 函数返回被削波的样本数. 混音分两遍 (附录 D Q17 (c)): 第一遍求和的峰值, 第二遍把会削波的和整体缩放到 -1 dBFS ([mixScale]),
+ * 不会削波的和保持原样.
  */
 internal object PcmMath {
 
@@ -135,13 +137,46 @@ internal object PcmMath {
     }
 
     /**
-     * Rounds the first [count] values of [mix] into [out] with clamping; returns the number of clipped samples.
-     * zh-CN: 把 [mix] 前 [count] 个值四舍五入写入 [out] 并截断; 返回被削波的样本数.
+     * The peak a two-pass mix brings a clipping sum down to (appendix D Q17 (c)): -1 dBFS.
+     * zh-CN: 两遍混音把会削波的和缩放到的峰值 (附录 D Q17 (c)): -1 dBFS.
      */
-    fun clip(mix: FloatArray, count: Int, out: ShortArray): Int {
+    const val MIX_PEAK_DBFS = -1.0
+
+    /** The largest absolute value of the first [count] values of [mix]. zh-CN: [mix] 前 [count] 个值的最大绝对值. */
+    fun peak(mix: FloatArray, count: Int): Float {
+        var peak = 0f
+        for (index in 0 until count) {
+            val value = Math.abs(mix[index])
+            if (value > peak) peak = value
+        }
+        return peak
+    }
+
+    /**
+     * Whether a sum peaking at [peak] clips when rounded to 16 bits (the negative side reaches one step further).
+     * zh-CN: 峰值为 [peak] 的和四舍五入到 16 位时是否削波 (负半轴多一级).
+     */
+    fun clips(peak: Float): Boolean = Math.round(peak) > Short.MAX_VALUE
+
+    /**
+     * The factor of the second pass of a mix (appendix D Q17 (c)): a sum that would clip is scaled so its peak lands on
+     * [MIX_PEAK_DBFS]; a sum that does not clip keeps its level (1.0), so nothing quieter is ever raised.
+     * zh-CN: 混音第二遍的倍数 (附录 D Q17 (c)): 会削波的和整体缩放到峰值 [MIX_PEAK_DBFS]; 不削波的和保持原电平 (1.0), 不会把较轻的混音放大.
+     */
+    fun mixScale(peak: Float): Double = if (clips(peak)) FULL_SCALE * dbfsToLinear(MIX_PEAK_DBFS) / peak else 1.0
+
+    /** [linear] in dB. zh-CN: [linear] 换算为 dB. */
+    fun linearToDb(linear: Double): Double = 20.0 * Math.log10(linear)
+
+    /**
+     * Rounds the first [count] values of [mix] times [factor] into [out] with clamping; returns the number of clipped
+     * samples (none after [mixScale]).
+     * zh-CN: 把 [mix] 前 [count] 个值乘以 [factor] 后四舍五入写入 [out] 并截断; 返回被削波的样本数 (按 [mixScale] 缩放后为 0).
+     */
+    fun clip(mix: FloatArray, count: Int, out: ShortArray, factor: Double = 1.0): Int {
         var clipped = 0
         for (index in 0 until count) {
-            val value = Math.round(mix[index])
+            val value = if (factor == 1.0) Math.round(mix[index]).toLong() else Math.round(mix[index] * factor)
             out[index] = when {
                 value > Short.MAX_VALUE -> Short.MAX_VALUE.also { clipped++ }
                 value < Short.MIN_VALUE -> Short.MIN_VALUE.also { clipped++ }

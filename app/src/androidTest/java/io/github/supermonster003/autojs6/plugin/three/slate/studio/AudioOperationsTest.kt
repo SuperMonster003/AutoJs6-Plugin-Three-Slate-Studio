@@ -199,9 +199,17 @@ class AudioOperationsTest : MediaStudioTestBase() {
             plugin,
             request(MediaStudioOps.AUDIO_MIX, listOf(fixtures.sineWav, fixtures.sineWav), output("mix-loud.m4a"), options("tracks" to listOf(options("volume" to 2.0), options("volume" to 2.0)))),
         )
-        assertTrue(warnings(loud).toString(), warnings(loud).any { "were clipped; lower the track volumes" in it })
+        // Two passes (appendix D Q17 (c)): the clipping sum is scaled down to -1 dBFS. zh-CN: 两遍: 会削波的和缩放到 -1 dBFS.
+        assertTrue(warnings(loud).toString(), warnings(loud).any { "it was scaled by" in it && "to -1 dBFS" in it })
+        assertTrue(warnings(loud).toString(), warnings(loud).none { "clipped" in it })
         assertDuration(3_000, loud, tolerance = 150)
         assertEquals(1, decode(output("mix-loud.m4a")).channels)
+        val loudWav = run(
+            plugin,
+            request(MediaStudioOps.AUDIO_MIX, listOf(fixtures.sineWav, fixtures.sineWav), output("mix-loud.wav"), options("tracks" to listOf(options("volume" to 2.0), options("volume" to 2.0)))),
+        )
+        assertTrue(warnings(loudWav).toString(), warnings(loudWav).any { "peaked at +" in it })
+        assertNear("scaled to -1 dBFS", Short.MAX_VALUE * 0.8913, Wav(output("mix-loud.wav")).peak(0, 3_000).toDouble(), 0.002)
     }
 
     @Test

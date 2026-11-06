@@ -257,6 +257,7 @@ internal class VideoOperations(
                 is OperationSpec.ExtractAudio -> extractAudio(spec, inputs.single())
                 is OperationSpec.Overlay -> overlay(spec, inputs.single())
                 is OperationSpec.Trim -> error("handled above")
+                is OperationSpec.Compose -> error("compose is written by ComposeOperation")
                 is OperationSpec.Frames, is OperationSpec.Frame, is OperationSpec.Thumbnail, is OperationSpec.ToGif ->
                     error("${spec::class.simpleName} is written by StillOperations")
                 is OperationSpec.AudioTrim, is OperationSpec.AudioConcat, is OperationSpec.AudioMix, is OperationSpec.AudioVolume,

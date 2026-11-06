@@ -78,6 +78,7 @@ internal class MediaStudioEngine private constructor(private val context: Contex
             hostToken = request.getString(MediaStudioRequestKeys.HOST_TOKEN),
             origin = request.getString(MediaStudioRequestKeys.ORIGIN),
             registerMedia = request.getBoolean(MediaStudioRequestKeys.REGISTER_MEDIA, true),
+            timeline = request.getBundle(MediaStudioRequestKeys.TIMELINE)?.let { BundleValues.toMap(it) },
         )
         val planned = try {
             planner().plan(envelope)

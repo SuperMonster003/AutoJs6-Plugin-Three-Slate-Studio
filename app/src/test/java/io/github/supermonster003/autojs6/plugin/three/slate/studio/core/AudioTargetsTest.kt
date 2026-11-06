@@ -2,6 +2,7 @@ package io.github.supermonster003.autojs6.plugin.three.slate.studio.core
 
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -76,13 +77,31 @@ class AudioTargetsTest {
     }
 
     @Test
-    fun `mixing sums with volume and clips the result (Q17 (a))`() {
+    fun `mixing sums with volume and rounds the result`() {
         val mix = FloatArray(4)
         PcmMath.accumulate(mix, 0, shortArrayOf(10_000, 10_000, 30_000), 0, 3, 1f)
         PcmMath.accumulate(mix, 1, shortArrayOf(9, 20_000, 20_000, -4), 1, 3, 0.5f)
+        assertEquals(40_000f, PcmMath.peak(mix, 3), 0f)
         val out = ShortArray(4)
-        assertEquals(1, PcmMath.clip(mix, 3, out))
+        assertEquals("plain rounding still clamps", 1, PcmMath.clip(mix, 3, out))
         assertArrayEquals(shortArrayOf(10_000, 20_000, Short.MAX_VALUE, 0), out)
+    }
+
+    @Test
+    fun `a clipping mix is scaled to -1 dBFS, a quieter one keeps its level (Q17 (c))`() {
+        assertEquals("no clipping, no change", 1.0, PcmMath.mixScale(32_767f), 0.0)
+        assertEquals("quiet mixes are never raised", 1.0, PcmMath.mixScale(1_000f), 0.0)
+        assertEquals("silence", 1.0, PcmMath.mixScale(0f), 0.0)
+        assertFalse(PcmMath.clips(32_767.4f))
+        assertTrue(PcmMath.clips(32_767.6f))
+        val scale = PcmMath.mixScale(65_534f)
+        assertEquals(32_767.0 * PcmMath.dbfsToLinear(-1.0) / 65_534.0, scale, 1e-12)
+        val mix = floatArrayOf(65_534f, -65_534f, 10_000f)
+        val out = ShortArray(3)
+        assertEquals(0, PcmMath.clip(mix, 3, out, scale))
+        val minusOne = Math.round(32_767.0 * PcmMath.dbfsToLinear(-1.0)).toShort()
+        assertArrayEquals(shortArrayOf(minusOne, (-minusOne).toShort(), Math.round(10_000 * scale).toShort()), out)
+        assertEquals(-1.0, PcmMath.linearToDb(out[0] / PcmMath.FULL_SCALE), 0.001)
     }
 
 }

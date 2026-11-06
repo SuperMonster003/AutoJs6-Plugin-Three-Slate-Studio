@@ -198,8 +198,11 @@ class OperationOptionsTest {
             MediaStudioOps.AUDIO_CONVERT to mapOf("format" to "wav"),
             MediaStudioOps.AUDIO_SPEED to mapOf("factor" to 1),
         )
-        OperationOptions.SUBMIT_OPS.forEach { op -> parse(op, minimal[op] ?: emptyMap()) }
-        assertEquals(18, OperationOptions.SUBMIT_OPS.size)
+        val timeline = mapOf("video" to listOf(mapOf("clips" to listOf(mapOf("src" to "/sdcard/a.mp4")))))
+        OperationOptions.SUBMIT_OPS.forEach { op ->
+            if (op == MediaStudioOps.COMPOSE) OperationOptions.parse(op, 0, emptyMap(), timeline) else parse(op, minimal[op] ?: emptyMap())
+        }
+        assertEquals(19, OperationOptions.SUBMIT_OPS.size)
         assertTrue(MediaStudioOps.ALL.containsAll(OperationOptions.SUBMIT_OPS))
     }
 

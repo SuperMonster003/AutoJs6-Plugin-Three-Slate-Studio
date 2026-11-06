@@ -201,9 +201,9 @@ io.github.supermonster003.autojs6.plugin.three.slate.studio
 | 阶段 | 版本 | 主题 | 状态 |
 | --- | --- | --- | --- |
 | P0 | 1.0.0 | 仓库骨架: 构建链与身份, Icon Studio 图标, 测试与 CI | 已完成 (2026-11-05; 剩真机图标目视 E4 待维护者, Q9 - Q11 已按推荐先行待确认) |
-| P1 | 宿主 6.8.1 (本地构建号, D23) | 契约 `media-studio-api`, 录屏 / 录音内核泛化, 脚本模块 `video` / `audio`, `CREATE_SCRIPT` 入口, 注册与协议文档 | 进行中 (P1.1-P1.5 与 P1.7 已完成 (2026-11-06), 宿主本地提交; P1.6 宿主侧已完成, 门面与 Node / Bun 真机验收等 Q30) |
+| P1 | 宿主 6.8.1 (本地构建号, D23) | 契约 `media-studio-api`, 录屏 / 录音内核泛化, 脚本模块 `video` / `audio`, `CREATE_SCRIPT` 入口, 注册与协议文档 | P1.1-P1.7 已完成 (2026-11-06), 宿主与 Node / Bun 仓库本地提交未推送 |
 | P2 | 1.0.0 | 插件加工核心: 执行器与任务模型, 视频基础加工, 叠加, 抽帧与 GIF, 音频加工, 设备矩阵 | 进行中 (P2.1 - P2.5 已完成 2026-11-06; 剩 P2.6) |
-| P3 | 1.0.0 | 多轨合成: 时间线 JSON 与 `video.compose`, 转场, 字幕 | 未开始 |
+| P3 | 1.0.0 | 多轨合成: 时间线 JSON 与 `video.compose`, 转场, 字幕 | 进行中 (P3.1 已完成, P3.2 实现与 AVD / G8441 样本完成, 待维护者真机目视确认 (2026-11-06); 剩 P3.3) |
 | P4 | 1.0.0 | Studio 界面: 应用骨架, 工具箱向导, 时间线剪辑器, 代码生成与宿主入口, Studio 录音 | 未开始 |
 | P5 | 1.0.0 | 文档, 声明, 四仓库同步, 样例, 兼容矩阵, 发布与索引登记 | 未开始 |
 | P6 | 1.1.0 | FFmpeg + libass 大库: 自建或选型, Shared-Assets 类别, 下载 / 校验 / 加载, 命令透传, 新格式, 完整 ASS, 发布 | 未开始 |
@@ -270,7 +270,7 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 
 ## P1: 宿主契约, 录制内核与脚本模块
 
-状态: 进行中 (P1.1 / P1.2 已完成 2026-11-05, P1.3 - P1.5 与 P1.7 已完成 2026-11-06; P1.6 (附录 D Q22 B) 宿主侧已完成, Node / Bun 门面与真机验收等附录 D Q30). 全部为宿主本地提交 (不推送). 设备: Sony XQ-AT72 API 31, XQ-DQ72 API 33 (录屏与内录), G8441 API 28 (无内录), Xiaomi Pad API 35.
+状态: 已完成 (P1.1 / P1.2 2026-11-05, P1.3 - P1.7 2026-11-06; P1.6 按附录 D Q22 B / Q30 A). 全部为宿主与 Node / Bun Runtime 仓库本地提交 (不推送). 设备: Sony XQ-AT72 API 31, XQ-DQ72 API 33 (录屏与内录), G8441 API 28 (无内录), Xiaomi Pad API 35.
 
 ### P1.1 契约模块 `plugin-api/media-studio-api` (D20, D28)
 
@@ -304,9 +304,10 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 
 ### P1.6 Node / Bun 桥接 `video` / `audio` (附录 D Q22 B)
 
-- [ ] (宿主) 按插件引擎桥接惯例把 `video` / `audio` 两个模块暴露给 Node 与 Bun, API 与 Rhino 一致 (录制, 加工方法与 `xxxAsync`, `onProgress`, `tasks()` / `cancelAll()`, `MediaStudioError`), 能力声明与 Rhino 一致; api-coverage 策略由 `media-studio-rhino-only` (not-portable) 改为 portable. 需改 Node / Bun Runtime 插件仓库时只本地提交并登记待决.
+- [x] (宿主) 按插件引擎桥接惯例把 `video` / `audio` 两个模块暴露给 Node 与 Bun, API 与 Rhino 一致 (录制, 加工方法与 `xxxAsync`, `onProgress`, `tasks()` / `cancelAll()`, `MediaStudioError`), 能力声明与 Rhino 一致; api-coverage 策略由 `media-studio-rhino-only` (not-portable) 改为 portable. 需改 Node / Bun Runtime 插件仓库时只本地提交并登记待决.
 - 验收: Node 与 Bun 脚本在真机上跑 `record` / `probe` / `trim` 与 `onProgress` / Promise 形态, 结果与 Rhino 一致; 宿主相关单测通过.
-- 进度 (2026-11-06, 3-slate-p1-6-7): 宿主侧已完成, 宿主本地提交 `734c5a785f` (Node 模块 `media_studio` = `RuntimeMediaStudioBridge`, 参数映射 `MediaStudioScriptArgs` 同 Rhino, Bun 新授权 `mediastudio.control` 默认关闭 + 设置开关 11 语言, api-coverage 策略改 portable 并登记 60 个 pending) 与 `3c26d999e9` (协议文档与 changelog 10 语言); 隔离克隆 JVM 570 例 0 失败. 未完成: Node / Bun Runtime 插件仓库里的门面, 声明与测试, 以及 Node / Bun 真机验收 (等附录 D Q30 拍板, 已按推荐 A 先行: 仓库空闲后由续接卡做). 桥接协议与门面待办见共享笔记 `3-slate-p1-6-7-handoff.md`.
+- 证据 (E1 + E3 + E4, 2026-11-06, 3-slate-p1-6-7): 宿主本地提交 `734c5a785f` (Node 模块 `media_studio` = `RuntimeMediaStudioBridge`, 参数映射 `MediaStudioScriptArgs` 同 Rhino, Bun 新授权 `mediastudio.control` 默认关闭 + 设置开关 11 语言), `3c26d999e9` (协议文档与 changelog 10 语言), `0aecdd6c01` (api-coverage: runtime-policy 的 `video` / `audio` 改 `mediastudio.control`, 60 个 pending 格改 covered, MATRIX.md), `f86bcb1da2` (设备脚本 `tools/mediastudio/device_mediastudio_check.py` 增 `--runtimes` / `--record` / `--record-size`); 门面 (附录 D Q30 A, 同一卡片续做): Node Runtime `0e81048e` (`autojs6:video` / `autojs6:audio`, 主线程 + Worker, d.ts, HOST-API 文档, changelog 10 语言), Bun Runtime `f0d85db` (`host.video` / `host.audio`, 录制按附录 D Q32 A 复用 screen.record 授权, 文档, changelog 10 语言); 均未推送. 隔离克隆 JVM 570 例 0 失败; Node 仓库 Node 测试与 Gradle 单测通过, Bun 仓库 136 例中 135 通过 (唯一失败为既有计时抖动, 与本条无关).
+- 结果 (2026-11-06): 通过. Redmi 22120RN86C (`bek749scrwv4wo8h`, Android 13, 临时宿主 6641 + Node 381 + Bun 353), `device_mediastudio_check.py --runtimes node,bun`: 不装插件 32 PASS / 0 FAIL (插件方法以 `PLUGIN_UNAVAILABLE` 拒绝且为 `MediaStudioError`); 装插件 debug 6 后 39 PASS / 0 FAIL (probe 8023 ms 640x360 h264 / aac, trim 的 Promise 与 2 次 onProgress, trimAsync, audio.probe, tasks, cancelAll); 录屏 `--record --record-size 720x1648` (维护者确认投影对话框) 30 PASS / 0 FAIL, Node 5246 ms 299340 B, Bun 5337 ms 299646 B, onStop 各 1 次. 默认尺寸录屏在该机失败 (720x1650 不被编码器接受), 登记附录 D Q33, 由宿主卡片 3-slate-q33 修复. 测后装回原宿主 6640 / Node 291 / Bun 349 (md5 一致).
 
 ### P1.7 `CREATE_SCRIPT` 大代码经 content URI (附录 D Q28 C)
 
@@ -342,7 +343,7 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 
 ### P2.5 音频加工 (D15)
 
-- [x] (插件) `audio.trim`, `concat`, `mix` (多路, 各自音量与偏移), `volume` (增益 / 归一化 / 淡入淡出), `convert` (M4A / WAV / FLAC / OGG-Opus, 采样率, 声道, 码率), `speed`; `AudioPipeline` 用 media3 解码 + `AudioProcessor` + 平台编码器, OGG 用 `MediaMuxer` OGG (API 29+, 低版本报 `UNSUPPORTED_FORMAT`). 证据 (E1 + E2, 2026-11-06, 3-slate-p2-3-5): 提交 `f3751f5`; `core/OperationOptions` (6 个操作共用 `format` (m4a / wav / flac / ogg, 省略时由输出扩展名补上, 都没有时 m4a, 附录 D Q16 (a); `audioConvert` 必须能确定格式), `bitRate` (8 - 512 kbps, 无损 wav / flac 不适用), `sampleRate` (ogg 只收 Opus 采样率), `channels` 1 / 2; `audioTrim` 的 `start` / `end` / `duration` 同 `trim`; `audioMix` 2 - 16 个输入 (超出 `LIMIT_EXCEEDED`, 附录 D Q18 (a)), `tracks[]` 每个输入一项 `volume` 0 - 16 (默认 1) 与 `at` (毫秒偏移, 默认 0); `audioVolume` 的 `gain` 0 - 16 (线性, 附录 D Q19 (a)) 与 `normalize` (`true` = -1 dBFS, 或 -60 - 0 dBFS 的目标峰值) 互斥, `fadeIn` / `fadeOut` 毫秒, 至少给一项; `audioSpeed` 的 `factor` 0.25 - 8 与 `keepPitch` (默认 true)), `core/AudioTargets` (未指定时的输出格式: wav 保留源声道, 其他至多 2 声道; ogg 48 kHz, m4a 取 AAC 支持的不低于源的采样率, wav / flac 保留源采样率; 多输入按最高采样率与最多声道; AAC 单声道 128 / 立体声 192 kbps, Opus 64 / 96 kbps), `pipeline/AudioOperations` (每个输入解码为同一目标格式的 16 位 PCM, 经 P2.2 的 `PcmSinks` 编码; `audioMix` 直接相加, 削波时在 `warnings[]` 报告比例并建议调低音量, 附录 D Q17 (a); `audioVolume` 的归一化与淡出先读一遍输入求峰值与时长; `audioSpeed` 用 Sonic; `extractAudio` 输出 wav / flac / ogg 也改走这条路径, m4a 仍走 media3 Transformer). 输出与编码器检查: 能力表 `mediaStudioAudioOutputFormats` 列出可用容器 (ogg 需 API 29+), 缺编码器时 `UNSUPPORTED_FORMAT`. 选项规则写在共享笔记 `3-slate-p2b-notes.md`; 宿主选项预检同步见附录 D Q24 (宿主本地提交 `764b63b765`).
+- [x] (插件) `audio.trim`, `concat`, `mix` (多路, 各自音量与偏移), `volume` (增益 / 归一化 / 淡入淡出), `convert` (M4A / WAV / FLAC / OGG-Opus, 采样率, 声道, 码率), `speed`; `AudioPipeline` 用 media3 解码 + `AudioProcessor` + 平台编码器, OGG 用 `MediaMuxer` OGG (API 29+, 低版本报 `UNSUPPORTED_FORMAT`). 证据 (E1 + E2, 2026-11-06, 3-slate-p2-3-5): 提交 `f3751f5`; `core/OperationOptions` (6 个操作共用 `format` (m4a / wav / flac / ogg, 省略时由输出扩展名补上, 都没有时 m4a, 附录 D Q16 (a); `audioConvert` 必须能确定格式), `bitRate` (8 - 512 kbps, 无损 wav / flac 不适用), `sampleRate` (ogg 只收 Opus 采样率), `channels` 1 / 2; `audioTrim` 的 `start` / `end` / `duration` 同 `trim`; `audioMix` 2 - 16 个输入 (超出 `LIMIT_EXCEEDED`, 附录 D Q18 (a)), `tracks[]` 每个输入一项 `volume` 0 - 16 (默认 1) 与 `at` (毫秒偏移, 默认 0); `audioVolume` 的 `gain` 0 - 16 (线性, 附录 D Q19 (a)) 与 `normalize` (`true` = -1 dBFS, 或 -60 - 0 dBFS 的目标峰值) 互斥, `fadeIn` / `fadeOut` 毫秒, 至少给一项; `audioSpeed` 的 `factor` 0.25 - 8 与 `keepPitch` (默认 true)), `core/AudioTargets` (未指定时的输出格式: wav 保留源声道, 其他至多 2 声道; ogg 48 kHz, m4a 取 AAC 支持的不低于源的采样率, wav / flac 保留源采样率; 多输入按最高采样率与最多声道; AAC 单声道 128 / 立体声 192 kbps, Opus 64 / 96 kbps), `pipeline/AudioOperations` (每个输入解码为同一目标格式的 16 位 PCM, 经 P2.2 的 `PcmSinks` 编码; `audioMix` 直接相加, 削波时在 `warnings[]` 报告比例并建议调低音量, 附录 D Q17 (a), 2026-11-06 由 3-slate-p3-1-2 按 Q17 (c) 改为两遍缩放, 见附录 B.2; `audioVolume` 的归一化与淡出先读一遍输入求峰值与时长; `audioSpeed` 用 Sonic; `extractAudio` 输出 wav / flac / ogg 也改走这条路径, m4a 仍走 media3 Transformer). 输出与编码器检查: 能力表 `mediaStudioAudioOutputFormats` 列出可用容器 (ogg 需 API 29+), 缺编码器时 `UNSUPPORTED_FORMAT`. 选项规则写在共享笔记 `3-slate-p2b-notes.md`; 宿主选项预检同步见附录 D Q24 (宿主本地提交 `764b63b765`).
 - 验收: 每种输出格式有仪器测试 (可解码, 时长与声道正确); 混音结果在真机听一次. 结果 (2026-11-06): 通过. AVD_API_35_16K 上 `AudioOperationsTest` 6 例: `audioConvert` 写出 m4a / wav / flac / ogg 的单声道与立体声, 经 `MediaExtractor` + `MediaCodec` 解码核对声道与 3000 ms (容差 150 ms), ogg 为 48 kHz, 重采样到 16 kHz 后 440 Hz 音调仍在 (3 %); 无音轨的视频为 `UNSUPPORTED_FORMAT`; `audioTrim` 的 wav 从第 22050 个样本逐样本一致, m4a 2000 ms, 超出结尾截到结尾, `start` 不早于结尾为 `INVALID_OPTIONS`; `audioConcat` 单声道 44.1 kHz + 立体声 48 kHz 拼成立体声 48 kHz 6000 ms, 三种来源拼成 m4a 9000 ms; `audioMix` 两路各 0.5 倍且第二路偏移 1000 ms 时 4000 ms, 各段峰值符合预期且无削波, 2 倍音量相加时 `warnings[]` 报削波; `audioVolume` 的 0.5 倍增益, 归一化到 -6 dBFS, 1 秒淡入淡出各点电平, flac 4 倍增益报削波; `audioSpeed` 2 倍保持音调约 440 Hz, 不保持约 880 Hz, 0.5 倍 m4a 6000 ms. 试听: `.python/listening_sample.py` 经 `ListeningSampleTest` 在 Sony XQ-AT72 (API 31) 上把 16 秒的三声部 (琶音 44.1 kHz 单声道 WAV, 4 秒进入的低音 22.05 kHz 单声道 FLAC, 鼓 48 kHz 立体声 M4A) 用 `audioMix` 混成 m4a (峰值 -7.05 dBFS, 0 个削波样本), 再用 `audioVolume` 归一化到 -1 dBFS 并淡出 3 秒 (峰值 -1.01 dBFS); 维护者 2026-11-06 在真机试听确认: 无破音或咔哒声, 低音在 4 秒合拍进入, 鼓与琶音对齐, 无失真. 全部单测 156 例通过.
 
 ### P2.6 设备矩阵与性能基线
@@ -354,17 +355,19 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 
 ## P3: 多轨合成
 
-状态: 未开始. 设备: API 35 AVD, Sony XQ-DQ72 API 33, Xiaomi Pad API 35, G8441 API 28 (GL 效果在低端 GPU 的可用性).
+状态: 进行中 (P3.1 已完成; P3.2 待真机目视确认; P3.3 未开始). 设备: API 35 AVD, Sony XQ-DQ72 API 33, Xiaomi Pad API 35, G8441 API 28 (GL 效果在低端 GPU 的可用性).
 
 ### P3.1 时间线 JSON 与 `video.compose` (D33)
 
-- [ ] (插件) 时间线模型与校验 (轨道, 片段, 时间重叠规则, z 顺序), `CompositionBuilder` 把时间线编成 media3 `Composition` (视频轨 -> 序列, 音频轨 -> 音频序列, 叠加 -> `OverlayEffect`, 片段变换 -> `Effects`); `compose` 操作接入 `TaskRunner`; 工程文件 `.slate.json` 读写.
-- 验收: 仪器测试: 两段视频 + 一段音频 + 一个文字叠加的时间线导出成功, 时长 / 轨道 / 叠加位置正确; JSON 校验的错误信息指出字段路径.
+- [x] (插件) 时间线模型与校验 (轨道, 片段, 时间重叠规则, z 顺序), `CompositionBuilder` 把时间线编成 media3 `Composition` (视频轨 -> 序列, 音频轨 -> 音频序列, 叠加 -> `OverlayEffect`, 片段变换 -> `Effects`); `compose` 操作接入 `TaskRunner`; 工程文件 `.slate.json` 读写. 证据 (E1 + E2, 2026-11-06, 3-slate-p3-1-2): 提交见下方 "提交" 行; `core/Timeline.kt` (`TimelineOptions.parse` 提交时校验, 字段路径消息, 4 / 8 轨上限 Q34; `TimelineLayout.resolve` 探测后定位: 同轨不重叠, 重叠转场的 `at`, 转场长度, 默认尺寸), `pipeline/ComposeOperation.kt` (序列 0 为透明时钟图片, 视频轨自上而下, 有重叠转场的轨道拆成两个车道, 车道空档与结尾用 gap 并在合成器设置里隐藏; 非黑背景为拉伸的纯色图片; 时间线叠加物为合成级 `OverlayEffect`; 音频经 `PcmMixer` 两遍混成临时 WAV 再作为音频序列编码), `core/SlateProject.kt` (`.slate.json` = 时间线对象 + `version` + `ui`, 读取时同样校验). 规则全文在附录 B.4 与共享笔记 `3-slate-p3-notes.md`; 宿主预检按附录 D Q24 同步 (宿主本地提交见 "提交" 行).
+- 验收: 仪器测试: 两段视频 + 一段音频 + 一个文字叠加的时间线导出成功, 时长 / 轨道 / 叠加位置正确; JSON 校验的错误信息指出字段路径. 结果 (2026-11-06): 通过. AVD_API_35_16K 上 `ComposeOperationsTest` 11 例中的 P3.1 部分: 彩条 2 s + 蓝色片段 2 s + 偏移 500 ms 的音调音频 + 文字叠加 (`x` 50 %, `y` 20 %, 1 - 3 s) 导出 320x240, 4000 ms (容差 100 ms), 视频与音频各一轨, 两段画面颜色正确, 文字只出现在 y 约 48 处且 3 s 后消失, 音频在 500 ms 前与 3.5 s 后静音; 上层轨道缩放后盖住下层, 下层结束后只剩上层, 无轨道处显示 `background`; 提交时校验与定位错误的消息带字段路径 (`unknown option timeline.video[0].clips[0].volumes`, 任务中的 `timeline.video[0].clips[1].at (1000) must be 2500 ...`), 失败不留半成品文件. JVM `TimelineTest` 9 例 (默认值与来源, 字段路径消息, 定位与转场重叠, 需要媒体的定位错误, 尺寸 / 时长 / 4 与 8 轨上限, GPU 回退替换, 混音来源淡化, 着色器状态, `.slate.json` 读写), 全部单测 166 例通过; 全量 `connectedDebugAndroidTest` 100 例 0 失败 (6 例按门控跳过).
 
 ### P3.2 转场 (D30)
 
-- [ ] (插件) 7 种转场的 GLSL 效果与重叠区间双序列合成; 转场时长校验; 时间线 `transition` 字段与界面转场表同源.
-- 验收: 每种转场在仪器测试里导出 2 秒样本并抽取中间帧比对 (两源各占一定比例); 真机 (含 API 28) 目视一次, 记录 GPU 不支持时的回退 (退为 `dissolve` 或 `cut` 并返回 warning).
+- [x] (插件) 7 种转场的 GLSL 效果与重叠区间双序列合成; 转场时长校验; 时间线 `transition` 字段与界面转场表同源. 证据 (E1 + E2, 2026-11-06, 3-slate-p3-1-2): `core/Timeline.kt` 的 `TransitionType` (7 种的重叠 / 方向 / 着色器属性与 GPU 回退, 界面转场表以它为源), `pipeline/TransitionEffect.kt` (GLSL ES 1.00: 亮度 (fade 经黑场), 擦除遮罩 (wipe), 两遍 15 点高斯模糊 (blur, 最强半径为短边 5 %), 时间按片段自身的第一帧起算), `pipeline/ComposeOperation.kt` 的 `ComposeCompositorSettings` (dissolve / zoom / blur 的上层透明度, zoom 缩放 0.5 -> 1 与 1 -> 1.5, slide 位移). GPU 回退: 导出以帧处理错误失败时先把 wipe / blur 换成 dissolve, fade 换成 cut 重导一次, 仍失败则全部换成 cut, 每次在 `warnings[]` 写一条 (`the GPU of this device failed on the wipe, blur transitions (...); they were exported as dissolve (fade as cut)`).
+- 验收: 每种转场在仪器测试里导出 2 秒样本并抽取中间帧比对 (两源各占一定比例); 真机 (含 API 28) 目视一次, 记录 GPU 不支持时的回退 (退为 `dissolve` 或 `cut` 并返回 warning). 结果 (2026-11-06): 仪器测试通过, 真机目视待维护者确认. AVD_API_35_16K 上 `ComposeOperationsTest` 的 P3.2 部分: 红 / 蓝片段以 1 s 转场接成 2000 ms 样本 (时长容差 100 ms), 转场中点 1 s 处 cut 前后为红 / 蓝, fade 经黑且两侧半亮, dissolve / zoom / blur 中点两源混色, slide (left) 左半为离场红色右半为入场蓝色, wipe (up) 上半红下半蓝, zoom 角落只有离场片段; `failShadersForTest` 模拟 GPU 失败时 wipe 导出为 dissolve 并带回退 warning (JVM `TimelineTest` 核对回退表与位置不变; 第二级 "全部换成 cut" 只有代码路径, 没有单独的用例). 样本: `.python/transition_samples.py` (`TransitionSampleTest`, 9 个样本, 彩条 2 s + 反序彩条 2 s, 转场 1 s) 在 AVD 与 Sony G8441 (API 28, `BH900ASK9E`) 上 9 / 9 PASS, 均无 GPU 回退; AVD 样本按 p = 0.25 / 0.5 / 0.75 抽帧自查方向与混合正确 (模糊转场初版 7x7 采样过弱, 改为两遍高斯后复查). G8441 样本在 `/sdcard/Movies/3-slate-transitions/`, 等维护者目视.
+
+- 提交: 插件 (见看板 "子会话结果"); 宿主 Q24 同步 (本地, 未推送).
 
 ### P3.3 字幕 (D31)
 
@@ -401,7 +404,7 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 ### P4.5 Studio 录音 (D41)
 
 - [ ] (插件) 录音页: 音源 mic / playback / mixed (后两者仅 API 29+ 显示), 格式 M4A / WAV, 采样率 / 声道 / 码率 (默认值同 `audio.record`, 附录 B.2 与 Q1), 电平表, 计时, 暂停 / 恢复 / 停止, 最长时长.
-- [ ] (插件) 投影授权流程与 `mediaProjection` / `microphone` 类型前台服务 (通知含停止按钮, 熄屏可继续); 录音内核照宿主 `core/record/AudioRecorder` (P1.2 产出) 复制, 文件头注明同步来源.
+- [ ] (插件) 投影授权流程与 `mediaProjection` / `microphone` 类型前台服务 (通知含停止按钮, 熄屏可继续); 录音内核照宿主 `core/record/AudioRecorder` (P1.2 产出) 复制, 文件头注明同步来源. P4.5 / P7 的录屏内核副本 (D41) 省略宽高时按附录 D Q33 (a) 的同一规则取默认尺寸 (按编码器 `VideoCapabilities` 向下取对齐倍数, 超上限等比缩小), 与宿主 3-slate-q33 的实现同步.
 - [ ] (插件) 产物进首页列表并可 "送进工具箱" 继续加工; 代码生成 (等价 `audio.record` 代码, D11).
 - 验收: Sony API 31 / 33 真机麦克风与内录各录一段并能被 `probe`; G8441 API 28 内录选项隐藏且麦克风可用; OnePlus ColorOS 后台授权弹窗一次; 单元测试覆盖选项校验与输出命名. 依赖 P4.1 与 P1.2, 可与 P4.3 / P4.4 并行.
 
@@ -525,7 +528,7 @@ AutoJs6-Plugin-Three-Slate-Studio/
 | `video.toGif(src, {start?, end?, fps?, width?, loop?, dither?}, output?)` | 插件 | 转 GIF |
 | `video.extractAudio(src, {format?}, output?)`, `video.removeAudio(src, output?)` | 插件 | 抽音频 / 去音轨 |
 | `video.transcode(src, {codec?, width?, height?, bitRate?, frameRate?, audio?}, output?)` | 插件 | 转码 |
-| `video.compose(timeline, output?, options?)` | 插件 | 多轨合成 (B.4) |
+| `video.compose(timeline, output?, options?)` | 插件 | 多轨合成 (B.4): 至多 4 条视频轨与 8 条音频轨 (附录 D Q34), 7 种转场 (D30); `options` 只有 `codec` / `bitRate`; 合成音轨与 `audio.mix` 同样两遍缩放 (Q17 (c)) |
 | `video.burnSubtitles(src, subtitles, style?, output?)` | 插件 | 烧录字幕 |
 | `video.subtitles.parse(path)`, `video.subtitles.write(path, cues, format?)` | 插件 | 字幕文件读写 |
 | `video.tasks()`, `video.cancelAll()` | 宿主 | 本脚本的进行中任务 |
@@ -540,7 +543,7 @@ AutoJs6-Plugin-Three-Slate-Studio/
 | `audio.record(path?, options?)` | 宿主 | 开始录音 (`source`: mic / playback / mixed, `format`: m4a / wav, `sampleRate`, `channels`, `bitRate`, `maxDuration`, `onStop`), 返回 `AudioRecording` (`stop()`, `cancel()`, `status()`) |
 | `audio.probe(src)` | 插件 | 音频信息 |
 | `audio.trim(src, {start, end?, duration?}, output?)`, `audio.concat(sources[], output?)` | 插件 | 裁剪 / 拼接 |
-| `audio.mix(inputs[], output?, options?)` | 插件 | `inputs[]` 为 `{src, volume?, at?}` |
+| `audio.mix(inputs[], output?, options?)` | 插件 | `inputs[]` 为 `{src, volume?, at?}`; 两遍处理 (附录 D Q17 (c)): 相加后会削波时整体缩放到 -1 dBFS, `warnings[]` 报峰值与缩放量 (例如 `the mix peaked at +6.02 dBFS; it was scaled by -7.02 dB to -1 dBFS to avoid clipping`), 不会削波时保持原电平, 不放大 |
 | `audio.volume(src, {gain?, normalize?, fadeIn?, fadeOut?}, output?)` | 插件 | 音量与淡入淡出 |
 | `audio.convert(src, {format, sampleRate?, channels?, bitRate?}, output?)` | 插件 | 转格式 (m4a / wav / flac / ogg; 1.1.0 加 mp3) |
 | `audio.speed(src, {factor, keepPitch?}, output?)` | 插件 | 变速 |
@@ -577,6 +580,13 @@ AutoJs6-Plugin-Three-Slate-Studio/
 ```
 
 `transition` 写在后一段上 (与前一段的重叠), `type` 取 D30 的 7 种; `at` 省略时紧接前一段; 时间单位毫秒.
+
+定稿规则 (P3.1 / P3.2, 2026-11-06, 详见共享笔记 `3-slate-p3-notes.md`, 宿主按附录 D Q24 照抄提交时的规则):
+
+- 顶层: `width` / `height` 16 - 8192 取偶 (省略时取第一条视频轨第一段裁切与旋转后的尺寸), `frameRate` 整数 1 - 120 (默认 30), `background` 颜色 (默认黑), `video[]` 至多 4 轨, `audio[]` 至多 8 轨 (附录 D Q34), 合计至少 1 个视频片段, 片段总数至多 256; `overlays` 同 `video.overlay` (空数组视为无叠加); `subtitles` 在 P3.3 之前报 `NOT_IMPLEMENTED`. 消息都带自 `timeline.` 起的字段路径, 未知键报错.
+- 片段: `src` 绝对路径; `start` / `end` 为源时间 (end 不含, 省略为源结尾); `speed` 0.25 - 8 (保持音高), `volume` 0 - 16 线性; `transform` 为 `scale`, `rotate` (90 的倍数), `crop`, `flip`, `fit`; `transition` 为 `type`, `duration` 100 - 3000 ms (默认 500), `direction` (left / right / up / down, 只用于 slide / wipe). 音频片段另有 `fadeIn` / `fadeOut`.
+- 定位 (探测之后): 同一轨道片段不重叠, 只有重叠转场 (dissolve / slide / wipe / zoom / blur) 让本段在上一段结尾前 `duration` 开始, 显式 `at` 必须恰好等于该位置; `fade` 经黑场, 不重叠, 两侧各占一半; 转场不得长于前后片段, 首段不能有转场. 轨道顺序即 z 顺序 (`video[0]` 最下), 叠加物在最上. 输出时长为所有片段结尾的最大值.
+- GPU 回退: 着色器转场 (fade / wipe / blur) 导出失败时先把 wipe / blur 换成 dissolve, fade 换成 cut 重导一次, 仍失败则全部换成 cut, 每次在 `warnings[]` 说明.
 
 ### B.5 示例
 
@@ -656,12 +666,12 @@ oneway interface IMediaStudioCallback {
 | Q11 | `release.yml` 只把 APK, `SHA256SUMS` 与索引清单草稿存为 workflow artifact, 不自动建 GitHub Release (影响 P0.3, P5.4) | (a) 保持, 建 Release 与索引登记在 P5.4 手动做 (推荐, 已先行; 改选返工: 无) / (b) 照 ImGui 由 tag 工作流自动建 Release 并上传附件 (加一个发布步骤与 `contents: write`, 返工小) | P5.4 | 已按推荐先行待确认 (2026-11-05, 3-slate-p0) |
 | Q12 | H.265 默认码率 (影响 P2.2 `transcode` / `concat` / `speed` / `transform` 的默认值, 附录 B.1, 脚本文档) | (a) H.264 估算值的 0.6 倍, 1080p30 为 4.8 Mbps (推荐, 已先行; 同画质下 HEVC 约省 40%; 改选返工: 无) / (b) 与 H.264 相同 (1080p30 8 Mbps, 改 `BitRates.estimateVideo` 一行与单测 / 文档, 返工小) | P2.2 | 已决 (2026-11-06, 维护者选 a): 保持 H.264 估算值的 0.6 倍 (1080p30 4.8 Mbps), 已实施. 3-slate-p2-1-2 当时的附录 F 基准: 平滑内容时 H.264 只有 1.57 - 4.15 Mbps (目标 8), H.265 为 2.15 - 4.78 Mbps (目标 4.8), 反而比 H.264 大; 每帧跳位的最坏内容时两台设备的硬件编码器都超出目标 2 - 5 倍; 0.6 倍的目标没有让 H.265 输出稳定变小 |
 | Q13 | HyperOS 默认限制新装应用后台 (`RUN_ANY_IN_BACKGROUND ignore`), 系统静默忽略 `startForeground()`: 长任务照常完成, 但没有前台服务与进度通知, 熄屏或内存紧张时可能被杀 (影响 P2.1 前台服务, P4.1 设置页引导) | (a) 保持: 能力表 `mediaStudioWarnings` 报后台受限 (API 28+ `isBackgroundRestricted`), P4.1 设置页加 "电池无限制" 引导 (推荐, 警告已先行; 改选返工: 无) / (b) 另加首次运行即弹的电池设置引导页 (新 Activity + 10 语言文案, 返工小) | P4.1 | 已决 (2026-11-06, 维护者选 a): 保持能力表警告, P4.1 设置页加 "电池无限制" 引导 (已写进 P4.1 条目) |
-| Q14 | 图片类输出 (`frames` / `frame` / `thumbnail` / `toGif`) 省略输出路径时的默认位置 (D14 只规定了视频与音频) | (a) `/sdcard/Pictures/3-Slate Studio/`, 名称 `<源名>-<操作>-<时间戳>.<ext>`, `frames` 为同名文件夹 (推荐, 已先行; Pictures 是系统的图片标准目录, 相册按图片归类; 改选返工: 无) / (b) 与视频相同放 `/sdcard/Movies/3-Slate Studio/` (改 `OutputKind` 三处与单测, 宿主默认输出同步改, 返工小) | P2.4 | 已按推荐先行待确认 (2026-11-06, 3-slate-p2-3-5) |
-| Q15 | `frames` 单次抽帧上限 (D32 与契约只规定了 GIF 的 600 帧) | (a) 1000 帧, 超出报 `LIMIT_EXCEEDED` 并提示加大 `every` 或设 `count` (推荐, 已先行; 1080p 自然画面 PNG 每帧约 2 - 4 MB, 1000 帧约 2 - 4 GB; 改选返工: 无) / (b) 不设上限, 只按 Q6 在超过 2 GB 时返回 warning (删一处检查与单测, 返工小) / (c) 与 GIF 相同 600 帧 (改一个常量) | P2.4 | 已按推荐先行待确认 (2026-11-06, 3-slate-p2-3-5) |
-| Q16 | 音频操作 (`audioTrim` 等 6 个) 既没有 `options.format` 也没有输出扩展名 (省略输出路径) 时的输出格式 | (a) m4a (AAC), 与默认输出 `Music/3-Slate Studio/<源名>-<操作>-<时间戳>.m4a` 一致 (推荐, 已先行; 所有设备都有 AAC 编码器, 体积小; 改选返工: 无) / (b) 沿用第一个输入的扩展名 (输入为 mp3 / mp4 等无法写出的容器时仍要回退, 改 `audioOutput` 与宿主默认输出, 返工小) | P2.5 | 已按推荐先行待确认 (2026-11-06, 3-slate-p2-3-5) |
-| Q17 | `audioMix` 相加超出 16 位范围时的处理 | (a) 直接相加后硬削波, `warnings[]` 报削波样本比例并建议调低 `tracks[].volume` (推荐, 已先行; 与常见混音器的默认一致, 不改动未削波的电平; 改选返工: 无) / (b) 各路自动除以输入数 (永不削波, 但两路时整体低 6 dB, 改一处与单测) / (c) 两遍: 先求峰值再整体缩放到 -1 dBFS (读两遍输入, 耗时约翻倍) | P2.5 | 已按推荐先行待确认 (2026-11-06, 3-slate-p2-3-5) |
-| Q18 | `audioMix` 的输入数上限 (契约 `MAX_INPUTS` 为 256) | (a) 16 路, 每路一个解码器同时运行, 超出 `LIMIT_EXCEEDED` (推荐, 已先行; 设备硬件解码器实例通常在 16 - 32 个, 超出会随机失败; 改选返工: 无) / (b) 至多 256 路, 超过 16 路时先逐路解码到临时 PCM 文件再相加 (磁盘约 10 MB / 分钟 / 路, 返工中: 约半天, 含宿主预检) | P2.5 | 已按推荐先行待确认 (2026-11-06, 3-slate-p2-3-5) |
-| Q19 | `audioVolume` 的 `gain` 与 `audioMix` 的 `tracks[].volume` 的单位 | (a) 线性倍数 0 - 16 (1 为原样, 0.5 约 -6 dB) (推荐, 已先行; 与附录 B.4 时间线 `volume` (示例 1.0 / 0.4) 的写法一致; 改选返工: 无) / (b) 分贝 (-60 - +24 dB, 改选项名为 `gainDb` 或换算, 宿主同步改, 返工小) | P2.5 | 已按推荐先行待确认 (2026-11-06, 3-slate-p2-3-5) |
+| Q14 | 图片类输出 (`frames` / `frame` / `thumbnail` / `toGif`) 省略输出路径时的默认位置 (D14 只规定了视频与音频) | (a) `/sdcard/Pictures/3-Slate Studio/`, 名称 `<源名>-<操作>-<时间戳>.<ext>`, `frames` 为同名文件夹 (推荐, 已先行; Pictures 是系统的图片标准目录, 相册按图片归类; 改选返工: 无) / (b) 与视频相同放 `/sdcard/Movies/3-Slate Studio/` (改 `OutputKind` 三处与单测, 宿主默认输出同步改, 返工小) | P2.4 | 已决 (2026-11-06 19:45, 维护者选 a): 保持 `/sdcard/Pictures/3-Slate Studio/`, 已实施 |
+| Q15 | `frames` 单次抽帧上限 (D32 与契约只规定了 GIF 的 600 帧) | (a) 1000 帧, 超出报 `LIMIT_EXCEEDED` 并提示加大 `every` 或设 `count` (推荐, 已先行; 1080p 自然画面 PNG 每帧约 2 - 4 MB, 1000 帧约 2 - 4 GB; 改选返工: 无) / (b) 不设上限, 只按 Q6 在超过 2 GB 时返回 warning (删一处检查与单测, 返工小) / (c) 与 GIF 相同 600 帧 (改一个常量) | P2.4 | 已决 (2026-11-06 19:45, 维护者选 a): 保持 1000 帧上限, 已实施 |
+| Q16 | 音频操作 (`audioTrim` 等 6 个) 既没有 `options.format` 也没有输出扩展名 (省略输出路径) 时的输出格式 | (a) m4a (AAC), 与默认输出 `Music/3-Slate Studio/<源名>-<操作>-<时间戳>.m4a` 一致 (推荐, 已先行; 所有设备都有 AAC 编码器, 体积小; 改选返工: 无) / (b) 沿用第一个输入的扩展名 (输入为 mp3 / mp4 等无法写出的容器时仍要回退, 改 `audioOutput` 与宿主默认输出, 返工小) | P2.5 | 已决 (2026-11-06 19:45, 维护者选 a): 保持 m4a, 已实施 |
+| Q17 | `audioMix` 相加超出 16 位范围时的处理 | (a) 直接相加后硬削波, `warnings[]` 报削波样本比例并建议调低 `tracks[].volume` (推荐, 已先行; 与常见混音器的默认一致, 不改动未削波的电平; 改选返工: 无) / (b) 各路自动除以输入数 (永不削波, 但两路时整体低 6 dB, 改一处与单测) / (c) 两遍: 先求峰值再整体缩放到 -1 dBFS (读两遍输入, 耗时约翻倍) | P2.5 | 已决 (2026-11-06 19:45, 维护者选 c, 非推荐): 两遍处理, 先求相加后的峰值, 超过 -1 dBFS 时整体缩放到 -1 dBFS, 未超出时不缩放 (不放大, 保持原电平); `warnings[]` 改报实际缩放量; P3.1 多轨合成的混音共用同一实现. 硬削波 (a) 已由 3-slate-p3-1-2 返工替换, 规则见附录 B.2 与 P2.5 条目 |
+| Q18 | `audioMix` 的输入数上限 (契约 `MAX_INPUTS` 为 256) | (a) 16 路, 每路一个解码器同时运行, 超出 `LIMIT_EXCEEDED` (推荐, 已先行; 设备硬件解码器实例通常在 16 - 32 个, 超出会随机失败; 改选返工: 无) / (b) 至多 256 路, 超过 16 路时先逐路解码到临时 PCM 文件再相加 (磁盘约 10 MB / 分钟 / 路, 返工中: 约半天, 含宿主预检) | P2.5 | 已决 (2026-11-06 19:45, 维护者选 a): 保持 16 路, 已实施 |
+| Q19 | `audioVolume` 的 `gain` 与 `audioMix` 的 `tracks[].volume` 的单位 | (a) 线性倍数 0 - 16 (1 为原样, 0.5 约 -6 dB) (推荐, 已先行; 与附录 B.4 时间线 `volume` (示例 1.0 / 0.4) 的写法一致; 改选返工: 无) / (b) 分贝 (-60 - +24 dB, 改选项名为 `gainDb` 或换算, 宿主同步改, 返工小) | P2.5 | 已决 (2026-11-06 19:45, 维护者选 a): 保持线性倍数 0 - 16, 已实施 |
 | Q20 | 媒体工作室契约 AIDL 与附录 C 草案的差异: 实际为 `PluginInfo getInfo()`, `getCapabilities()` 居第 2, `probe` / `listTasks` 收 `Bundle` | (a) 保持实际定义, 按 speech / alarm 惯例 (推荐) / (b) 改回草案签名 (宿主契约返工) | P1.1 | 已决 (2026-11-05, 维护者确认推荐项 / 保持现状 a): 附录 C 已按实际定义改写 (2026-11-06) |
 | Q21 | Node 纯音频录音 (recorder 模块) 改用内核 `AudioRecorder` 后的两处行为变化: 目标文件改为 stop 时由同目录临时文件移入 (以前 start 即创建并截断目标); MediaRecorder 出错原因由 `recorder-error-<what>-<extra>` 统一为 `recorder-error` | (a) 保持 (推荐, 失败或取消不留文件, 与 P1.3 Rhino 录音一致) / (b) 恢复旧行为 | P1.2 | 已决 (2026-11-05, 维护者选 a): 保持, P1.5 changelog 写明 |
 | Q22 | `video` / `audio` 1.0.0 是否只登记 Rhino 模块 (api-coverage 策略 `media-studio-rhino-only` 标 not-portable) | (a) 保持, 插件引擎桥接以后按需另立条目 (推荐) / (b) 1.0.0 同时桥接 Node 与 Bun | P1.3 | 已决 (2026-11-06, 维护者选 b, 非推荐): 1.0.0 同时桥接 Node 与 Bun, 新增宿主条目 P1.6, api-coverage 策略改 portable (批次 3 宿主卡片 3-slate-p1-6-7) |
@@ -672,6 +682,12 @@ oneway interface IMediaStudioCallback {
 | Q27 | 加工方法必需参数之后的参数映射 | (a) 按类型映射: 字符串 = 输出路径, null / undefined = 默认输出, 对象 = 选项, 函数 = `onProgress` (推荐, 与附录 B.1 写法一致) / (b) 只接受 (输入, 选项) 两参 | P1.3 | 已决 (2026-11-06, 维护者选 a) |
 | Q28 | `CREATE_SCRIPT` 的代码上限: Intent 按 UTF-16 传, 只限 512 KB 时 25 万字符以上的 ASCII 代码会让发送方把宿主杀掉 | (a) 加 200000 字符上限, 发送方先自查 (推荐) / (b) 只保留 512 KB, 协议文档提醒 / (c) 大代码改经 content URI 传 (契约增字段, 插件需 FileProvider) | P1.4 | 已决 (2026-11-06, 维护者选 c, 非推荐): 大代码经 content URI, 内联 `code` 保留 512 KiB / 200000 字符上限; 新增宿主条目 P1.7, 插件 P4.4 加 FileProvider |
 | Q29 | 附录 B.4 时间线 JSON 中 `transition` 的位置 (示例写在前一段上, 说明写 "写在后一段上") | (a) 按说明写在后一段上, 改示例 (推荐, 与 "at 省略时紧接前一段" 一致, 首段没有转场) / (b) 按示例写在前一段上, 改说明 | P3.1 前 | 已决 (2026-11-06, 维护者选 a): 附录 B.4 示例已改 (2026-11-06, 3-slate-p2-3-5) |
+| Q30 | P1.6 的 Node / Bun 门面何时写 (两个运行时插件仓库当时被 3-prism 的门面会话独占, 宿主没有注入门面的通道) | (a) 串行: 先做宿主侧桥接与 P1.7, 仓库空闲后由同一卡片或续接卡写门面, 声明, 测试并做 Node / Bun 真机验收 (推荐) / (b) 门面与真机验收拆为新条目另开卡 / (c) 与 3-prism 门面会话并行改同一仓库 | P1.6 | 已决 (2026-11-06 19:45, 维护者选 a): 门面已由 3-slate-p1-6-7 续做完成 (Node Runtime `0e81048e`, Bun Runtime `f0d85db`), 见 P1.6 证据 |
+| Q31 | `CREATE_SCRIPT` URI 模式的读取上限 | (a) 4 MiB UTF-8 (推荐, 内联上限 512 KiB 的 8 倍, 超过 512 KiB 走编辑器大文件模式) / (b) 16 MiB / (c) 与内联相同 512 KiB | P1.7 | 已决 (2026-11-06 19:45, 维护者选 a): 保持 4 MiB, 插件 P4.4 发送前按此自查 |
+| Q32 | Bun 里 `video.record` / `audio.record` 用哪组授权 (Bun 新授权 `mediastudio.control` 默认关闭, 只放行加工与任务管理) | (a) 复用 Node 录屏授权: `video.record` 需 screen.capture + screen.record, 麦克风需 screen.record.microphone, 内录需 screen.capture + screen.record.playback (推荐) / (b) 新增 mediastudio.record 授权 / (c) 只要 mediastudio.control 即可录制 | P1.6 | 已决 (2026-11-06 19:45, 维护者选 a): 保持, P5 文档授权表按此写 |
+| Q33 | `video.record` 省略 `width` / `height` 时默认用截图尺寸取偶数, 在要求 16 对齐或有宏块上限的编码器上必失败 (Redmi 22120RN86C 屏幕 720x1650, 默认调用报 `INVALID_OPTIONS: No H.264 encoder supports 720x1650`, 显式 720x1648 正常) | (a) 默认尺寸按编码器能力取: 查 `MediaCodecList` 的 `VideoCapabilities`, 向下取到对齐倍数, 超上限时等比缩小; 显式宽高不受支持时仍报 `INVALID_OPTIONS` 并在消息里给出可用尺寸 (推荐) / (b) 默认尺寸固定向下取 16 的倍数, 不查编码器 / (c) 保持, 只在文档写明 | P1.3 | 已决 (2026-11-06 19:45, 维护者选 a): 宿主 `core/record` 一处修改, Rhino / Node / Bun 共用, 由宿主卡片 3-slate-q33 实施; 插件录屏 / 录音内核副本 (D41, P4.5 / P7) 实现时按同一规则取默认尺寸 |
+
+| Q34 | `compose` 时间线的轨道上限 (契约只限 256 个输入) | (a) 视频轨至多 4 条, 音频轨至多 8 条, 超出 `LIMIT_EXCEEDED` (推荐, 已先行; 重叠转场时每条视频轨同时解码 2 段, 4 x 2 + 8 = 16 个来源同时发声, 与 `audioMix` 的 16 路解码器上限 (Q18) 一致; 改选返工: 无) / (b) 不限轨道数, 改为检查任一时刻同时发声的来源不超过 16 (要在探测后逐时刻统计, 宿主无法预检, 返工小) / (c) 视频 8 条, 音频 16 条 (同时解码可达 32 个, 低端设备易随机失败) | P3.1 | 已按推荐先行待确认 (2026-11-06, 3-slate-p3-1-2): 插件与宿主预检均已实施 |
 
 ## 附录 E. 证据等级
 

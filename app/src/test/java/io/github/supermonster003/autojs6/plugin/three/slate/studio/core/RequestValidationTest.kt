@@ -49,8 +49,8 @@ class RequestValidationTest {
         }
         assertEquals(
             "operations without inputs reach the operation check",
-            RequestValidation.notImplemented(MediaStudioOps.COMPOSE),
-            RequestValidation.rejection(MediaStudioOps.COMPOSE, emptyList(), null),
+            RequestValidation.notImplemented(MediaStudioOps.BURN_SUBTITLES),
+            RequestValidation.rejection(MediaStudioOps.BURN_SUBTITLES, emptyList(), null),
         )
     }
 
@@ -66,7 +66,7 @@ class RequestValidationTest {
     }
 
     @Test
-    fun `P2 implements probe and the basic operations, later operations answer NOT_IMPLEMENTED`() {
+    fun `P2 and P3_1 implement probe, the basic operations and compose, later operations answer NOT_IMPLEMENTED`() {
         val implemented = listOf(
             MediaStudioOps.PROBE,
             MediaStudioOps.TRIM,
@@ -81,6 +81,7 @@ class RequestValidationTest {
             MediaStudioOps.FRAME,
             MediaStudioOps.THUMBNAIL,
             MediaStudioOps.TO_GIF,
+            MediaStudioOps.COMPOSE,
             MediaStudioOps.AUDIO_PROBE,
             MediaStudioOps.AUDIO_TRIM,
             MediaStudioOps.AUDIO_CONCAT,

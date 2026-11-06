@@ -20,12 +20,12 @@ import java.util.Locale
  * The audio operations of roadmap P2.5 (D15) and `extractAudio` to WAV / FLAC / OGG: every input is decoded to 16-bit
  * PCM in one target format ([AudioTargets], [DecodedAudio]), processed and encoded through [PcmSinks].
  * `audioTrim` cuts in source time, `audioConcat` appends, `audioMix` sums the inputs with their volume and start offset
- * (a plain sum, clipping is reported in `warnings`, appendix D Q17 (a)), `audioVolume` applies a linear gain or peak
+ * in two passes ([PcmMixer]: a sum that would clip is scaled down to -1 dBFS, appendix D Q17 (c)), `audioVolume` applies a linear gain or peak
  * normalization and linear fades (normalization and fade out read the input twice), `audioSpeed` runs Sonic (pitch kept
  * or shifted with the speed), `audioConvert` re-encodes.
  * zh-CN: 路线图 P2.5 (D15) 的音频操作以及 `extractAudio` 输出 WAV / FLAC / OGG: 每个输入都解码为同一目标格式的 16 位 PCM
  * ([AudioTargets], [DecodedAudio]), 加工后经 [PcmSinks] 编码. `audioTrim` 按源时间裁剪, `audioConcat` 依次拼接, `audioMix`
- * 按各输入的音量与起点相加 (直接相加, 削波在 `warnings` 中报告, 附录 D Q17 (a)), `audioVolume` 施加线性增益或峰值归一化以及
+ * 按各输入的音量与起点分两遍相加 ([PcmMixer]: 会削波的和整体缩放到 -1 dBFS, 附录 D Q17 (c)), `audioVolume` 施加线性增益或峰值归一化以及
  * 线性淡入淡出 (归一化与淡出会把输入读两遍), `audioSpeed` 运行 Sonic (保持音调或随速度变调), `audioConvert` 重新编码.
  */
 internal class AudioOperations(private val task: TaskRunner.JobContext, private val notes: MutableList<String>) {
@@ -163,63 +163,36 @@ internal class AudioOperations(private val task: TaskRunner.JobContext, private 
     }
 
     /**
-     * Sums the inputs in blocks of [MIX_FRAMES] frames; each input starts at its offset, the output lasts until the last
-     * input ends (appendix D Q17 (a), Q18 (a)).
-     * zh-CN: 以 [MIX_FRAMES] 帧为一块把各输入相加; 每个输入从自己的起点开始, 输出持续到最后一个输入结束 (附录 D Q17 (a), Q18 (a)).
+     * Sums the inputs at their offsets with [PcmMixer] in two passes (appendix D Q17 (c), Q18 (a)): the first finds the
+     * peak, the second writes the sum, scaled down to -1 dBFS only when it would clip; the output lasts until the last
+     * input ends.
+     * zh-CN: 用 [PcmMixer] 分两遍按各输入的起点相加 (附录 D Q17 (c), Q18 (a)): 第一遍求峰值, 第二遍写出, 仅在会削波时整体缩放到
+     * -1 dBFS; 输出持续到最后一个输入结束.
      */
     private fun mix(spec: OperationSpec.AudioMix, inputs: List<MediaInfo>, output: String, progress: Progress) {
         val (rate, sourceChannels) = AudioTargets.common(inputs.map { it.sampleRate }, inputs.map { it.channels })
         val target = AudioTargets.of(spec.container, spec.audio, rate, sourceChannels)
-        val channels = target.channels
-        val tracks = ArrayList<MixInput>(inputs.size)
-        try {
-            inputs.forEachIndexed { index, input ->
-                val track = spec.tracks[index]
-                tracks += MixInput(DecodedAudio(task, input.path) { target }, track.volume.toFloat(), AudioTargets.frames(track.atMillis, target.sampleRate), channels)
-            }
-            val expected = inputs.indices.maxOf { tracks[it].offsetFrames + AudioTargets.frames(inputs[it].durationMillis, target.sampleRate) }.coerceAtLeast(1L)
-            val sum = FloatArray(MIX_FRAMES * channels)
-            val block = ShortArray(MIX_FRAMES * channels)
-            var position = 0L
-            var clipped = 0L
-            Output(spec, output).use { out ->
-                out.open(target, sourceChannels)
-                while (true) {
-                    task.throwIfCancelled()
-                    sum.fill(0f)
-                    var length = 0
-                    for (track in tracks) {
-                        val start = track.offsetFrames - position
-                        if (start >= MIX_FRAMES) {
-                            // Still to come: the block is silence for it. zh-CN: 尚未开始: 本块对它是静音.
-                            length = MIX_FRAMES
-                            continue
-                        }
-                        val first = maxOf(start, 0L).toInt()
-                        var frame = first
-                        while (frame < MIX_FRAMES) {
-                            val at = frame * channels
-                            val taken = track.take(MIX_FRAMES - frame) { samples, from, frames ->
-                                PcmMath.accumulate(sum, at, samples, from, frames * channels, track.volume)
-                            }
-                            if (taken == 0) break
-                            frame += taken
-                        }
-                        if (frame > first || !track.exhausted) length = maxOf(length, frame)
-                    }
-                    if (length == 0) break
-                    clipped += PcmMath.clip(sum, length * channels, block)
-                    out.write(block, length * channels)
-                    position += length
-                    progress.report(position.toDouble() / expected)
-                }
-                if (position == 0L) throw Codecs.error("no audio samples were decoded from the inputs")
-                if (clipped > 0) notes += clippedNote(clipped, position * channels, "lower the track volumes")
-                out.finish("no audio samples were decoded from the inputs")
-            }
-        } finally {
-            tracks.forEach { it.source.close() }
+        val sources = inputs.mapIndexed { index, input ->
+            val track = spec.tracks[index]
+            MixSource(
+                path = input.path,
+                volume = track.volume.toFloat(),
+                offsetFrames = AudioTargets.frames(track.atMillis, target.sampleRate),
+            )
         }
+        val expected = inputs.indices.maxOf { sources[it].offsetFrames + AudioTargets.frames(inputs[it].durationMillis, target.sampleRate) }
+        val mixer = PcmMixer(task, target, sources, expected = expected)
+        val scan = progress.part(0.0, PcmMixer.ANALYSIS_SHARE)
+        val analysis = mixer.analyze(scan::report)
+        if (analysis.frames == 0L) throw Codecs.error("no audio samples were decoded from the inputs")
+        val write = progress.part(PcmMixer.ANALYSIS_SHARE, 1.0)
+        Output(spec, output).use { out ->
+            out.open(target, sourceChannels)
+            val frames = mixer.write(analysis.scale, write::report) { samples, count -> out.write(samples, count) }
+            if (frames != analysis.frames) throw Codecs.error("the second pass of the mix decoded $frames frames, the first ${analysis.frames}")
+            out.finish("no audio samples were decoded from the inputs")
+        }
+        PcmMixer.scaledNote(analysis)?.let { notes += it }
     }
 
     private fun targetOf(spec: OperationSpec.AudioOutput, source: PcmFormat): AudioTargets.Target =
@@ -279,48 +252,10 @@ internal class AudioOperations(private val task: TaskRunner.JobContext, private 
 
     }
 
-    /** One input of [mix] and its unread samples. zh-CN: [mix] 的一个输入及其未读样本. */
-    private class MixInput(val source: DecodedAudio, val volume: Float, val offsetFrames: Long, private val channels: Int) {
-
-        private var chunk: ShortArray? = null
-
-        private var index = 0
-
-        var exhausted = false
-            private set
-
-        /**
-         * Up to [frames] frames, handed to [use] as (samples, first sample, frame count); 0 at the end of the input.
-         * zh-CN: 至多 [frames] 帧, 以 (样本, 首样本下标, 帧数) 交给 [use]; 输入结束时返回 0.
-         */
-        fun take(frames: Int, use: (ShortArray, Int, Int) -> Unit): Int {
-            var current = chunk
-            while (current == null || current.size - index < channels) {
-                if (exhausted) return 0
-                current = source.read()
-                if (current == null) {
-                    exhausted = true
-                    chunk = null
-                    return 0
-                }
-                chunk = current
-                index = 0
-            }
-            val count = minOf(frames, (current.size - index) / channels)
-            use(current, index, count)
-            index += count * channels
-            return count
-        }
-
-    }
-
     companion object {
 
         /** Share of the progress for the first pass of `audioVolume`. zh-CN: `audioVolume` 第一遍读取所占的进度份额. */
         const val ANALYSIS_SHARE = 0.4
-
-        /** Frames per mix block. zh-CN: 每个混音块的帧数. */
-        const val MIX_FRAMES = 4_096
 
         private const val INITIAL_BUFFER_BYTES = 64 * 1024
 

@@ -274,7 +274,8 @@ internal object OverlayOptions {
         return if (percent) Length.Percent(value) else Length.Pixels(value)
     }
 
-    private fun OptionReader.color(key: String): Int? {
+    /** A color option (see [Colors]). zh-CN: 颜色选项 (见 [Colors]). */
+    fun OptionReader.color(key: String): Int? {
         val raw = numberOrString(key) ?: return null
         return when (raw) {
             is String -> Colors.parse(raw) ?: throw MediaStudioException.invalid(
