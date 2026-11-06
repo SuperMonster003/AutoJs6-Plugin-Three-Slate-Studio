@@ -203,7 +203,7 @@ io.github.supermonster003.autojs6.plugin.three.slate.studio
 | P0 | 1.0.0 | 仓库骨架: 构建链与身份, Icon Studio 图标, 测试与 CI | 已完成 (2026-11-05; 剩真机图标目视 E4 待维护者, Q9 - Q11 已按推荐先行待确认) |
 | P1 | 宿主 6.8.1 (本地构建号, D23) | 契约 `media-studio-api`, 录屏 / 录音内核泛化, 脚本模块 `video` / `audio`, `CREATE_SCRIPT` 入口, 注册与协议文档 | P1.1-P1.7 已完成 (2026-11-06), 宿主与 Node / Bun 仓库本地提交未推送 |
 | P2 | 1.0.0 | 插件加工核心: 执行器与任务模型, 视频基础加工, 叠加, 抽帧与 GIF, 音频加工, 设备矩阵 | 进行中 (P2.1 - P2.5 已完成 2026-11-06; 剩 P2.6) |
-| P3 | 1.0.0 | 多轨合成: 时间线 JSON 与 `video.compose`, 转场, 字幕 | 进行中 (P3.1 已完成, P3.2 实现与 AVD / G8441 样本完成, 待维护者真机目视确认 (2026-11-06); 剩 P3.3) |
+| P3 | 1.0.0 | 多轨合成: 时间线 JSON 与 `video.compose`, 转场, 字幕 | 进行中 (P3.1 - P3.2 已完成 (2026-11-06); 剩 P3.3) |
 | P4 | 1.0.0 | Studio 界面: 应用骨架, 工具箱向导, 时间线剪辑器, 代码生成与宿主入口, Studio 录音 | 未开始 |
 | P5 | 1.0.0 | 文档, 声明, 四仓库同步, 样例, 兼容矩阵, 发布与索引登记 | 未开始 |
 | P6 | 1.1.0 | FFmpeg + libass 大库: 自建或选型, Shared-Assets 类别, 下载 / 校验 / 加载, 命令透传, 新格式, 完整 ASS, 发布 | 未开始 |
@@ -355,7 +355,7 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 
 ## P3: 多轨合成
 
-状态: 进行中 (P3.1 已完成; P3.2 待真机目视确认; P3.3 未开始). 设备: API 35 AVD, Sony XQ-DQ72 API 33, Xiaomi Pad API 35, G8441 API 28 (GL 效果在低端 GPU 的可用性).
+状态: 进行中 (P3.1 - P3.2 已完成; P3.3 未开始). 设备: API 35 AVD, Sony XQ-DQ72 API 33, Xiaomi Pad API 35, G8441 API 28 (GL 效果在低端 GPU 的可用性).
 
 ### P3.1 时间线 JSON 与 `video.compose` (D33)
 
@@ -365,9 +365,9 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 ### P3.2 转场 (D30)
 
 - [x] (插件) 7 种转场的 GLSL 效果与重叠区间双序列合成; 转场时长校验; 时间线 `transition` 字段与界面转场表同源. 证据 (E1 + E2, 2026-11-06, 3-slate-p3-1-2): `core/Timeline.kt` 的 `TransitionType` (7 种的重叠 / 方向 / 着色器属性与 GPU 回退, 界面转场表以它为源), `pipeline/TransitionEffect.kt` (GLSL ES 1.00: 亮度 (fade 经黑场), 擦除遮罩 (wipe), 两遍 15 点高斯模糊 (blur, 最强半径为短边 5 %), 时间按片段自身的第一帧起算), `pipeline/ComposeOperation.kt` 的 `ComposeCompositorSettings` (dissolve / zoom / blur 的上层透明度, zoom 缩放 0.5 -> 1 与 1 -> 1.5, slide 位移). GPU 回退: 导出以帧处理错误失败时先把 wipe / blur 换成 dissolve, fade 换成 cut 重导一次, 仍失败则全部换成 cut, 每次在 `warnings[]` 写一条 (`the GPU of this device failed on the wipe, blur transitions (...); they were exported as dissolve (fade as cut)`).
-- 验收: 每种转场在仪器测试里导出 2 秒样本并抽取中间帧比对 (两源各占一定比例); 真机 (含 API 28) 目视一次, 记录 GPU 不支持时的回退 (退为 `dissolve` 或 `cut` 并返回 warning). 结果 (2026-11-06): 仪器测试通过, 真机目视待维护者确认. AVD_API_35_16K 上 `ComposeOperationsTest` 的 P3.2 部分: 红 / 蓝片段以 1 s 转场接成 2000 ms 样本 (时长容差 100 ms), 转场中点 1 s 处 cut 前后为红 / 蓝, fade 经黑且两侧半亮, dissolve / zoom / blur 中点两源混色, slide (left) 左半为离场红色右半为入场蓝色, wipe (up) 上半红下半蓝, zoom 角落只有离场片段; `failShadersForTest` 模拟 GPU 失败时 wipe 导出为 dissolve 并带回退 warning (JVM `TimelineTest` 核对回退表与位置不变; 第二级 "全部换成 cut" 只有代码路径, 没有单独的用例). 样本: `.python/transition_samples.py` (`TransitionSampleTest`, 9 个样本, 彩条 2 s + 反序彩条 2 s, 转场 1 s) 在 AVD 与 Sony G8441 (API 28, `BH900ASK9E`) 上 9 / 9 PASS, 均无 GPU 回退; AVD 样本按 p = 0.25 / 0.5 / 0.75 抽帧自查方向与混合正确 (模糊转场初版 7x7 采样过弱, 改为两遍高斯后复查). G8441 样本在 `/sdcard/Movies/3-slate-transitions/`, 等维护者目视.
+- 验收: 每种转场在仪器测试里导出 2 秒样本并抽取中间帧比对 (两源各占一定比例); 真机 (含 API 28) 目视一次, 记录 GPU 不支持时的回退 (退为 `dissolve` 或 `cut` 并返回 warning). 结果 (2026-11-06): 通过 (仪器测试通过, 维护者在 G8441 上目视 9 个样本正常). AVD_API_35_16K 上 `ComposeOperationsTest` 的 P3.2 部分: 红 / 蓝片段以 1 s 转场接成 2000 ms 样本 (时长容差 100 ms), 转场中点 1 s 处 cut 前后为红 / 蓝, fade 经黑且两侧半亮, dissolve / zoom / blur 中点两源混色, slide (left) 左半为离场红色右半为入场蓝色, wipe (up) 上半红下半蓝, zoom 角落只有离场片段; `failShadersForTest` 模拟 GPU 失败时 wipe 导出为 dissolve 并带回退 warning (JVM `TimelineTest` 核对回退表与位置不变; 第二级 "全部换成 cut" 只有代码路径, 没有单独的用例). 样本: `.python/transition_samples.py` (`TransitionSampleTest`, 9 个样本, 彩条 2 s + 反序彩条 2 s, 转场 1 s) 在 AVD 与 Sony G8441 (API 28, `BH900ASK9E`) 上 9 / 9 PASS, 均无 GPU 回退; AVD 样本按 p = 0.25 / 0.5 / 0.75 抽帧自查方向与混合正确 (模糊转场初版 7x7 采样过弱, 改为两遍高斯后复查). 维护者 2026-11-06 在 G8441 上目视确认 9 个样本正常, 之后样本已删除.
 
-- 提交: 插件 (见看板 "子会话结果"); 宿主 Q24 同步 (本地, 未推送).
+- 提交: 插件 `26c60f7` (P3.1, P3.2, Q17 (c)); 宿主 `025ec4dffe` (Q24 同步 compose 预检, 本地, 未推送).
 
 ### P3.3 字幕 (D31)
 
