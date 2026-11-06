@@ -34,9 +34,9 @@ object ThreeSlateStudioContract {
     const val CONTRACT_VERSION = MediaStudioContract.CONTRACT_VERSION
 
     /**
-     * Operations the plugin implements (roadmap P2.1 - P2.5): `probe` and `audioProbe` through `probe()`, the others
+     * Operations the plugin implements (roadmap P2.1 - P2.5, P3.1 - P3.3): `probe` and `audioProbe` through `probe()`, the others
      * through `submit`; every other contract operation answers `INVALID_OPTIONS: NOT_IMPLEMENTED`.
-     * zh-CN: 插件已实现的操作 (路线图 P2.1 - P2.5): `probe` 与 `audioProbe` 经 `probe()`, 其余经 `submit`; 其他契约操作回答
+     * zh-CN: 插件已实现的操作 (路线图 P2.1 - P2.5, P3.1 - P3.3): `probe` 与 `audioProbe` 经 `probe()`, 其余经 `submit`; 其他契约操作回答
      * `INVALID_OPTIONS: NOT_IMPLEMENTED`.
      */
     val IMPLEMENTED_OPS: List<String> = listOf(
@@ -54,6 +54,9 @@ object ThreeSlateStudioContract {
         MediaStudioOps.THUMBNAIL,
         MediaStudioOps.TO_GIF,
         MediaStudioOps.COMPOSE,
+        MediaStudioOps.BURN_SUBTITLES,
+        MediaStudioOps.SUBTITLES_PARSE,
+        MediaStudioOps.SUBTITLES_WRITE,
         MediaStudioOps.AUDIO_PROBE,
         MediaStudioOps.AUDIO_TRIM,
         MediaStudioOps.AUDIO_CONCAT,

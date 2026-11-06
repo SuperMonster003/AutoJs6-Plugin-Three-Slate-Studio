@@ -40,6 +40,8 @@ import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.MediaInf
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.MediaStudioException
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.OperationSpec
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.PlacedVideo
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.SubtitleFiles
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.SubtitleWarnings
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.TaskRunner
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.TimelineLayout
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.Transition
@@ -92,6 +94,9 @@ internal class ComposeOperation(
 
     private val resources = mutableListOf<Closeable>()
 
+    /** The `subtitles` of the timeline, loaded once for every export attempt. zh-CN: 时间线的 `subtitles`, 只加载一次, 供每次导出尝试使用. */
+    private var painter: SubtitlePainter? = null
+
     fun run(spec: OperationSpec.Compose, inputs: List<MediaInfo>, output: String, from: Double, to: Double) {
         val probed = inputs.associateBy { it.path }
         val layout = TimelineLayout.resolve(spec.timeline) { path ->
@@ -101,6 +106,15 @@ internal class ComposeOperation(
             if (item.placement.fromMillis >= layout.durationMillis) {
                 notes += "timeline.overlays[$index] starts at ${item.placement.fromMillis} ms, after the end of the timeline (${layout.durationMillis} ms); it never shows"
             }
+        }
+        layout.subtitles?.let { subtitles ->
+            val warnings = SubtitleWarnings()
+            val track = SubtitleFiles.load(subtitles.source, warnings)
+            painter = SubtitlePainter(track, subtitles.style, warnings)
+            if (track.cues.none { it.startMillis < layout.durationMillis }) {
+                notes += "no cue of timeline.subtitles starts before the end of the timeline (${layout.durationMillis} ms); none shows"
+            }
+            notes += warnings.list()
         }
         try {
             val audioEnd = from + (to - from) * AUDIO_SHARE
@@ -246,8 +260,8 @@ internal class ComposeOperation(
             val item = EditedMediaItem.Builder(MediaItem.fromUri(Uri.fromFile(file))).setRemoveVideo(true).build()
             sequences += EditedMediaItemSequence.Builder(setOf(C.TRACK_TYPE_AUDIO)).addItem(item).build()
         }
-        val effects = if (layout.overlays.isEmpty()) Effects.EMPTY else {
-            val renderer = OverlayRenderer(layout.overlays, FrameSize(layout.width, layout.height)).also { resources += it }
+        val effects = if (layout.overlays.isEmpty() && painter == null) Effects.EMPTY else {
+            val renderer = OverlayRenderer(layout.overlays, FrameSize(layout.width, layout.height), painter).also { resources += it }
             Effects(emptyList(), listOf<Effect>(OverlayEffect(listOf(renderer.overlay()))))
         }
         return Composition.Builder(sequences)

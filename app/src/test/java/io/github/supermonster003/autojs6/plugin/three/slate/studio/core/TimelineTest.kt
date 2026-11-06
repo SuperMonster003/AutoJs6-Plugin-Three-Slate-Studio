@@ -90,12 +90,19 @@ class TimelineTest {
         rejected("timeline.overlays[0].type is required") {
             TimelineOptions.parse(timeline("video" to listOf(track(clip(a))), "overlays" to listOf(mapOf("text" to "x"))))
         }
-        rejected("NOT_IMPLEMENTED: timeline.subtitles (roadmap P3.3)") {
-            TimelineOptions.parse(timeline("video" to listOf(track(clip(a))), "subtitles" to mapOf("src" to "/a.srt")))
+        // timeline.subtitles (roadmap P3.3): src or cues, and a style. zh-CN: timeline.subtitles (路线图 P3.3): src 或 cues, 以及样式.
+        val subtitled = TimelineOptions.parse(timeline("video" to listOf(track(clip(a))), "subtitles" to mapOf("src" to "/a.srt", "style" to mapOf("fontSize" to 40L))))
+        assertEquals(SubtitleSource.File("/a.srt"), subtitled.subtitles?.source)
+        assertEquals(40.0, subtitled.subtitles?.style?.fontSize)
+        rejected("timeline.subtitles needs timeline.subtitles.src or timeline.subtitles.cues") {
+            TimelineOptions.parse(timeline("video" to listOf(track(clip(a))), "subtitles" to mapOf("style" to mapOf("fontSize" to 40L))))
+        }
+        rejected("unknown option timeline.subtitles.style.codec") {
+            TimelineOptions.parse(timeline("video" to listOf(track(clip(a))), "subtitles" to mapOf("src" to "/a.srt", "style" to mapOf("codec" to "h264"))))
         }
         rejected("unknown option timeline.tracks") { TimelineOptions.parse(timeline("video" to listOf(track(clip(a))), "tracks" to 1L)) }
-        rejected("timeline.video holds 5 tracks, at most 4", MediaStudioErrorCodes.LIMIT_EXCEEDED) {
-            TimelineOptions.parse(timeline("video" to List(5) { track(clip(a)) }))
+        rejected("timeline.video holds 9 tracks, at most 8", MediaStudioErrorCodes.LIMIT_EXCEEDED) {
+            TimelineOptions.parse(timeline("video" to List(9) { track(clip(a)) }))
         }
         // An empty overlay array is accepted (the editor may save one). zh-CN: 接受空叠加数组 (编辑器可能保存空数组).
         assertEquals(emptyList<OverlayItem>(), TimelineOptions.parse(timeline("video" to listOf(track(clip(a))), "overlays" to emptyList<Any>())).overlays)
@@ -176,10 +183,10 @@ class TimelineTest {
         assertEquals(500 to 1000, rotated.width to rotated.height)
         val widthOnly = layout(timeline("width" to 961L, "video" to listOf(track(clip(a)))))
         assertEquals("even, aspect of the first clip", 960 to 540, widthOnly.width to widthOnly.height)
-        // 4 video tracks (two clips at once in a transition) and 8 audio tracks keep the decoders of the mix at 16.
-        // zh-CN: 4 条视频轨 (转场时同时两段) 与 8 条音频轨使混音解码器不超过 16 个.
-        rejected("timeline.audio holds 9 tracks, at most 8", MediaStudioErrorCodes.LIMIT_EXCEEDED) {
-            TimelineOptions.parse(timeline("video" to listOf(track(clip(a))), "audio" to List(9) { track(clip(music)) }))
+        // 8 video tracks and 16 audio tracks are the limits (appendix D Q34 (c)). zh-CN: 视频轨 8 条, 音频轨 16 条为上限 (附录 D Q34 (c)).
+        TimelineOptions.parse(timeline("video" to List(8) { track(clip(a)) }, "audio" to List(16) { track(clip(music)) }))
+        rejected("timeline.audio holds 17 tracks, at most 16", MediaStudioErrorCodes.LIMIT_EXCEEDED) {
+            TimelineOptions.parse(timeline("video" to listOf(track(clip(a))), "audio" to List(17) { track(clip(music)) }))
         }
     }
 

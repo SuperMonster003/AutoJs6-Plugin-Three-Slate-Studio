@@ -19,6 +19,13 @@ internal enum class OutputKind(val parent: String) {
 
     /** `frames` writes a folder of images. zh-CN: `frames` 写出一个图片文件夹. */
     DIRECTORY(OutputPaths.PICTURES_PARENT),
+
+    /**
+     * `subtitlesWrite` writes an SRT or ASS file to the path the script names (no default); `subtitlesParse` writes nothing.
+     * zh-CN: `subtitlesWrite` 写出脚本指定路径的 SRT 或 ASS 文件 (无默认输出); `subtitlesParse` 不写文件.
+     */
+    SUBTITLE(OutputPaths.VIDEO_PARENT),
+    NONE(OutputPaths.VIDEO_PARENT),
     ;
 
     companion object {
@@ -28,6 +35,8 @@ internal enum class OutputKind(val parent: String) {
             MediaStudioOps.FRAMES -> DIRECTORY
             MediaStudioOps.FRAME, MediaStudioOps.THUMBNAIL -> IMAGE
             MediaStudioOps.TO_GIF -> GIF
+            MediaStudioOps.SUBTITLES_WRITE -> SUBTITLE
+            MediaStudioOps.SUBTITLES_PARSE -> NONE
             else -> VIDEO
         }
     }

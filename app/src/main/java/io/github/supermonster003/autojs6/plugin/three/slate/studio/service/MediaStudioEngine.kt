@@ -101,9 +101,10 @@ internal class MediaStudioEngine private constructor(private val context: Contex
             runner.submit(
                 tokenKey = tokenKey,
                 op = planned.op,
-                output = planned.output,
+                output = planned.output.ifEmpty { null },
                 origin = planned.origin,
-                claims = listOf(planned.output),
+                // subtitlesParse writes nothing and claims no path. zh-CN: subtitlesParse 不写文件, 不占用路径.
+                claims = listOfNotNull(planned.output.ifEmpty { null }),
                 job = OperationJob(context, planned),
                 listener = listener,
             )

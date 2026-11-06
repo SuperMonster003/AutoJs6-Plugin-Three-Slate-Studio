@@ -109,6 +109,8 @@ internal class RequestPlanner(
         val kind = OutputKind.of(op)
         var options = envelope.options
         var explicitOutput = envelope.output?.takeIf { it.isNotBlank() }
+        if (kind == OutputKind.NONE) return planReadOnly(op, inputs, explicitOutput, options, origin)
+        if (explicitOutput == null && kind == OutputKind.SUBTITLE) throw MediaStudioException.invalid("$op needs an output path")
         if (explicitOutput != null && kind == OutputKind.DIRECTORY) {
             if (!explicitOutput.startsWith("/")) throw MediaStudioException.invalid("output must be an absolute folder path, got $explicitOutput")
             explicitOutput = explicitOutput.trimEnd('/').ifEmpty { "/" }
@@ -151,6 +153,27 @@ internal class RequestPlanner(
     }
 
     /**
+     * `subtitlesParse`: reads its input and writes nothing, so there is no output to check or claim (the task output is
+     * empty).
+     * zh-CN: `subtitlesParse`: 读取输入, 不写文件, 因此没有要检查或占用的输出 (任务输出为空).
+     */
+    private fun planReadOnly(op: String, inputs: List<String>, output: String?, options: Map<String, Any?>, origin: String): PlannedTask {
+        if (output != null) throw MediaStudioException.invalid("$op writes no file; leave out the output, got $output")
+        val spec = OperationOptions.parse(op, inputs.size, options)
+        inputs.firstOrNull(lacksStorageAccess)?.let { path ->
+            throw MediaStudioException(
+                MediaStudioErrorCodes.STORAGE_PERMISSION_DENIED,
+                "the plugin needs all files access for $path; grant it in the 3-Slate Studio storage screen",
+            )
+        }
+        inputs.forEach { input ->
+            if (!files.isFile(input)) throw MediaStudioException.io("input not found: $input")
+            if (!files.isReadableFile(input)) throw MediaStudioException.io("input is not readable: $input")
+        }
+        return PlannedTask(op, inputs, "", spec, origin, registerMedia = false)
+    }
+
+    /**
      * The options with `format` filled from the output [name], after checking its extension against [kind].
      * zh-CN: 按 [kind] 检查输出 [name] 的扩展名后, 返回由扩展名补上 `format` 的选项.
      */
@@ -181,7 +204,12 @@ internal class RequestPlanner(
             OutputKind.VIDEO -> options.also {
                 if (extension != VIDEO_EXTENSION) throw MediaStudioException.unsupported("video output must end with .$VIDEO_EXTENSION, got $name")
             }
-            OutputKind.DIRECTORY -> options
+            OutputKind.SUBTITLE -> {
+                val format = SubtitleFormat.entries.firstOrNull { it.extension == extension }
+                    ?: throw MediaStudioException.unsupported("subtitle output must end with .srt or .ass, got $name")
+                filled(format.id, SubtitleFormat.IDS) { it == format.id }
+            }
+            OutputKind.DIRECTORY, OutputKind.NONE -> options
         }
     }
 
@@ -211,6 +239,7 @@ internal class RequestPlanner(
             is OperationSpec.Transcode -> spec.video
             is OperationSpec.Overlay -> spec.video
             is OperationSpec.Compose -> spec.video
+            is OperationSpec.BurnSubtitles -> spec.video
             else -> null
         }
         if (video?.codec == VideoCodec.H265 && EncoderIds.H265 !in encoders) {

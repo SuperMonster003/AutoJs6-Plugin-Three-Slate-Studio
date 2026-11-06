@@ -2,6 +2,7 @@ package io.github.supermonster003.autojs6.plugin.three.slate.studio.pipeline
 
 import android.content.Context
 import android.os.Bundle
+import android.os.Parcel
 import android.util.Log
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.AudioContainer
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.MediaInfo
@@ -12,12 +13,18 @@ import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.MediaWar
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.OperationSpec
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.OutputKind
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.PlannedTask
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.SubtitleFiles
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.SubtitleFormat
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.SubtitleMarkups
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.SubtitleWarnings
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.TaskRunner
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.service.StorageAccess
 import org.autojs.plugin.mediastudio.api.MediaStudioContract
 import org.autojs.plugin.mediastudio.api.MediaStudioErrorCodes
+import org.autojs.plugin.mediastudio.api.MediaStudioLimits
 import org.autojs.plugin.mediastudio.api.MediaStudioResultKeys
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
@@ -57,6 +64,11 @@ internal class OperationJob(private val appContext: Context, private val planned
 
     private fun execute(context: TaskRunner.JobContext): Bundle {
         context.progress(0.0, MediaStudioContract.STAGE_PROBING)
+        when (val spec = planned.spec) {
+            OperationSpec.SubtitlesParse -> return subtitlesParse(context)
+            is OperationSpec.SubtitlesWrite -> return subtitlesWrite(context, spec)
+            else -> Unit
+        }
         val inputs = planned.inputs.mapIndexed { index, path ->
             context.throwIfCancelled()
             val info = if (planned.audioOutput) MediaProbe.probeAudio(path) else MediaProbe.probe(path)
@@ -187,6 +199,88 @@ internal class OperationJob(private val appContext: Context, private val planned
         }
     }
 
+    /**
+     * `subtitlesParse` (roadmap P3.3): `cues` (one Bundle per cue, `start` / `end` in milliseconds and the plain `text`,
+     * markup removed), `path`, `mime`, `warnings`. The result must fit the 256 KiB event limit of the contract; a larger
+     * one is LIMIT_EXCEEDED (appendix D Q36).
+     * zh-CN: `subtitlesParse` (路线图 P3.3): `cues` (每条 cue 一个 Bundle, `start` / `end` 为毫秒, `text` 为去掉标记的纯文本), `path`,
+     * `mime`, `warnings`. 结果须在契约的 256 KiB 事件上限之内, 超出时为 LIMIT_EXCEEDED (附录 D Q36).
+     */
+    private fun subtitlesParse(context: TaskRunner.JobContext): Bundle {
+        val path = planned.inputs.single()
+        val warnings = SubtitleWarnings()
+        val track = SubtitleFiles.read(path, warnings)
+        context.throwIfCancelled()
+        context.progress(EXPORT_END, MediaStudioContract.STAGE_DECODING)
+        val cues = ArrayList<Bundle>(track.cues.size)
+        track.cues.forEach { cue ->
+            cues += Bundle().apply {
+                putLong(CUE_START, cue.startMillis)
+                putLong(CUE_END, cue.endMillis)
+                putString(CUE_TEXT, SubtitleMarkups.parse(cue.text, cue.markup, track.wrapStyle, warnings).plain)
+            }
+        }
+        val result = Bundle().apply {
+            putString(MediaStudioResultKeys.PATH, path)
+            putString(MediaStudioResultKeys.MIME, track.format.mime)
+            putLong(MediaStudioResultKeys.SIZE_BYTES, File(path).length())
+            putParcelableArrayList(MediaStudioResultKeys.CUES, cues)
+            putStringArray(MediaStudioResultKeys.WARNINGS, warnings.list().toTypedArray())
+        }
+        val size = parcelSize(result)
+        if (size > MediaStudioLimits.MAX_EVENT_BYTES) {
+            throw MediaStudioException(
+                MediaStudioErrorCodes.LIMIT_EXCEEDED,
+                "the ${track.cues.size} cues of $path take $size bytes, more than the ${MediaStudioLimits.MAX_EVENT_BYTES} bytes a result may carry; " +
+                    "split the file, or pass it to burnSubtitles or a timeline directly",
+            )
+        }
+        return result
+    }
+
+    /**
+     * `subtitlesWrite` (roadmap P3.3): writes the cues as SRT or ASS (UTF-8) through a part file; `path`, `sizeBytes`,
+     * `mime`, `warnings`. Never registered in MediaStore.
+     * zh-CN: `subtitlesWrite` (路线图 P3.3): 经临时文件把 cue 写成 SRT 或 ASS (UTF-8); `path`, `sizeBytes`, `mime`, `warnings`. 不登记 MediaStore.
+     */
+    private fun subtitlesWrite(context: TaskRunner.JobContext, spec: OperationSpec.SubtitlesWrite): Bundle {
+        val warnings = mutableListOf<String>()
+        if (spec.format == SubtitleFormat.SRT && spec.cues.any { cue -> cue.text.lines().let { lines -> lines.any { it.isBlank() } && lines.size > 1 } }) {
+            warnings += "empty lines inside cue texts were removed (an empty line ends an SRT cue)"
+        }
+        val text = if (spec.format == SubtitleFormat.SRT) SubtitleFiles.writeSrt(spec.cues) else SubtitleFiles.writeAss(spec.cues)
+        val partFile = partFile(context.taskId).also { part = it }
+        if (partFile.exists() && !partFile.delete()) throw MediaStudioException.io("cannot replace the temporary file ${partFile.path}")
+        try {
+            partFile.writeText(text, Charsets.UTF_8)
+        } catch (e: IOException) {
+            throw MediaStudioException.io("cannot write ${outputFile.path} (${e.message ?: e.javaClass.simpleName})")
+        }
+        context.throwIfCancelled()
+        if (outputFile.exists()) throw MediaStudioException.io("${outputFile.path} appeared while the task ran; the result was not saved")
+        if (!partFile.renameTo(outputFile)) throw MediaStudioException.io("cannot move the result to ${outputFile.path}")
+        created = true
+        part = null
+        context.progress(EXPORT_END, MediaStudioContract.STAGE_WRITING)
+        return Bundle().apply {
+            putString(MediaStudioResultKeys.PATH, outputFile.path)
+            putLong(MediaStudioResultKeys.SIZE_BYTES, outputFile.length())
+            putString(MediaStudioResultKeys.MIME, spec.format.mime)
+            putStringArray(MediaStudioResultKeys.WARNINGS, warnings.toTypedArray())
+        }
+    }
+
+    /** The serialized size of [bundle] (what crosses Binder). zh-CN: [bundle] 序列化后的大小 (跨 Binder 的字节数). */
+    private fun parcelSize(bundle: Bundle): Int {
+        val parcel = Parcel.obtain()
+        return try {
+            bundle.writeToParcel(parcel, 0)
+            parcel.dataSize()
+        } finally {
+            parcel.recycle()
+        }
+    }
+
     private fun partFile(taskId: Int): File {
         val parent = outputFile.absoluteFile.parentFile ?: throw MediaStudioException.io("${outputFile.path} has no parent folder")
         val extension = outputFile.extension.takeIf { it.isNotEmpty() }?.let { ".$it" } ?: ""
@@ -212,6 +306,9 @@ internal class OperationJob(private val appContext: Context, private val planned
 
     private companion object {
         const val TAG = "SlateStudioJob"
+        const val CUE_START = "start"
+        const val CUE_END = "end"
+        const val CUE_TEXT = "text"
         const val PROBE_END = 5.0
         const val EXPORT_END = 95.0
         const val REGISTER_START = 97.0

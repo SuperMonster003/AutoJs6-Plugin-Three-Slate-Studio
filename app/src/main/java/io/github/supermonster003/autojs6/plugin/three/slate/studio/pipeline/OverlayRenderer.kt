@@ -32,7 +32,12 @@ import kotlin.math.roundToInt
  * zh-CN: 把 `overlay` 的叠加物 (路线图 P2.3, D29) 画进一张与帧同尺寸的透明位图, 仅在可见叠加物的集合变化时重画, 因此 media3
  * 每个时间段只上传一次纹理. 字体与图片在构造时加载 (导出开始之前), 字体或图片有问题时任务立即失败.
  */
-internal class OverlayRenderer(private val items: List<OverlayItem>, private val frame: FrameSize) : Closeable {
+internal class OverlayRenderer(
+    private val items: List<OverlayItem>,
+    private val frame: FrameSize,
+    /** Subtitles drawn above the overlays (roadmap P3.3). zh-CN: 画在叠加物之上的字幕 (路线图 P3.3). */
+    private val subtitles: SubtitlePainter? = null,
+) : Closeable {
 
     private class Picture(val bitmap: Bitmap, val width: Int, val height: Int)
 
@@ -67,7 +72,7 @@ internal class OverlayRenderer(private val items: List<OverlayItem>, private val
 
         private var pixels: IntArray? = null
 
-        private var visible: List<Int>? = null
+        private var visible: Pair<List<Int>, List<Int>>? = null
 
         override fun configure(videoSize: Size) {
             super.configure(videoSize)
@@ -80,14 +85,15 @@ internal class OverlayRenderer(private val items: List<OverlayItem>, private val
 
         override fun getBitmap(presentationTimeUs: Long): Bitmap {
             val millis = presentationTimeUs / 1_000.0
-            val now = items.indices.filter { items[it].placement.isActive(millis) }
+            val now = items.indices.filter { items[it].placement.isActive(millis) } to subtitles?.visible(millis).orEmpty()
             val (width, height) = size.width to size.height
             val target = bitmap ?: createBitmap(width, height).also { bitmap = it }
             val upload = straight ?: createBitmap(width, height).apply { isPremultiplied = false }.also { straight = it }
             if (now != visible) {
                 target.eraseColor(0)
                 val canvas = Canvas(target)
-                now.forEach { draw(canvas, items[it], size) }
+                now.first.forEach { draw(canvas, items[it], size) }
+                if (now.second.isNotEmpty()) subtitles?.draw(canvas, now.second, size)
                 // The media3 overlay shader blends straight alpha (rgb * a + video * (1 - a)); the texture of a
                 // premultiplied bitmap would apply the alpha twice (half transparent blue over black came out at 0x39
                 // instead of 0x80 on XQ-AT72). getPixels answers unpremultiplied colors and setPixels keeps them.

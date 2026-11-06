@@ -45,6 +45,8 @@ import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.FrameSiz
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.MediaInfo
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.MediaStudioException
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.OperationSpec
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.SubtitleFiles
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.SubtitleWarnings
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.TaskRunner
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.VideoCodec
 import org.autojs.plugin.mediastudio.api.MediaStudioContract
@@ -256,7 +258,9 @@ internal class VideoOperations(
                 OperationSpec.RemoveAudio -> removeAudio(inputs.single())
                 is OperationSpec.ExtractAudio -> extractAudio(spec, inputs.single())
                 is OperationSpec.Overlay -> overlay(spec, inputs.single())
+                is OperationSpec.BurnSubtitles -> burnSubtitles(spec, inputs.single())
                 is OperationSpec.Trim -> error("handled above")
+                OperationSpec.SubtitlesParse, is OperationSpec.SubtitlesWrite -> error("${spec::class.simpleName} is written by OperationJob")
                 is OperationSpec.Compose -> error("compose is written by ComposeOperation")
                 is OperationSpec.Frames, is OperationSpec.Frame, is OperationSpec.Thumbnail, is OperationSpec.ToGif ->
                     error("${spec::class.simpleName} is written by StillOperations")
@@ -474,6 +478,39 @@ internal class VideoOperations(
             }
         }
         val renderer = OverlayRenderer(spec.items, size).also { resources += it }
+        val effects = listOf<Effect>(
+            Presentation.createForWidthAndHeight(size.width, size.height, Presentation.LAYOUT_STRETCH_TO_FIT),
+            OverlayEffect(listOf(renderer.overlay())),
+        )
+        val item = EditedMediaItem.Builder(mediaItemOf(input.path)).setEffects(Effects(emptyList(), effects)).build()
+        return Plan(
+            single(item),
+            TransformerExport.Settings(
+                videoMime = spec.video.codec.mime,
+                audioMime = if (input.hasAudio) MimeTypes.AUDIO_AAC else null,
+                videoBitRate = spec.video.bitRate ?: BitRates.estimateVideo(size.width, size.height, input.frameRate, spec.video.codec),
+            ),
+        )
+    }
+
+    /**
+     * `burnSubtitles` (roadmap P3.3, D31): the cues drawn by a [SubtitlePainter] in the same full-frame bitmap overlay as
+     * [overlay], after a Presentation to the even display size; the audio passes through where media3 can.
+     * zh-CN: `burnSubtitles` (路线图 P3.3, D31): 由 [SubtitlePainter] 把 cue 画进与 [overlay] 相同的整帧位图叠加层, 之前先用
+     * Presentation 调到偶数的显示尺寸; 音频在 media3 能直通时直通.
+     */
+    private fun burnSubtitles(spec: OperationSpec.BurnSubtitles, input: MediaInfo): Plan {
+        requireVideo(input, MediaStudioOps.BURN_SUBTITLES)
+        val size = FrameGeometry.even(displaySize(input))
+        FrameGeometry.sizeProblem(size)?.let { throw MediaStudioException.invalid(it) }
+        val warnings = SubtitleWarnings()
+        val track = SubtitleFiles.load(spec.subtitles.source, warnings)
+        val painter = SubtitlePainter(track, spec.subtitles.style, warnings)
+        if (track.cues.none { it.startMillis < input.durationMillis }) {
+            notes += "no subtitle cue starts before the end of the input (${input.durationMillis} ms); nothing was burned"
+        }
+        notes += warnings.list()
+        val renderer = OverlayRenderer(emptyList(), size, painter).also { resources += it }
         val effects = listOf<Effect>(
             Presentation.createForWidthAndHeight(size.width, size.height, Presentation.LAYOUT_STRETCH_TO_FIT),
             OverlayEffect(listOf(renderer.overlay())),

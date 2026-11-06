@@ -197,12 +197,18 @@ class OperationOptionsTest {
             MediaStudioOps.AUDIO_VOLUME to mapOf("gain" to 1),
             MediaStudioOps.AUDIO_CONVERT to mapOf("format" to "wav"),
             MediaStudioOps.AUDIO_SPEED to mapOf("factor" to 1),
+            MediaStudioOps.BURN_SUBTITLES to mapOf("subtitles" to "/sdcard/a.srt"),
+            MediaStudioOps.SUBTITLES_WRITE to mapOf("format" to "srt", "cues" to listOf(mapOf("start" to 0, "end" to 1, "text" to "a"))),
         )
         val timeline = mapOf("video" to listOf(mapOf("clips" to listOf(mapOf("src" to "/sdcard/a.mp4")))))
         OperationOptions.SUBMIT_OPS.forEach { op ->
-            if (op == MediaStudioOps.COMPOSE) OperationOptions.parse(op, 0, emptyMap(), timeline) else parse(op, minimal[op] ?: emptyMap())
+            when (op) {
+                MediaStudioOps.COMPOSE -> OperationOptions.parse(op, 0, emptyMap(), timeline)
+                MediaStudioOps.SUBTITLES_WRITE -> parse(op, minimal.getValue(op), inputs = 0)
+                else -> parse(op, minimal[op] ?: emptyMap())
+            }
         }
-        assertEquals(19, OperationOptions.SUBMIT_OPS.size)
+        assertEquals(22, OperationOptions.SUBMIT_OPS.size)
         assertTrue(MediaStudioOps.ALL.containsAll(OperationOptions.SUBMIT_OPS))
     }
 

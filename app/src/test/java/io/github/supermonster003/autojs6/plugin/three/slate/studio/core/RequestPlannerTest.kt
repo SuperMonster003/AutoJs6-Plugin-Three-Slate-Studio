@@ -77,7 +77,7 @@ class RequestPlannerTest {
     @Test
     fun `envelope rejections keep their code`() {
         assertRejected(MediaStudioErrorCodes.INVALID_OPTIONS, "op is required", envelope(op = null))
-        assertRejected(MediaStudioErrorCodes.INVALID_OPTIONS, "NOT_IMPLEMENTED: burnSubtitles", envelope(op = MediaStudioOps.BURN_SUBTITLES))
+        assertRejected(MediaStudioErrorCodes.INVALID_OPTIONS, "NOT_IMPLEMENTED: ffmpeg", envelope(op = MediaStudioOps.FFMPEG))
         assertRejected(MediaStudioErrorCodes.LIMIT_EXCEEDED, "257 inputs, at most 256", envelope(op = MediaStudioOps.CONCAT, inputs = List(257) { clip }))
         assertRejected(MediaStudioErrorCodes.INVALID_OPTIONS, "probe is answered by probe(), not submit", envelope(op = MediaStudioOps.PROBE))
         assertRejected(MediaStudioErrorCodes.INVALID_OPTIONS, "audioProbe is answered by probe(), not submit", envelope(op = MediaStudioOps.AUDIO_PROBE))
@@ -362,6 +362,41 @@ class RequestPlannerTest {
             MediaStudioErrorCodes.UNSUPPORTED_FORMAT,
             "ogg output needs Android 10 (API 29) or later",
             envelope(op = MediaStudioOps.AUDIO_CONVERT, inputs = listOf(song), options = mapOf("format" to "ogg")),
+        )
+    }
+
+    @Test
+    fun `subtitle operations`() {
+        val subtitles = "/sdcard/Movies/a.srt"
+        files.files += subtitles
+        val cues = mapOf("cues" to listOf(mapOf("start" to 0L, "end" to 1000L, "text" to "x")))
+        fun write(output: String?, options: Map<String, Any?> = cues) = envelope(op = MediaStudioOps.SUBTITLES_WRITE, inputs = emptyList(), output = output, options = options)
+        assertRejected(MediaStudioErrorCodes.INVALID_OPTIONS, "subtitlesWrite needs an output path", write(null))
+        assertRejected(MediaStudioErrorCodes.UNSUPPORTED_FORMAT, "subtitle output must end with .srt or .ass, got b.vtt", write("/sdcard/b.vtt"))
+        assertRejected(MediaStudioErrorCodes.INVALID_OPTIONS, "options.format ass does not match the output extension .srt", write("/sdcard/b.srt", cues + ("format" to "ass")))
+        assertRejected(MediaStudioErrorCodes.IO_ERROR, "output already exists: $subtitles", write(subtitles))
+        val written = plan(write("/sdcard/b.ASS"))
+        assertEquals(SubtitleFormat.ASS, (written.spec as OperationSpec.SubtitlesWrite).format)
+        assertEquals(OutputKind.SUBTITLE, written.kind)
+
+        fun parse(input: String, output: String? = null) = envelope(op = MediaStudioOps.SUBTITLES_PARSE, inputs = listOf(input), output = output, options = emptyMap())
+        val parsed = plan(parse(subtitles))
+        assertEquals("" to false, parsed.output to parsed.registerMedia)
+        assertRejected(MediaStudioErrorCodes.INVALID_OPTIONS, "subtitlesParse writes no file; leave out the output, got /sdcard/c.srt", parse(subtitles, "/sdcard/c.srt"))
+        assertRejected(MediaStudioErrorCodes.IO_ERROR, "input not found: /sdcard/missing.srt", parse("/sdcard/missing.srt"))
+        denied += subtitles
+        assertEquals(MediaStudioErrorCodes.STORAGE_PERMISSION_DENIED, rejected(parse(subtitles)).code)
+        denied.clear()
+
+        // The subtitle file of burnSubtitles is checked like an input. zh-CN: burnSubtitles 的字幕文件像输入一样检查.
+        fun burn(file: String) = envelope(op = MediaStudioOps.BURN_SUBTITLES, options = mapOf("subtitles" to file))
+        assertRejected(MediaStudioErrorCodes.IO_ERROR, "file not found: /sdcard/missing.srt", burn("/sdcard/missing.srt"))
+        assertEquals("/sdcard/Movies/3-Slate Studio/clip-burnSubtitles-20261105-010203.mp4", plan(burn(subtitles)).output)
+        encoders = setOf(EncoderIds.H264, EncoderIds.AAC)
+        assertRejected(
+            MediaStudioErrorCodes.UNSUPPORTED_FORMAT,
+            "this device has no H.265 encoder; use codec h264",
+            envelope(op = MediaStudioOps.BURN_SUBTITLES, options = mapOf("subtitles" to subtitles, "style" to mapOf("codec" to "h265"))),
         )
     }
 

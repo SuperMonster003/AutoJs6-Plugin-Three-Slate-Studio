@@ -114,6 +114,8 @@ internal data class TimelineSpec(
     val videoTracks: List<List<VideoClip>>,
     val audioTracks: List<List<AudioClip>>,
     val overlays: List<OverlayItem>,
+    /** Drawn above the overlays (roadmap P3.3). zh-CN: 画在叠加物之上 (路线图 P3.3). */
+    val subtitles: SubtitlesSpec? = null,
 ) {
     /** The media files the clips read, in first use order. zh-CN: 片段读取的媒体文件, 按首次使用的顺序. */
     val sources: List<String> get() = (videoTracks.flatten().map { it.src } + audioTracks.flatten().map { it.src }).distinct()
@@ -135,13 +137,16 @@ internal object TimelineOptions {
     const val MAX_FRAME_RATE = 120
 
     /**
-     * Track limits (appendix D Q34 (a)): a video track decodes two clips at once in an overlapping transition, an audio
-     * track one, so at most 4 x 2 + 8 = 16 sources sound together, the decoder limit of `audioMix` (Q18 (a)).
-     * zh-CN: 轨道上限 (附录 D Q34 (a)): 视频轨在重叠转场中同时解码两段, 音频轨一段, 因此至多 4 x 2 + 8 = 16 个来源同时发声,
-     * 与 `audioMix` 的解码器上限相同 (Q18 (a)).
+     * Track limits (appendix D Q34 (c), the maintainer's choice of 2026-11-06): 8 video tracks and 16 audio tracks. A
+     * video track decodes two clips at once in an overlapping transition, so up to 8 x 2 + 16 = 32 sources may decode
+     * together, twice the 16 inputs of `audioMix` (Q18 (a)); low-end devices may then fail at random (codec resources),
+     * see the G8441 result in roadmap appendix F.
+     * zh-CN: 轨道上限 (附录 D Q34 (c), 维护者 2026-11-06 选): 视频轨 8 条, 音频轨 16 条. 视频轨在重叠转场中同时解码两段, 因此至多
+     * 8 x 2 + 16 = 32 个来源同时解码, 是 `audioMix` 16 路 (Q18 (a)) 的两倍; 低端设备可能因编解码器资源随机失败, 见路线图附录 F 的
+     * G8441 结果.
      */
-    const val MAX_VIDEO_TRACKS = 4
-    const val MAX_AUDIO_TRACKS = 8
+    const val MAX_VIDEO_TRACKS = 8
+    const val MAX_AUDIO_TRACKS = 16
 
     fun parse(timeline: Map<String, Any?>?): TimelineSpec {
         if (timeline == null) throw MediaStudioException.invalid("timeline is required")
@@ -150,9 +155,7 @@ internal object TimelineOptions {
         val height = reader.int("height", OperationOptions.MIN_DIMENSION, OperationOptions.MAX_DIMENSION)?.let { it and 1.inv() }
         val frameRate = reader.int("frameRate", 1, MAX_FRAME_RATE) ?: DEFAULT_FRAME_RATE
         val background = with(OverlayOptions) { reader.color("background") } ?: Colors.BLACK
-        if (reader.has("subtitles")) {
-            throw MediaStudioException.invalid("NOT_IMPLEMENTED: ${reader.name("subtitles")} (roadmap P3.3)")
-        }
+        val subtitles = reader.child("subtitles")?.let(SubtitleOptions::timeline)
         val videoTracks = reader.objects("video")?.let { tracks ->
             if (tracks.size > MAX_VIDEO_TRACKS) throw limit("${reader.name("video")} holds ${tracks.size} tracks, at most $MAX_VIDEO_TRACKS")
             tracks.map { track -> track.clips { clip -> videoClip(clip) }.also { track.finish() } }
@@ -172,7 +175,7 @@ internal object TimelineOptions {
         if (videoTracks.all { it.isEmpty() }) throw MediaStudioException.invalid("${reader.name("video")} must hold at least one clip")
         val clips = videoTracks.sumOf { it.size } + audioTracks.sumOf { it.size }
         if (clips > MediaStudioLimits.MAX_INPUTS) throw limit("the timeline holds $clips clips, at most ${MediaStudioLimits.MAX_INPUTS}")
-        return TimelineSpec(width, height, frameRate, background, videoTracks, audioTracks, overlays)
+        return TimelineSpec(width, height, frameRate, background, videoTracks, audioTracks, overlays, subtitles)
     }
 
     private fun <T> OptionReader.clips(parse: (OptionReader) -> T): List<T> {
@@ -318,6 +321,7 @@ internal data class TimelineLayout(
     val videoTracks: List<List<PlacedVideo>>,
     val audio: List<PlacedAudio>,
     val overlays: List<OverlayItem>,
+    val subtitles: SubtitlesSpec? = null,
 ) {
 
     val durationMillis: Long get() = (durationUs + 999) / 1_000
@@ -345,7 +349,7 @@ internal data class TimelineLayout(
             val first = videoTracks.flatten().first()
             val (width, height) = frameSize(spec, first)
             val duration = maxOf(videoTracks.flatten().maxOf { it.endUs }, audio.maxOfOrNull { it.endUs } ?: 0L)
-            return TimelineLayout(width, height, spec.frameRate, spec.background, duration, videoTracks, audio, spec.overlays)
+            return TimelineLayout(width, height, spec.frameRate, spec.background, duration, videoTracks, audio, spec.overlays, spec.subtitles)
         }
 
         private fun placeVideo(track: Int, clips: List<VideoClip>, probe: (String) -> MediaInfo): List<PlacedVideo> {

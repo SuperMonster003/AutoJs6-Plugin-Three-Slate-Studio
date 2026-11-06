@@ -11,6 +11,7 @@ import io.github.supermonster003.autojs6.plugin.three.slate.studio.R
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ThreeSlateStudioContract
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.CodecSupport
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.EncoderIds
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.SubtitleFormat
 import org.autojs.plugin.common.api.PluginInfo
 import org.autojs.plugin.mediastudio.api.MediaStudioCapabilityKeys
 import org.autojs.plugin.mediastudio.api.MediaStudioLimits
@@ -106,6 +107,7 @@ internal fun PluginRuntimeFields.capabilities(): Bundle = Bundle().apply {
     putStringArray(MediaStudioCapabilityKeys.AUDIO_ENCODERS, audioEncoders.toTypedArray())
     putStringArray(MediaStudioCapabilityKeys.VIDEO_OUTPUT_FORMATS, videoOutputFormats.toTypedArray())
     putStringArray(MediaStudioCapabilityKeys.AUDIO_OUTPUT_FORMATS, audioOutputFormats.toTypedArray())
+    putStringArray(MediaStudioCapabilityKeys.SUBTITLE_FORMATS, SubtitleFormat.IDS.toTypedArray())
     putInt(MediaStudioCapabilityKeys.MAX_CONCURRENT_ENCODES, maxConcurrentEncodes)
     putInt(MediaStudioCapabilityKeys.MAX_TASKS_PER_TOKEN, maxTasksPerToken)
 }

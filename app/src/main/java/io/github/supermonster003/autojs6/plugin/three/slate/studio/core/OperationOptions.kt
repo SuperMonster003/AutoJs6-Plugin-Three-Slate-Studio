@@ -169,6 +169,15 @@ internal sealed interface OperationSpec {
      */
     data class Compose(val timeline: TimelineSpec, val video: VideoEncoding) : OperationSpec
 
+    /** Subtitles burned into the frames (roadmap P3.3, D31). zh-CN: 烧录进画面的字幕 (路线图 P3.3, D31). */
+    data class BurnSubtitles(val subtitles: SubtitlesSpec, val video: VideoEncoding) : OperationSpec
+
+    /** Reads the cues of the input subtitle file (roadmap P3.3). zh-CN: 读取输入字幕文件的 cue (路线图 P3.3). */
+    data object SubtitlesParse : OperationSpec
+
+    /** Writes [cues] as an SRT or ASS file (roadmap P3.3). zh-CN: 把 [cues] 写成 SRT 或 ASS 文件 (路线图 P3.3). */
+    data class SubtitlesWrite(val cues: List<SubtitleCue>, val format: SubtitleFormat) : OperationSpec
+
     /** Frames written as images into one folder (roadmap P2.4). zh-CN: 写成图片放进一个文件夹的多帧 (路线图 P2.4). */
     data class Frames(val times: FrameTimes, val image: ImageEncoding) : OperationSpec
 
@@ -270,6 +279,8 @@ internal object OperationOptions {
         MediaStudioOps.AUDIO_VOLUME,
         MediaStudioOps.AUDIO_CONVERT,
         MediaStudioOps.AUDIO_SPEED,
+        MediaStudioOps.BURN_SUBTITLES,
+        MediaStudioOps.SUBTITLES_PARSE,
     )
 
     /** Operations submit runs in this build. zh-CN: 本构建中 submit 可执行的操作. */
@@ -287,6 +298,9 @@ internal object OperationOptions {
         MediaStudioOps.THUMBNAIL,
         MediaStudioOps.TO_GIF,
         MediaStudioOps.COMPOSE,
+        MediaStudioOps.BURN_SUBTITLES,
+        MediaStudioOps.SUBTITLES_PARSE,
+        MediaStudioOps.SUBTITLES_WRITE,
         MediaStudioOps.AUDIO_TRIM,
         MediaStudioOps.AUDIO_CONCAT,
         MediaStudioOps.AUDIO_MIX,
@@ -308,6 +322,9 @@ internal object OperationOptions {
         }
         if (op == MediaStudioOps.AUDIO_MIX && inputCount > MAX_MIX_INPUTS) {
             throw limit("audioMix takes at most $MAX_MIX_INPUTS inputs, got $inputCount")
+        }
+        if (op == MediaStudioOps.SUBTITLES_WRITE && inputCount != 0) {
+            throw MediaStudioException.invalid("subtitlesWrite takes no inputs, got $inputCount")
         }
         val reader = OptionReader(options, "options.")
         val spec = when (op) {
@@ -347,6 +364,17 @@ internal object OperationOptions {
             MediaStudioOps.TO_GIF -> toGif(reader)
             // The timeline first: its field paths are more specific than the two options. zh-CN: 先解析时间线: 其字段路径比两个选项更具体.
             MediaStudioOps.COMPOSE -> TimelineOptions.parse(timeline).let { spec -> OperationSpec.Compose(spec, reader.videoEncoding()) }
+            MediaStudioOps.BURN_SUBTITLES -> {
+                // The script passes one object after the subtitles; codec and bitRate travel in it. zh-CN: 脚本在字幕之后只传一个对象, codec 与 bitRate 也在其中.
+                val (source, style, video) = SubtitleOptions.source(reader, op, "subtitles") { it.videoEncoding() }
+                OperationSpec.BurnSubtitles(SubtitlesSpec(source, style), video ?: VideoEncoding())
+            }
+            MediaStudioOps.SUBTITLES_PARSE -> OperationSpec.SubtitlesParse
+            MediaStudioOps.SUBTITLES_WRITE -> OperationSpec.SubtitlesWrite(
+                cues = SubtitleOptions.cues(reader, "cues"),
+                format = reader.choice("format", SubtitleFormat.IDS)?.let(SubtitleFormat::of)
+                    ?: throw MediaStudioException.invalid("subtitlesWrite needs options.format or an output ending with .srt or .ass"),
+            )
             MediaStudioOps.AUDIO_TRIM -> trim(reader, op).let { range ->
                 reader.audioOutput(op) { container, audio -> OperationSpec.AudioTrim(range.startMillis, range.endMillis, container, audio) }
             }
@@ -554,12 +582,14 @@ internal object OperationOptions {
     fun limit(detail: String) = MediaStudioException(MediaStudioErrorCodes.LIMIT_EXCEEDED, detail)
 
     /**
-     * Files besides the inputs that the task reads (overlay pictures and font files); the planner checks them like inputs.
-     * zh-CN: 输入之外任务要读取的文件 (叠加图片与字体文件); 规划器像检查输入一样检查它们.
+     * Files besides the inputs that the task reads (overlay pictures, font files and subtitle files); the planner checks
+     * them like inputs.
+     * zh-CN: 输入之外任务要读取的文件 (叠加图片, 字体文件与字幕文件); 规划器像检查输入一样检查它们.
      */
     fun resources(spec: OperationSpec): List<String> = when (spec) {
         is OperationSpec.Overlay -> overlayFiles(spec.items)
-        is OperationSpec.Compose -> overlayFiles(spec.timeline.overlays)
+        is OperationSpec.Compose -> (overlayFiles(spec.timeline.overlays) + spec.timeline.subtitles?.files.orEmpty()).distinct()
+        is OperationSpec.BurnSubtitles -> spec.subtitles.files
         else -> emptyList()
     }
 

@@ -329,6 +329,7 @@ class ThreeSlateStudioContractTest {
             MediaStudioCapabilityKeys.AUDIO_ENCODERS,
             MediaStudioCapabilityKeys.VIDEO_OUTPUT_FORMATS,
             MediaStudioCapabilityKeys.AUDIO_OUTPUT_FORMATS,
+            MediaStudioCapabilityKeys.SUBTITLE_FORMATS,
             MediaStudioCapabilityKeys.MAX_CONCURRENT_ENCODES,
             MediaStudioCapabilityKeys.MAX_TASKS_PER_TOKEN,
         )

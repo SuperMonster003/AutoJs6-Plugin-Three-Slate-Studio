@@ -51,7 +51,8 @@ class PluginRuntimeInfoTest {
         assertEquals("P2.1 / P2.2 implement probe and the basic operations", ThreeSlateStudioContract.IMPLEMENTED_OPS, fields.ops)
         assertTrue(fields.ops.containsAll(listOf(MediaStudioOps.PROBE, MediaStudioOps.TRIM, MediaStudioOps.TRANSCODE, MediaStudioOps.AUDIO_PROBE)))
         assertTrue("compose comes with P3.1", MediaStudioOps.COMPOSE in fields.ops)
-        assertFalse("burnSubtitles comes with P3.3", MediaStudioOps.BURN_SUBTITLES in fields.ops)
+        assertTrue("the subtitle operations come with P3.3", fields.ops.containsAll(listOf(MediaStudioOps.BURN_SUBTITLES, MediaStudioOps.SUBTITLES_PARSE, MediaStudioOps.SUBTITLES_WRITE)))
+        assertFalse("ffmpeg comes with 1.1.0", MediaStudioOps.FFMPEG in fields.ops)
     }
 
     @Test
