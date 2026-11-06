@@ -202,8 +202,8 @@ io.github.supermonster003.autojs6.plugin.three.slate.studio
 | --- | --- | --- | --- |
 | P0 | 1.0.0 | 仓库骨架: 构建链与身份, Icon Studio 图标, 测试与 CI | 已完成 (2026-11-05; 剩真机图标目视 E4 待维护者, Q9 - Q11 已按推荐先行待确认) |
 | P1 | 宿主 6.8.1 (本地构建号, D23) | 契约 `media-studio-api`, 录屏 / 录音内核泛化, 脚本模块 `video` / `audio`, `CREATE_SCRIPT` 入口, 注册与协议文档 | P1.1-P1.7 已完成 (2026-11-06), 宿主与 Node / Bun 仓库本地提交未推送 |
-| P2 | 1.0.0 | 插件加工核心: 执行器与任务模型, 视频基础加工, 叠加, 抽帧与 GIF, 音频加工, 设备矩阵 | 进行中 (P2.1 - P2.5 已完成 2026-11-06; 剩 P2.6) |
-| P3 | 1.0.0 | 多轨合成: 时间线 JSON 与 `video.compose`, 转场, 字幕 | 进行中 (P3.1 - P3.2 已完成 (2026-11-06); 剩 P3.3) |
+| P2 | 1.0.0 | 插件加工核心: 执行器与任务模型, 视频基础加工, 叠加, 抽帧与 GIF, 音频加工, 设备矩阵 | 进行中 (P2.1 - P2.5 已完成 2026-11-06; P2.6 真机回归 4 / 6 台已跑 (2026-11-07), XQ-DQ72 / XQ-AT72 待补跑) |
+| P3 | 1.0.0 | 多轨合成: 时间线 JSON 与 `video.compose`, 转场, 字幕 | 已完成 (2026-11-07; P3.1 - P3.2 于 2026-11-06, P3.3 字幕于 2026-11-07 维护者目视通过) |
 | P4 | 1.0.0 | Studio 界面: 应用骨架, 工具箱向导, 时间线剪辑器, 代码生成与宿主入口, Studio 录音 | 未开始 |
 | P5 | 1.0.0 | 文档, 声明, 四仓库同步, 样例, 兼容矩阵, 发布与索引登记 | 未开始 |
 | P6 | 1.1.0 | FFmpeg + libass 大库: 自建或选型, Shared-Assets 类别, 下载 / 校验 / 加载, 命令透传, 新格式, 完整 ASS, 发布 | 未开始 |
@@ -318,7 +318,7 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 
 ## P2: 插件加工核心
 
-状态: 进行中 (P2.1 - P2.5 已完成, 2026-11-06; 剩 P2.6 设备矩阵). 宿主选项预检已同步到全部 18 个已实现操作 (附录 D Q24, 宿主本地提交 `764b63b765`). 设备: API 35 AVD (仪器测试), Sony XQ-DQ72 API 33 与 Xiaomi Pad API 35 (硬件编码器), G8441 API 28 (低端机性能基线).
+状态: 进行中 (P2.1 - P2.5 已完成, 2026-11-06; P2.6 设备矩阵 4 / 6 台已跑, 剩 XQ-DQ72 / XQ-AT72). 宿主选项预检已同步到全部 18 个已实现操作 (附录 D Q24, 宿主本地提交 `764b63b765`). 设备: API 35 AVD (仪器测试), Sony XQ-DQ72 API 33 与 Xiaomi Pad API 35 (硬件编码器), G8441 API 28 (低端机性能基线).
 
 ### P2.1 执行器, 任务模型与探测 (D28, D29, D14)
 
@@ -348,14 +348,14 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 
 ### P2.6 设备矩阵与性能基线
 
-- [ ] (测试) 附录 F 设备矩阵跑一遍 P2 的回归脚本 (插件仓库 `scripts/device-regression.js`, 只输出每项通过 / 失败与耗时); 记录各机硬件编码器名称, 1080p 转码倍速, H.265 可用性.
+- [ ] (测试) 附录 F 设备矩阵跑一遍 P2 的回归脚本 (插件仓库 `scripts/device-regression.js`, 只输出每项通过 / 失败与耗时); 记录各机硬件编码器名称, 1080p 转码倍速, H.265 可用性. 进度 (E3, 2026-11-07, 3-slate-p3-3): 脚本 `scripts/device-regression.js` (宿主 Rhino 把 P2 / P3 的 25 个操作各跑一次, 另列编码器, 测 1080p 60 秒 H.264 / H.265 转码倍速; `extreme` 另跑 8 视频轨 + 16 音频轨, 失败时逐级减少) 与驱动 `.python/device_regression.py` (ffmpeg 生成素材, 推到插件私有目录, 输出放 `/sdcard/Download/slate-regression`, 运行期间经 appops / pm 授予插件存储权限并事后还原, 删除推送文件与 MediaStore 记录) 已入库 (提交见下方 "提交" 行). 已跑 4 / 6 台 (宿主为隔离克隆 debug 6641, 插件 debug 1.0.0 (10), 测后装回原宿主核对 md5): G8441 26 / 27, Redmi 23 / 25, 小米平板 25 / 25, OnePlus 25 / 25, 结果见附录 F. 失败项: G8441 极限用例 (附录 D Q37), Redmi 1080p 输出 1920x1088 (Q38); 首轮暴露的 `video.frame` 需要全部文件访问 (Q39). 未执行: XQ-DQ72 (API 33) 与 XQ-AT72 (API 31) 被 3-chime 卡片 chime-p5 占用, 维护者 2026-11-07 决定由本卡在设备释放后补跑, 补跑后勾选.
 - 验收: 结果表回填附录 F; 失败项登记为条目或待决.
 
 ---
 
 ## P3: 多轨合成
 
-状态: 进行中 (P3.1 - P3.2 已完成; P3.3 未开始). 设备: API 35 AVD, Sony XQ-DQ72 API 33, Xiaomi Pad API 35, G8441 API 28 (GL 效果在低端 GPU 的可用性).
+状态: 已完成 (P3.1 - P3.2 于 2026-11-06, P3.3 于 2026-11-07). 设备: API 35 AVD, Sony XQ-DQ72 API 33, Xiaomi Pad API 35, G8441 API 28 (GL 效果在低端 GPU 的可用性).
 
 ### P3.1 时间线 JSON 与 `video.compose` (D33)
 
@@ -371,8 +371,10 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 
 ### P3.3 字幕 (D31)
 
-- [ ] (插件) SRT 解析 / 导出, ASS 基础子集解析 (样式表 + 允许的内联标签, 其余忽略并 warning), 字幕渲染器 (`StaticLayout` 到 `TextOverlay`), `burnSubtitles` 操作与时间线 `subtitles` 字段; `video.subtitles.parse` / `write` 暴露给脚本.
-- 验收: 单元测试覆盖 SRT (BOM, CRLF, 空行, 重叠时间) 与 ASS 子集 (样式继承, 标签覆盖, 忽略标签 warning); 烧录结果抽帧目视.
+- [x] (插件) SRT 解析 / 导出, ASS 基础子集解析 (样式表 + 允许的内联标签, 其余忽略并 warning), 字幕渲染器 (`StaticLayout` 到 `TextOverlay`), `burnSubtitles` 操作与时间线 `subtitles` 字段; `video.subtitles.parse` / `write` 暴露给脚本. 证据 (E1 + E2, 2026-11-06, 3-slate-p3-3): 提交见下方 "提交" 行; `core/Subtitles.kt` (读取至多 16 MiB, UTF-8 / UTF-16 BOM, 非法 UTF-8 替换并 warning, 按扩展名再按内容判格式; SRT 容忍缺序号 / 缺空行 / 句点毫秒, 文本内空行去掉, 无文本或结尾不晚于开头的 cue 跳过并 warning, 重叠保留; ASS 读 `[Script Info]` 的 PlayRes (缺省按 4:3 推, 都缺为 384x288) 与 WrapStyle, `[V4+ Styles]` / `[V4 Styles]` (SSA 对齐换算), 样式子集为字体 / 字号 / 主色 / 边框色 / 背景色 / 粗斜体 / BorderStyle (3 为底框) / Outline / Shadow / Alignment / 边距, 其余非默认值 warning; 内联标签只认 `\b` `\i` `\c` `\1c` `\fs` `\an` `\pos`, `\N` / `\n` / `\h`, `\p` 绘图不显示, 其他标签汇总为一条 warning; SRT 标记 `<b> <i> <u> <font color>`; 写出 SRT (CRLF, UTF-8) 与 ASS (1920x1080, Default 样式同烧录默认值)), `core/SubtitleOptions.kt` (cue 数组 1 - 10000 条, 文本 1 - 1000 字符; 样式键 = 文字叠加键 + `background` / `align` / `marginV` / `marginH`; ASS 样式按 PlayRes 缩放, SRT 默认字号为画面高 / 18, 白字黑边, 底部居中, 边距 5 %), `pipeline/SubtitlePainter.kt` (`StaticLayout` + span 画进 `OverlayRenderer` 与叠加物共用的非预乘位图, 先描边后填充, 逐行底框, 阴影; 同位置的并存 cue 堆叠: 底部早的在下, 顶部早的在上). 与条目原文的差异: 未用 media3 `TextOverlay` (每个 cue 一个纹理, 且有 P2.3 发现的预乘 alpha 问题), 改为与叠加物同一张位图. `burnSubtitles` / `subtitlesParse` (结果超过契约事件上限 256 KiB 时 `LIMIT_EXCEEDED`, 附录 D Q36) / `subtitlesWrite`, 时间线 `subtitles` (画在叠加物之上); 能力表 `mediaStudioSubtitleFormats` = srt, ass. 宿主按 Q24 只同步 `burnSubtitles` 与 `timeline.subtitles` 的预检 (`subtitlesParse` / `subtitlesWrite` 见 Q35), 宿主脚本模块在 P1.3 已预留, 未改.
+- 验收: 单元测试覆盖 SRT (BOM, CRLF, 空行, 重叠时间) 与 ASS 子集 (样式继承, 标签覆盖, 忽略标签 warning); 烧录结果抽帧目视. 结果 (2026-11-07): 通过. JVM 单测 176 例 0 失败 (新增 `SubtitlesTest` 9 例: BOM + CRLF + 缺序号 + 空行 + 重叠时间, 无效 cue 跳过并 warning, ASS 样式继承与未知样式退回 Default, `\b` / `\i` / `\c` / `\fs` / `\an` / `\pos` 覆盖与恢复, 忽略标签汇总 warning (含行号), SSA 对齐换算, 写出往返; `TimelineTest` 加时间线字幕与 8 / 16 轨上限); AVD_API_35_16K `connectedDebugAndroidTest` 54 例 0 失败 (3 例基准 / 样本用例默认跳过), 其中 `SubtitleOperationsTest` 4 例抽帧比对像素: SRT cue 只在各自时间窗出现且并存时堆叠, ASS 的 BorderStyle 3 蓝色底框与 `\pos` 定位的绿字, cue 数组与时间线字幕, 经 Binder 写出再解析; 宿主隔离克隆 (6641) `org.autojs.autojs.core.plugin.mediastudio.*` 单测 51 例 0 失败. 真机目视 (E4, 2026-11-07): 小米平板上把 1080p 10 秒片段烧录成 4 个样本 (SRT 默认样式与重叠堆叠, `{\an8}` 置顶, 斜体 / 红字; ASS 半透明蓝底框, `\c` / `\b` / `\fs` 与 `\N`, `\an7\pos(200,300)`, `\k` 被忽略并 warning; cue 数组 + 黄字半透明底框; `compose` 时间线字幕盖在文字叠加之上), 关键帧拼图存于共享笔记 `3-slate-p3-3-visual/`, 维护者目视正常, 样本已删.
+
+- 提交: 插件 `fa78933` (P3.3, Q34 (c), VERSION_BUILD 10); 宿主 `630ba2a200` (Q24 同步 `burnSubtitles` / `timeline.subtitles` 预检与 Q34 (c) 上限, 协议文档, 本地, 未推送); P2.6 脚本与本次 ROADMAP 见插件下一笔提交.
 
 ---
 
@@ -686,10 +688,12 @@ oneway interface IMediaStudioCallback {
 | Q31 | `CREATE_SCRIPT` URI 模式的读取上限 | (a) 4 MiB UTF-8 (推荐, 内联上限 512 KiB 的 8 倍, 超过 512 KiB 走编辑器大文件模式) / (b) 16 MiB / (c) 与内联相同 512 KiB | P1.7 | 已决 (2026-11-06 19:45, 维护者选 a): 保持 4 MiB, 插件 P4.4 发送前按此自查 |
 | Q32 | Bun 里 `video.record` / `audio.record` 用哪组授权 (Bun 新授权 `mediastudio.control` 默认关闭, 只放行加工与任务管理) | (a) 复用 Node 录屏授权: `video.record` 需 screen.capture + screen.record, 麦克风需 screen.record.microphone, 内录需 screen.capture + screen.record.playback (推荐) / (b) 新增 mediastudio.record 授权 / (c) 只要 mediastudio.control 即可录制 | P1.6 | 已决 (2026-11-06 19:45, 维护者选 a): 保持, P5 文档授权表按此写 |
 | Q33 | `video.record` 省略 `width` / `height` 时默认用截图尺寸取偶数, 在要求 16 对齐或有宏块上限的编码器上必失败 (Redmi 22120RN86C 屏幕 720x1650, 默认调用报 `INVALID_OPTIONS: No H.264 encoder supports 720x1650`, 显式 720x1648 正常) | (a) 默认尺寸按编码器能力取: 查 `MediaCodecList` 的 `VideoCapabilities`, 向下取到对齐倍数, 超上限时等比缩小; 显式宽高不受支持时仍报 `INVALID_OPTIONS` 并在消息里给出可用尺寸 (推荐) / (b) 默认尺寸固定向下取 16 的倍数, 不查编码器 / (c) 保持, 只在文档写明 | P1.3 | 已决 (2026-11-06 19:45, 维护者选 a): 宿主 `core/record` 一处修改, Rhino / Node / Bun 共用, 由宿主卡片 3-slate-q33 实施; 插件录屏 / 录音内核副本 (D41, P4.5 / P7) 实现时按同一规则取默认尺寸. 已实施 (2026-11-06, 3-slate-q33): 宿主本地提交 `95b3d8ab42` (规则 `core/record/RecordingVideoSizes.kt`, Rhino / Node / Bun 与旧 `screen.record` 共用, 协议文档 "Recording size") 与 `0d5e37d97d` (以编码器 `areSizeAndRateSupported` 为准, 上限按两个方向取宽松者), 未推送; 隔离克隆单测 81 例 0 失败; Redmi 22120RN86C 两轮 `device_mediastudio_check.py --record --runtimes node,bun` 各 41 PASS / 0 FAIL, 第 2 轮 Rhino / Node / Bun 默认尺寸均为 720x1648 (屏幕 720x1650), 显式 718x1648 报 INVALID_OPTIONS 并给出最近可用尺寸 704x1648 |
-
+| Q34 | `compose` 时间线的轨道上限 (契约只限 256 个输入) | (a) 视频轨至多 4 条, 音频轨至多 8 条, 超出 `LIMIT_EXCEEDED` (推荐, 已先行; 重叠转场时每条视频轨同时解码 2 段, 4 x 2 + 8 = 16 个来源同时发声, 与 `audioMix` 的 16 路解码器上限 (Q18) 一致; 改选返工: 无) / (b) 不限轨道数, 改为检查任一时刻同时发声的来源不超过 16 (要在探测后逐时刻统计, 宿主无法预检, 返工小) / (c) 视频 8 条, 音频 16 条 (同时解码可达 32 个, 低端设备易随机失败) | P3.1 | 已决 (2026-11-06 23:10, 维护者选 c, 非推荐): 视频轨至多 8 条, 音频轨至多 16 条, 超出 `LIMIT_EXCEEDED`; 由批次 5 卡片 3-slate-p3-3 返工 (插件 `core/Timeline.kt` 与宿主 `MediaStudioOptionRules` 常量, 单测, 附录 B.1 / B.4, 协议文档上限表). 风险: 重叠转场时同时解码可达 8 x 2 + 16 = 32 个来源, 是 `audioMix` 16 路 (Q18) 的两倍, 低端设备可能因编解码器资源随机失败; P2.6 在 G8441 跑 8 视频轨 + 16 音频轨极限用例, 结果见附录 F |
 | Q35 | 宿主是否预检 `subtitlesParse` / `subtitlesWrite` 的选项 (Q24 要求插件冻结的操作把规则抄进宿主; 这两个操作没有默认输出, 输出扩展名为字幕格式, 宿主 `MediaStudioRequests` 目前按视频处理未校验操作的扩展名) | (a) 不预检, 只由插件校验 (推荐, 已先行; 两个操作无编码器, 失败即时返回, 宿主改动需要动 `MediaStudioRequests` / `MediaStudioOutputPaths` 的输出类型, 超出本卡的宿主范围) / (b) 宿主另开卡片: 增加字幕输出类型 (`.srt` / `.ass`, 补 `format`), 预检 cue 数组与 `format`, `subtitlesParse` 不填默认输出 (约 1 小时, 宿主 3 个文件 + 单测) | P3.3 | 已按推荐先行待确认 (2026-11-06, 3-slate-p3-3): `burnSubtitles` 与 `timeline.subtitles` 已抄进宿主, 这两个操作未抄; 改选 (b) 的返工只在宿主, 插件不变 |
 | Q36 | `subtitlesParse` 的结果超过契约事件上限 256 KiB (约 1500 条中等长度的 cue, 一部长片的字幕可能超出) | (a) 超出时 `LIMIT_EXCEEDED` 并在消息中建议拆分文件或直接交给 `burnSubtitles` / 时间线 (推荐, 已先行; 不改契约) / (b) 契约 v2: 结果改为插件写出的 JSON 临时文件路径, 宿主读出后删除 (契约, 宿主, 文档与声明都要改, 约半天) / (c) 结果改为紧凑数组 (`starts` long[], `ends` long[], `texts` String[]), 约省 40 %, 仍有上限 (契约字段变化, 宿主映射改, 约 2 小时) | P3.3 | 已按推荐先行待确认 (2026-11-06, 3-slate-p3-3): 插件按序列化后的实际大小判断; 改选 (b) / (c) 需要宿主卡片 |
-| Q34 | `compose` 时间线的轨道上限 (契约只限 256 个输入) | (a) 视频轨至多 4 条, 音频轨至多 8 条, 超出 `LIMIT_EXCEEDED` (推荐, 已先行; 重叠转场时每条视频轨同时解码 2 段, 4 x 2 + 8 = 16 个来源同时发声, 与 `audioMix` 的 16 路解码器上限 (Q18) 一致; 改选返工: 无) / (b) 不限轨道数, 改为检查任一时刻同时发声的来源不超过 16 (要在探测后逐时刻统计, 宿主无法预检, 返工小) / (c) 视频 8 条, 音频 16 条 (同时解码可达 32 个, 低端设备易随机失败) | P3.1 | 已决 (2026-11-06 23:10, 维护者选 c, 非推荐): 视频轨至多 8 条, 音频轨至多 16 条, 超出 `LIMIT_EXCEEDED`; 由批次 5 卡片 3-slate-p3-3 返工 (插件 `core/Timeline.kt` 与宿主 `MediaStudioOptionRules` 常量, 单测, 附录 B.1 / B.4, 协议文档上限表). 风险: 重叠转场时同时解码可达 8 x 2 + 16 = 32 个来源, 是 `audioMix` 16 路 (Q18) 的两倍, 低端设备可能因编解码器资源随机失败; P2.6 在 G8441 跑 8 视频轨 + 16 音频轨极限用例, 结果见附录 F |
+| Q37 | `compose` 8 视频轨 + 16 音频轨 (Q34 (c)) 在 G8441 (API 28, 骁龙 835) 必失败: 8 条带溶解转场的视频轨同时占用 16 个硬件解码器后, 编码器 `OMX.qcom.video.encoder.avc` 初始化报 `InsufficientResources`, 任务约 27 秒后以 `CODEC_ERROR: ERROR_CODE_ENCODER_INIT_FAILED` 结束 (无残留文件); 逐级减少后 6 视频轨 + 16 音频轨通过 (P2.6, 附录 F) | (a) 保持静态 8 / 16, 编码器或解码器因资源不足失败时把消息改为可操作的提示 (同时解码的来源过多, 减少轨道或重叠转场), 文档写明低端设备的实测上限 (推荐; 插件约 1 小时, 不改契约与宿主) / (b) 按设备能力动态收紧: 提交后按 `MediaCodecInfo.getMaxSupportedInstances` 与同时解码路数估算, 超出时 `LIMIT_EXCEEDED` (插件约半天; 宿主无法预检, 估算偏差可能误拒能跑的时间线) / (c) 资源不足时自动降级重试 (重叠转场改为 cut 以减少同时解码路数) 并 warning (插件约半天, 输出效果与请求不同) | P2.6 | 需拍板 (2026-11-07, 3-slate-p3-3 登记, 未先行) |
+| Q38 | 编码器能力表偏保守时 media3 回退改变输出尺寸: Redmi 22120RN86C 的 MTK 编码器 (`c2.mtk.avc.encoder` 等, 对齐 16x16) 与谷歌软件编码器对 1920x1080 / 640x360 的 `isSizeSupported` 都答 false, media3 (`setEnableFallback(true)`) 改用 1920x1088 / 640x368, 画面按比例居中, 上下各加 4 像素黑边; 只改宽度时 (360x640 -> 368x640) 连 warning 都没有 (`TransformationRequest` 只有高度). 用探测脚本直接以 1920x1080 / 640x360 / 360x640 配置这些编码器都能启动, 输出格式也是请求尺寸 | (a) 先按请求尺寸配置编码器, 配置或启动失败才走 media3 回退 (包装 `DefaultEncoderFactory`, 码率与编码格式的回退不变), 回退时 warning 写明前后宽高 (推荐; 插件约 2 - 3 小时含真机验证, 影响全部重编码的视频操作) / (b) 保持 media3 回退 (16 对齐 + 黑边), 只补上宽度变化的 warning (比较输出与请求尺寸, 约 1 小时) / (c) 回退时改为铺满后裁切, 不加黑边 (仍为非标准尺寸或损失 8 行画面, 约 2 小时) | P2.6 | 需拍板 (2026-11-07, 3-slate-p3-3 登记, 未先行) |
+| Q39 | `video.frame` 不写文件却需要插件有全部文件访问权限: 宿主把临时图片放在公共 `Movies/3-Slate Studio/.frame-<uuid>.png` (P1.3 `Video.kt`), 插件没有该权限时 `STORAGE_PERMISSION_DENIED` (P2.6 首轮在 G8441 / 小米平板 / Redmi 复现; 宿主在 Android 11+ 读不到插件私有目录, 不能改放那里) | (a) 保持, 文档 (P5.1) 写明 `video.frame` 与默认输出一样需要全部文件访问 (推荐; 无代码改动, 插件首次使用本就引导授权) / (b) 契约 v2: 宿主在自身缓存目录打开文件, 把 `ParcelFileDescriptor` 随请求交给插件写入, 无需任何存储权限 (契约, 宿主, 插件与文档都要改, 约半天) | P5.1 | 需拍板 (2026-11-07, 3-slate-p3-3 登记, 未先行) |
 
 ## 附录 E. 证据等级
 
@@ -742,7 +746,18 @@ P2.2 转码基准 (E3, 2026-11-06, 3-slate-p2-1-2): `py .python/benchmark_transc
 - 小米平板 (HyperOS) 新装应用默认 `RUN_ANY_IN_BACKGROUND ignore`, 系统日志 `Service.startForeground() not allowed due to bg restriction`, 不抛异常: 任务照常完成, 但没有前台服务与通知 (附录 D Q13). 能力表 `mediaStudioWarnings` 此时报后台受限, 基准脚本把这一项记为 `RESTRICTED` 而非失败. XQ-DQ72 无此限制. 小米平板复跑一次 (00:34, 改正警告文本的分隔符后): H.264 13.7 s, H.265 13.5 s, 码率与上表相同, 取消后 230 ms 服务停止, 警告全文输出正确.
 - 两台设备都保留 debug APK `1.0.0 (4)` (基准脚本事后卸载测试 APK, 并删除缓存里的源与输出).
 
-性能基线表 (P2.6 回填): 设备 | 硬件编码器 | 1080p 60 秒转码耗时 | H.265 | 备注.
+性能基线表 (P2.6, E3, 2026-11-07, 3-slate-p3-3): `py -3.12 .python/device_regression.py --serial <serial> [--extreme]`; 宿主为隔离克隆 debug 6641 (含 `630ba2a200`), 插件 debug 1.0.0 (10). 源为 ffmpeg `testsrc2` 1920x1080 30 fps 60 秒 (H.264 8 Mbps, 440 Hz AAC), 内容与 P2.2 的平移纹理不同, 倍速只在本表内可比; 耗时为脚本侧 (含 Binder 往返) 默认选项转码, 倍速 = 源时长 / 耗时. "回归" 为 25 个操作 (G8441 另加极限用例) 的通过数.
+
+| 设备 | API | 硬件视频编码器 | 1080p 60 秒 H.264 | H.265 | 回归 | 备注 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Sony G8441 (`BH900ASK9E`) | 28 | `OMX.qcom.video.encoder.avc`, `OMX.qcom.video.encoder.hevc` | 40.3 s (1.49 倍速) | 可用, 30.4 s (1.98 倍速) | 26 / 27 | 8 视频轨 + 16 音频轨极限用例失败 (`ERROR_CODE_ENCODER_INIT_FAILED`, 编码器 `InsufficientResources`), 逐级减少后 6 + 16 通过 (附录 D Q37) |
+| Sony XQ-AT72 (`QV710AF65F`) | 31 | 未执行 | | | | 被 chime-p5 占用, 待补跑 |
+| Sony XQ-DQ72 (`QV770340J7`) | 33 | 未执行 | | | | 被 chime-p5 占用, 待补跑 |
+| Redmi 22120RN86C (`bek749scrwv4wo8h`) | 33 | `c2.mtk.avc.encoder`, `OMX.MTK.VIDEO.ENCODER.AVC`, `c2.mtk.hevc.encoder`, `OMX.MTK.VIDEO.ENCODER.HEVC` | 34.5 s (1.74 倍速) | 可用, 38.8 s (1.55 倍速) | 23 / 25 | 两个 1080p 转码输出 1920x1088 (上下各 4 像素黑边), 360p 的重编码输出为 640x368 / 368x640 (附录 D Q38) |
+| Xiaomi Pad 23046RP50C (`968e9f18`) | 35 | `c2.qti.avc.encoder`, `OMX.qcom.video.encoder.avc`, `c2.qti.hevc.encoder` (另有 `.cq`), `OMX.qcom.video.encoder.hevc` (另有 `.cq`) | 8.3 s (7.22 倍速) | 可用, 8.2 s (7.31 倍速) | 25 / 25 | |
+| OnePlus OPD2413 (`63751f63`) | 35 | 同小米平板, 另有 `c2.qti.hevc.encoder.hdr` | 6.9 s (8.75 倍速) | 可用, 6.6 s (9.13 倍速) | 25 / 25 | ColorOS 首次安装插件要维护者在安装引导页确认 |
+
+- 首轮 (30 秒源) 暴露的脚本问题均已修正后重跑, 上表为修正后的结果: `frames` 返回路径数组; Android 11+ 宿主读不到插件私有目录, 检查一律用返回值; `video.frame` 的临时图片在公共目录, 运行期间授予存储权限 (Q39); 小米平板 (Android 15) 的 shell 删不掉插件写进私有目录的文件 (`run-as` 也进不了 `/storage`), 输出改放 `/sdcard/Download/slate-regression`, 残留已在插件进程内删除; 删除的文件夹 (API 28 上还有文件) 仍留 MediaStore 记录, 驱动改为按路径删除记录.
 
 ## 附录 G. 已评估暂缓
 
