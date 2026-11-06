@@ -21,6 +21,7 @@ import androidx.media3.common.util.ExperimentalApi
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.effect.Crop
 import androidx.media3.effect.FrameDropEffect
+import androidx.media3.effect.OverlayEffect
 import androidx.media3.effect.Presentation
 import androidx.media3.effect.ScaleAndRotateTransformation
 import androidx.media3.transformer.AudioEncoderSettings
@@ -49,6 +50,7 @@ import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.VideoCod
 import org.autojs.plugin.mediastudio.api.MediaStudioContract
 import org.autojs.plugin.mediastudio.api.MediaStudioErrorCodes
 import org.autojs.plugin.mediastudio.api.MediaStudioOps
+import java.io.Closeable
 import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
@@ -224,8 +226,8 @@ internal class TransformerExport(private val context: Context, private val task:
 
 /**
  * Builds the media3 compositions of the video operations (roadmap P2.2, D29) and runs them; `extractAudio` to M4A runs
- * here as well, the other audio containers go through [AudioExport].
- * zh-CN: 构建视频操作的 media3 合成并运行 (路线图 P2.2, D29); `extractAudio` 输出 M4A 也在这里运行, 其他音频容器走 [AudioExport].
+ * here as well, the other audio containers and the `audio*` operations go through [AudioOperations].
+ * zh-CN: 构建视频操作的 media3 合成并运行 (路线图 P2.2, D29); `extractAudio` 输出 M4A 也在这里运行, 其他音频容器与 `audio*` 操作走 [AudioOperations].
  */
 internal class VideoOperations(
     context: Context,
@@ -234,6 +236,9 @@ internal class VideoOperations(
 ) {
 
     private val export = TransformerExport(context, task)
+
+    /** Resources an export holds until it ends. zh-CN: 导出结束前持有的资源. */
+    private val resources = mutableListOf<Closeable>()
 
     private data class Plan(val composition: Composition, val settings: TransformerExport.Settings, val stage: String = MediaStudioContract.STAGE_ENCODING)
 
@@ -250,11 +255,19 @@ internal class VideoOperations(
                 is OperationSpec.Transcode -> transcode(spec, inputs.single())
                 OperationSpec.RemoveAudio -> removeAudio(inputs.single())
                 is OperationSpec.ExtractAudio -> extractAudio(spec, inputs.single())
+                is OperationSpec.Overlay -> overlay(spec, inputs.single())
                 is OperationSpec.Trim -> error("handled above")
+                is OperationSpec.Frames, is OperationSpec.Frame, is OperationSpec.Thumbnail, is OperationSpec.ToGif ->
+                    error("${spec::class.simpleName} is written by StillOperations")
+                is OperationSpec.AudioTrim, is OperationSpec.AudioConcat, is OperationSpec.AudioMix, is OperationSpec.AudioVolume,
+                is OperationSpec.AudioConvert, is OperationSpec.AudioSpeed ->
+                    error("${spec::class.simpleName} is written by AudioOperations")
             }
             export.run(plan.composition, output, plan.settings, from, to, plan.stage)
         } finally {
             notes += export.notes
+            resources.forEach { runCatching { it.close() } }
+            resources.clear()
         }
     }
 
@@ -441,6 +454,37 @@ internal class VideoOperations(
                 audioBitRate = if (explicit) spec.audio.bitRate ?: BitRates.aac(spec.audio.channels ?: input.channels ?: 2) else null,
             ),
             if (explicit) MediaStudioContract.STAGE_ENCODING else MediaStudioContract.STAGE_MUXING,
+        )
+    }
+
+    /**
+     * One full-frame bitmap overlay after a Presentation to the even display size, so pixel positions and percentages
+     * refer to the output frame; the audio passes through where media3 can.
+     * zh-CN: 先用 Presentation 调到偶数的显示尺寸, 再加一个整帧位图叠加层, 使像素位置与百分比都以输出帧为准; 音频在 media3
+     * 能直通时直通.
+     */
+    private fun overlay(spec: OperationSpec.Overlay, input: MediaInfo): Plan {
+        requireVideo(input, MediaStudioOps.OVERLAY)
+        val size = FrameGeometry.even(displaySize(input))
+        FrameGeometry.sizeProblem(size)?.let { throw MediaStudioException.invalid(it) }
+        spec.items.forEachIndexed { index, item ->
+            if (item.placement.fromMillis >= input.durationMillis) {
+                notes += "overlay $index starts at ${item.placement.fromMillis} ms, after the end of the input (${input.durationMillis} ms); it never shows"
+            }
+        }
+        val renderer = OverlayRenderer(spec.items, size).also { resources += it }
+        val effects = listOf<Effect>(
+            Presentation.createForWidthAndHeight(size.width, size.height, Presentation.LAYOUT_STRETCH_TO_FIT),
+            OverlayEffect(listOf(renderer.overlay())),
+        )
+        val item = EditedMediaItem.Builder(mediaItemOf(input.path)).setEffects(Effects(emptyList(), effects)).build()
+        return Plan(
+            single(item),
+            TransformerExport.Settings(
+                videoMime = spec.video.codec.mime,
+                audioMime = if (input.hasAudio) MimeTypes.AUDIO_AAC else null,
+                videoBitRate = spec.video.bitRate ?: BitRates.estimateVideo(size.width, size.height, input.frameRate, spec.video.codec),
+            ),
         )
     }
 

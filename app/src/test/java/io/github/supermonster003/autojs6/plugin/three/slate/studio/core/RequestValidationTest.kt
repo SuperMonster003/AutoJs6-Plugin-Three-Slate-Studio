@@ -76,7 +76,18 @@ class RequestValidationTest {
             MediaStudioOps.EXTRACT_AUDIO,
             MediaStudioOps.REMOVE_AUDIO,
             MediaStudioOps.TRANSCODE,
+            MediaStudioOps.OVERLAY,
+            MediaStudioOps.FRAMES,
+            MediaStudioOps.FRAME,
+            MediaStudioOps.THUMBNAIL,
+            MediaStudioOps.TO_GIF,
             MediaStudioOps.AUDIO_PROBE,
+            MediaStudioOps.AUDIO_TRIM,
+            MediaStudioOps.AUDIO_CONCAT,
+            MediaStudioOps.AUDIO_MIX,
+            MediaStudioOps.AUDIO_VOLUME,
+            MediaStudioOps.AUDIO_CONVERT,
+            MediaStudioOps.AUDIO_SPEED,
         )
         assertEquals(implemented, ThreeSlateStudioContract.IMPLEMENTED_OPS)
         assertTrue(MediaStudioOps.ALL.containsAll(implemented))

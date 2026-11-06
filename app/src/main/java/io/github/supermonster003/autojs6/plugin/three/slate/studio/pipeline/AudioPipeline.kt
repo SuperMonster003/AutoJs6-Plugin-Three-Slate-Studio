@@ -3,7 +3,7 @@
 package io.github.supermonster003.autojs6.plugin.three.slate.studio.pipeline
 
 import android.media.MediaCodec
-import android.media.MediaExtractor
+import android.media.MediaCodecInfo
 import android.media.MediaFormat
 import android.media.MediaMuxer
 import android.os.Build
@@ -16,148 +16,22 @@ import androidx.media3.common.audio.SonicAudioProcessor
 import androidx.media3.common.util.UnstableApi
 import com.google.common.collect.ImmutableList
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.AudioContainer
-import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.BitRates
-import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.MediaInfo
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.MediaStudioException
-import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.OperationSpec
-import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.TaskRunner
-import org.autojs.plugin.mediastudio.api.MediaStudioContract
 import org.autojs.plugin.mediastudio.api.MediaStudioErrorCodes
 import java.io.Closeable
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-/**
- * `extractAudio` to WAV, FLAC and OGG (roadmap P2.2, D15): decodes the first audio track to 16-bit PCM, mixes the
- * channels and resamples with media3 audio processors, then writes WAV itself, FLAC through the platform encoder and
- * OGG Opus through the platform encoder and MediaMuxer (Android 10+). Defaults: WAV keeps the channels, FLAC and OGG
- * keep at most 2; OGG runs at 48 kHz, the others keep the source rate.
- * zh-CN: `extractAudio` 输出 WAV, FLAC 与 OGG (路线图 P2.2, D15): 把第一条音轨解码为 16 位 PCM, 用 media3 音频处理器混合声道并
- * 重采样, 然后由插件自己写 WAV, 用平台编码器写 FLAC, 用平台编码器与 MediaMuxer 写 OGG Opus (Android 10+). 默认: WAV 保留声道数,
- * FLAC 与 OGG 最多保留 2 个声道; OGG 为 48 kHz, 其他保留源采样率.
+/*
+ * Building blocks of the audio operations (roadmap P2.2 / P2.5, D15), driven by [AudioOperations]: decoder PCM in any
+ * platform encoding becomes 16-bit little endian ([Pcm16]), [PcmConverter] mixes the channels and runs Sonic (resampling,
+ * speed, pitch), [PcmSinks] writes WAV itself, FLAC through the platform encoder, M4A (AAC LC) and OGG Opus (Android 10+)
+ * through the platform encoders and MediaMuxer.
+ * zh-CN: 音频操作 (路线图 P2.2 / P2.5, D15) 的构件, 由 [AudioOperations] 驱动: 解码器输出的各种平台 PCM 编码先转为 16 位小端
+ * ([Pcm16]), [PcmConverter] 混合声道并运行 Sonic (重采样, 变速, 变调), [PcmSinks] 由插件自己写 WAV, 用平台编码器写 FLAC,
+ * 用平台编码器与 MediaMuxer 写 M4A (AAC LC) 与 OGG Opus (Android 10+).
  */
-internal class AudioExport(private val task: TaskRunner.JobContext, private val notes: MutableList<String>) {
-
-    fun run(input: MediaInfo, output: String, spec: OperationSpec.ExtractAudio, from: Double, to: Double) {
-        require(spec.container != AudioContainer.M4A) { "M4A runs through media3 Transformer" }
-        val stage = if (spec.container == AudioContainer.WAV) MediaStudioContract.STAGE_DECODING else MediaStudioContract.STAGE_ENCODING
-        val durationUs = (input.durationMillis * 1_000L).coerceAtLeast(1L)
-        val extractor = MediaExtractor()
-        var decoder: MediaCodec? = null
-        var chain: PcmChain? = null
-        var completed = false
-        try {
-            try {
-                extractor.setDataSource(input.path)
-            } catch (e: Exception) {
-                throw MediaStudioException.unsupported("cannot read media from ${input.path} (${e.message ?: e.javaClass.simpleName})")
-            }
-            val track = (0 until extractor.trackCount).firstOrNull { index ->
-                extractor.getTrackFormat(index).getString(MediaFormat.KEY_MIME)?.startsWith("audio/") == true
-            } ?: throw MediaStudioException.unsupported("no audio track in ${input.path}")
-            extractor.selectTrack(track)
-            val trackFormat = extractor.getTrackFormat(track)
-            val mime = trackFormat.getString(MediaFormat.KEY_MIME)!!
-            val codec = Codecs.decoder(mime, trackFormat).also { decoder = it }
-            val info = MediaCodec.BufferInfo()
-            var pcmFormat: PcmFormat? = null
-            var scratch = ByteBuffer.allocateDirect(INITIAL_SCRATCH_BYTES).order(ByteOrder.nativeOrder())
-            var inputDone = false
-            var outputDone = false
-            while (!outputDone) {
-                task.throwIfCancelled()
-                if (!inputDone) {
-                    val index = codec.dequeueInputBuffer(TIMEOUT_US)
-                    if (index >= 0) {
-                        val buffer = codec.getInputBuffer(index) ?: throw codecError("the decoder gave no input buffer")
-                        val size = extractor.readSampleData(buffer, 0)
-                        if (size < 0) {
-                            codec.queueInputBuffer(index, 0, 0, 0L, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
-                            inputDone = true
-                        } else {
-                            codec.queueInputBuffer(index, 0, size, extractor.sampleTime.coerceAtLeast(0L), 0)
-                            extractor.advance()
-                        }
-                    }
-                }
-                val index = codec.dequeueOutputBuffer(info, TIMEOUT_US)
-                when {
-                    index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
-                        val changed = PcmFormat.of(codec.outputFormat)
-                        if (chain != null && changed != pcmFormat) {
-                            throw MediaStudioException.unsupported("the audio format of ${input.path} changed while decoding ($pcmFormat -> $changed)")
-                        }
-                        pcmFormat = changed
-                    }
-                    index >= 0 -> {
-                        if (info.size > 0) {
-                            val format = pcmFormat ?: PcmFormat.of(codec.outputFormat).also { pcmFormat = it }
-                            val buffer = codec.getOutputBuffer(index) ?: throw codecError("the decoder gave no output buffer")
-                            buffer.position(info.offset)
-                            buffer.limit(info.offset + info.size)
-                            val needed = Pcm16.bytesFor(info.size, format.encoding)
-                            if (scratch.capacity() < needed) scratch = ByteBuffer.allocateDirect(needed).order(ByteOrder.nativeOrder())
-                            scratch.clear()
-                            Pcm16.convert(buffer, format.encoding, scratch)
-                            scratch.flip()
-                            val active = chain ?: PcmChain(format, targetRate(spec, format), targetChannels(spec, format), sink(spec, output, format)).also {
-                                chain = it
-                                if (format.channels > 2 && targetChannels(spec, format) == 2) {
-                                    notes += "the ${format.channels} channel input was mixed down to 2 channels"
-                                }
-                            }
-                            active.write(scratch)
-                            if (info.presentationTimeUs > 0) task.progress(from + (to - from) * (info.presentationTimeUs.toDouble() / durationUs).coerceIn(0.0, 1.0), stage)
-                        }
-                        codec.releaseOutputBuffer(index, false)
-                        if (info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) outputDone = true
-                    }
-                }
-            }
-            val active = chain ?: throw codecError("no audio samples were decoded from ${input.path}")
-            task.throwIfCancelled()
-            active.finish()
-            completed = true
-        } finally {
-            decoder?.let { codec -> runCatching { codec.stop() }; runCatching { codec.release() } }
-            runCatching { extractor.release() }
-            if (!completed) chain?.close()
-        }
-    }
-
-    private fun targetChannels(spec: OperationSpec.ExtractAudio, source: PcmFormat): Int =
-        spec.audio.channels ?: if (spec.container == AudioContainer.WAV) source.channels else minOf(source.channels, 2)
-
-    private fun targetRate(spec: OperationSpec.ExtractAudio, source: PcmFormat): Int =
-        spec.audio.sampleRate ?: if (spec.container == AudioContainer.OGG) OPUS_DEFAULT_SAMPLE_RATE else source.sampleRate
-
-    private fun sink(spec: OperationSpec.ExtractAudio, output: String, source: PcmFormat): (Int, Int) -> PcmSink = { rate, channels ->
-        when (spec.container) {
-            AudioContainer.WAV -> WavSink(output, rate, channels)
-            AudioContainer.FLAC -> FlacSink(output, rate, channels)
-            AudioContainer.OGG -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                OggSink(output, rate, channels, spec.audio.bitRate ?: BitRates.opus(channels))
-            } else {
-                throw MediaStudioException.unsupported("ogg output needs Android 10 or later")
-            }
-            AudioContainer.M4A -> error("M4A runs through media3 Transformer; source $source")
-        }
-    }
-
-    companion object {
-
-        const val TIMEOUT_US = 10_000L
-
-        const val OPUS_DEFAULT_SAMPLE_RATE = 48_000
-
-        private const val INITIAL_SCRATCH_BYTES = 64 * 1024
-
-        fun codecError(detail: String, cause: Throwable? = null) = MediaStudioException(MediaStudioErrorCodes.CODEC_ERROR, detail, cause)
-
-    }
-
-}
 
 /** Decoded PCM as the decoder reports it. zh-CN: 解码器报告的 PCM 格式. */
 internal data class PcmFormat(val sampleRate: Int, val channels: Int, val encoding: Int) {
@@ -234,19 +108,27 @@ internal interface PcmSink : Closeable {
 }
 
 /**
- * 16-bit PCM through the channel mixer and the Sonic resampler where the target differs from the source.
- * zh-CN: 目标与源不同时, 让 16 位 PCM 经过声道混合器与 Sonic 重采样器.
+ * 16-bit PCM through the channel mixer and Sonic (resampling, [speed], [pitch]) where the target differs from the source;
+ * the output goes to the callback of [write] and [finish], which consumes each buffer.
+ * zh-CN: 目标与源不同时, 让 16 位 PCM 经过声道混合器与 Sonic (重采样, [speed], [pitch]); 输出交给 [write] 与 [finish] 的回调,
+ * 回调须消费每个缓冲区.
  */
-private class PcmChain(source: PcmFormat, targetRate: Int, targetChannels: Int, sinkFactory: (Int, Int) -> PcmSink) : Closeable {
+internal class PcmConverter(source: PcmFormat, targetRate: Int, targetChannels: Int, speed: Float = 1f, pitch: Float = 1f) {
 
     private val pipeline: AudioProcessingPipeline?
-
-    private val sink: PcmSink
 
     init {
         val processors = buildList<AudioProcessor> {
             if (targetChannels != source.channels) add(AudioProcessors.channelMixer(targetChannels))
-            if (targetRate != source.sampleRate) add(SonicAudioProcessor().apply { setOutputSampleRateHz(targetRate) })
+            if (targetRate != source.sampleRate || speed != 1f || pitch != 1f) {
+                add(
+                    SonicAudioProcessor().apply {
+                        if (targetRate != source.sampleRate) setOutputSampleRateHz(targetRate)
+                        setSpeed(speed)
+                        setPitch(pitch)
+                    },
+                )
+            }
         }
         pipeline = if (processors.isEmpty()) {
             null
@@ -266,44 +148,37 @@ private class PcmChain(source: PcmFormat, targetRate: Int, targetChannels: Int, 
                 chain.flush(AudioProcessor.StreamMetadata.DEFAULT)
             }
         }
-        sink = sinkFactory(targetRate, targetChannels)
     }
 
-    fun write(pcm: ByteBuffer) {
-        val chain = pipeline ?: return sink.write(pcm)
+    fun write(pcm: ByteBuffer, out: (ByteBuffer) -> Unit) {
+        val chain = pipeline ?: return out(pcm)
         var stalls = 0
         while (pcm.hasRemaining()) {
             val before = pcm.remaining()
             chain.queueInput(pcm)
-            val drained = drain(chain)
+            val drained = drain(chain, out)
             stalls = if (pcm.remaining() == before && !drained) stalls + 1 else 0
             if (stalls > MAX_STALLS) throw MediaStudioException(MediaStudioErrorCodes.INTERNAL_ERROR, "the audio processors stopped taking input")
         }
     }
 
-    fun finish() {
-        pipeline?.let { chain ->
-            chain.queueEndOfStream()
-            var stalls = 0
-            while (!chain.isEnded) {
-                stalls = if (drain(chain)) 0 else stalls + 1
-                if (stalls > MAX_STALLS) throw MediaStudioException(MediaStudioErrorCodes.INTERNAL_ERROR, "the audio processors did not end")
-            }
-            drain(chain)
+    fun finish(out: (ByteBuffer) -> Unit) {
+        val chain = pipeline ?: return
+        chain.queueEndOfStream()
+        var stalls = 0
+        while (!chain.isEnded) {
+            stalls = if (drain(chain, out)) 0 else stalls + 1
+            if (stalls > MAX_STALLS) throw MediaStudioException(MediaStudioErrorCodes.INTERNAL_ERROR, "the audio processors did not end")
         }
-        sink.finish()
+        drain(chain, out)
     }
 
-    override fun close() {
-        sink.close()
-    }
-
-    private fun drain(chain: AudioProcessingPipeline): Boolean {
+    private fun drain(chain: AudioProcessingPipeline, out: (ByteBuffer) -> Unit): Boolean {
         var any = false
         while (true) {
             val output = chain.getOutput()
             if (!output.hasRemaining()) return any
-            sink.write(output)
+            out(output)
             any = true
         }
     }
@@ -315,7 +190,7 @@ private class PcmChain(source: PcmFormat, targetRate: Int, targetChannels: Int, 
 }
 
 /** Canonical 44-byte header WAV, header written on [finish]. zh-CN: 44 字节标准头的 WAV, 头部在 [finish] 时写入. */
-private class WavSink(path: String, private val sampleRate: Int, private val channels: Int) : PcmSink {
+internal class WavSink(path: String, private val sampleRate: Int, private val channels: Int) : PcmSink {
 
     private val file = RandomAccessFile(path, "rw").apply {
         setLength(0)
@@ -368,7 +243,7 @@ private class WavSink(path: String, private val sampleRate: Int, private val cha
 }
 
 /** Feeds 16-bit PCM to a platform encoder and hands out its output. zh-CN: 把 16 位 PCM 送入平台编码器并转交其输出. */
-private abstract class EncoderSink(mime: String, format: MediaFormat, private val sampleRate: Int, channels: Int) : PcmSink {
+internal abstract class EncoderSink(mime: String, format: MediaFormat, private val sampleRate: Int, channels: Int) : PcmSink {
 
     protected val codec: MediaCodec = Codecs.encoder(mime, format)
 
@@ -396,12 +271,12 @@ private abstract class EncoderSink(mime: String, format: MediaFormat, private va
 
     override fun write(pcm: ByteBuffer) {
         while (pcm.hasRemaining()) {
-            val index = codec.dequeueInputBuffer(AudioExport.TIMEOUT_US)
+            val index = codec.dequeueInputBuffer(Codecs.TIMEOUT_US)
             if (index >= 0) {
-                val buffer = codec.getInputBuffer(index) ?: throw AudioExport.codecError("the encoder gave no input buffer")
+                val buffer = codec.getInputBuffer(index) ?: throw Codecs.error("the encoder gave no input buffer")
                 buffer.clear()
                 val size = minOf(buffer.remaining(), pcm.remaining()) / frameBytes * frameBytes
-                if (size <= 0) throw AudioExport.codecError("the encoder input buffer holds less than one frame")
+                if (size <= 0) throw Codecs.error("the encoder input buffer holds less than one frame")
                 val slice = pcm.duplicate()
                 slice.limit(slice.position() + size)
                 buffer.put(slice)
@@ -415,7 +290,7 @@ private abstract class EncoderSink(mime: String, format: MediaFormat, private va
 
     override fun finish() {
         while (true) {
-            val index = codec.dequeueInputBuffer(AudioExport.TIMEOUT_US)
+            val index = codec.dequeueInputBuffer(Codecs.TIMEOUT_US)
             if (index >= 0) {
                 codec.queueInputBuffer(index, 0, 0, timeUs(queuedFrames), MediaCodec.BUFFER_FLAG_END_OF_STREAM)
                 break
@@ -444,16 +319,16 @@ private abstract class EncoderSink(mime: String, format: MediaFormat, private va
     private fun drain(untilEnd: Boolean) {
         var idle = 0
         while (true) {
-            val index = codec.dequeueOutputBuffer(info, if (untilEnd) AudioExport.TIMEOUT_US else 0L)
+            val index = codec.dequeueOutputBuffer(info, if (untilEnd) Codecs.TIMEOUT_US else 0L)
             when {
                 index == MediaCodec.INFO_TRY_AGAIN_LATER -> {
                     if (!untilEnd) return
-                    if (++idle > MAX_IDLE_POLLS) throw AudioExport.codecError("the encoder did not finish within ${MAX_IDLE_POLLS * AudioExport.TIMEOUT_US / 1_000_000L} s")
+                    if (++idle > MAX_IDLE_POLLS) throw Codecs.error("the encoder did not finish within ${MAX_IDLE_POLLS * Codecs.TIMEOUT_US / 1_000_000L} s")
                 }
                 index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> onFormat(codec.outputFormat)
                 index >= 0 -> {
                     idle = 0
-                    val buffer = codec.getOutputBuffer(index) ?: throw AudioExport.codecError("the encoder gave no output buffer")
+                    val buffer = codec.getOutputBuffer(index) ?: throw Codecs.error("the encoder gave no output buffer")
                     buffer.position(info.offset)
                     buffer.limit(info.offset + info.size)
                     if (info.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG != 0) {
@@ -480,7 +355,7 @@ private abstract class EncoderSink(mime: String, format: MediaFormat, private va
  * end (the platform encoder cannot seek back).
  * zh-CN: 原生 FLAC: 编码器给出的 `fLaC` + STREAMINFO 头, 然后是各帧; 结束时补写总样本数 (平台编码器无法回写).
  */
-private class FlacSink(path: String, sampleRate: Int, channels: Int) :
+internal class FlacSink(path: String, sampleRate: Int, channels: Int) :
     EncoderSink(MediaFormat.MIMETYPE_AUDIO_FLAC, format(sampleRate, channels), sampleRate, channels) {
 
     private val file = RandomAccessFile(path, "rw").apply { setLength(0) }
@@ -523,7 +398,7 @@ private class FlacSink(path: String, sampleRate: Int, channels: Int) :
 
     private fun writeHeader() {
         if (headerWritten) return
-        val bytes = header ?: throw AudioExport.codecError("the FLAC encoder gave no stream header")
+        val bytes = header ?: throw Codecs.error("the FLAC encoder gave no stream header")
         channel.write(ByteBuffer.wrap(bytes), 0L)
         channel.position(bytes.size.toLong())
         headerWritten = true
@@ -552,10 +427,10 @@ private class FlacSink(path: String, sampleRate: Int, channels: Int) :
         fun streamHeader(data: ByteBuffer): ByteArray {
             val bytes = ByteArray(data.remaining()).also { data.get(it) }
             val start = if (bytes.size >= 4 && bytes.copyOfRange(0, 4).contentEquals(MAGIC)) 4 else 0
-            if (bytes.size < start + 4 + STREAMINFO_BYTES) throw AudioExport.codecError("the FLAC stream header is ${bytes.size} bytes")
+            if (bytes.size < start + 4 + STREAMINFO_BYTES) throw Codecs.error("the FLAC stream header is ${bytes.size} bytes")
             val type = bytes[start].toInt() and 0x7F
             val length = ((bytes[start + 1].toInt() and 0xFF) shl 16) or ((bytes[start + 2].toInt() and 0xFF) shl 8) or (bytes[start + 3].toInt() and 0xFF)
-            if (type != 0 || length != STREAMINFO_BYTES) throw AudioExport.codecError("the FLAC stream header starts with block type $type of $length bytes")
+            if (type != 0 || length != STREAMINFO_BYTES) throw Codecs.error("the FLAC stream header starts with block type $type of $length bytes")
             return MAGIC + byteArrayOf(0x80.toByte(), 0, 0, STREAMINFO_BYTES.toByte()) + bytes.copyOfRange(start + 4, start + 4 + STREAMINFO_BYTES)
         }
 
@@ -563,12 +438,15 @@ private class FlacSink(path: String, sampleRate: Int, channels: Int) :
 
 }
 
-/** Opus in OGG through MediaMuxer (Android 10+). zh-CN: 经 MediaMuxer 写入 OGG 的 Opus (Android 10+). */
-@RequiresApi(Build.VERSION_CODES.Q)
-private class OggSink(path: String, sampleRate: Int, channels: Int, bitRate: Int) :
-    EncoderSink(MediaFormat.MIMETYPE_AUDIO_OPUS, format(sampleRate, channels, bitRate), sampleRate, channels) {
+/**
+ * An encoded track in a MediaMuxer container: M4A (AAC LC in MPEG-4) or OGG Opus (Android 10+). The codec data travels
+ * in the output format.
+ * zh-CN: MediaMuxer 容器中的一条编码轨: M4A (MPEG-4 中的 AAC LC) 或 OGG Opus (Android 10+). 编解码数据随输出格式传递.
+ */
+internal class MuxerSink(path: String, muxerFormat: Int, format: MediaFormat, sampleRate: Int, channels: Int) :
+    EncoderSink(format.getString(MediaFormat.KEY_MIME)!!, format, sampleRate, channels) {
 
-    private val muxer = MediaMuxer(path, MediaMuxer.OutputFormat.MUXER_OUTPUT_OGG)
+    private val muxer = MediaMuxer(path, muxerFormat)
 
     private var track = -1
 
@@ -581,17 +459,17 @@ private class OggSink(path: String, sampleRate: Int, channels: Int, bitRate: Int
     }
 
     override fun onConfig(buffer: ByteBuffer) {
-        // The Opus headers travel in the output format. zh-CN: Opus 头随输出格式传递.
+        // The codec data travels in the output format. zh-CN: 编解码数据随输出格式传递.
     }
 
     override fun onSample(buffer: ByteBuffer, info: MediaCodec.BufferInfo) {
-        if (track < 0) throw AudioExport.codecError("the Opus encoder gave samples before its format")
+        if (track < 0) throw Codecs.error("the encoder gave samples before its format")
         sample.set(info.offset, info.size, info.presentationTimeUs, info.flags and (MediaCodec.BUFFER_FLAG_END_OF_STREAM or MediaCodec.BUFFER_FLAG_CODEC_CONFIG).inv())
         muxer.writeSampleData(track, buffer, sample)
     }
 
     override fun complete() {
-        if (track < 0) throw AudioExport.codecError("the Opus encoder gave no output")
+        if (track < 0) throw Codecs.error("the encoder gave no output")
         muxer.stop()
         muxer.release()
     }
@@ -601,17 +479,51 @@ private class OggSink(path: String, sampleRate: Int, channels: Int, bitRate: Int
         muxer.release()
     }
 
-    private companion object {
-        fun format(sampleRate: Int, channels: Int, bitRate: Int): MediaFormat =
-            MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_OPUS, sampleRate, channels).apply {
-                setInteger(MediaFormat.KEY_BIT_RATE, bitRate)
-            }
+}
+
+/** Opens the sink of an [AudioContainer]. zh-CN: 打开某种 [AudioContainer] 的输出端. */
+internal object PcmSinks {
+
+    /** [bitRate] applies to M4A and OGG. zh-CN: [bitRate] 用于 M4A 与 OGG. */
+    fun open(container: AudioContainer, path: String, sampleRate: Int, channels: Int, bitRate: Int?): PcmSink = when (container) {
+        AudioContainer.WAV -> WavSink(path, sampleRate, channels)
+        AudioContainer.FLAC -> FlacSink(path, sampleRate, channels)
+        AudioContainer.M4A -> MuxerSink(
+            path,
+            MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4,
+            MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, sampleRate, channels).apply {
+                setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)
+                setInteger(MediaFormat.KEY_BIT_RATE, requireNotNull(bitRate) { "M4A needs a bit rate" })
+            },
+            sampleRate,
+            channels,
+        )
+        AudioContainer.OGG -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ogg(path, sampleRate, channels, requireNotNull(bitRate) { "OGG needs a bit rate" })
+        } else {
+            throw MediaStudioException.unsupported("ogg output needs Android 10 (API 29) or later")
+        }
     }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun ogg(path: String, sampleRate: Int, channels: Int, bitRate: Int) = MuxerSink(
+        path,
+        MediaMuxer.OutputFormat.MUXER_OUTPUT_OGG,
+        MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_OPUS, sampleRate, channels).apply {
+            setInteger(MediaFormat.KEY_BIT_RATE, bitRate)
+        },
+        sampleRate,
+        channels,
+    )
 
 }
 
 /** Creates and configures platform codecs with contract errors. zh-CN: 创建并配置平台编解码器, 失败时给出契约错误. */
-private object Codecs {
+internal object Codecs {
+
+    const val TIMEOUT_US = 10_000L
+
+    fun error(detail: String, cause: Throwable? = null) = MediaStudioException(MediaStudioErrorCodes.CODEC_ERROR, detail, cause)
 
     fun decoder(mime: String, format: MediaFormat): MediaCodec = create(mime, format, encoder = false)
 
@@ -629,7 +541,7 @@ private object Codecs {
             codec.start()
         } catch (e: RuntimeException) {
             runCatching { codec.release() }
-            throw AudioExport.codecError("the $mime $kind rejected $format (${e.message ?: e.javaClass.simpleName})", e)
+            throw error("the $mime $kind rejected $format (${e.message ?: e.javaClass.simpleName})", e)
         }
         return codec
     }

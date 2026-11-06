@@ -201,8 +201,8 @@ io.github.supermonster003.autojs6.plugin.three.slate.studio
 | 阶段 | 版本 | 主题 | 状态 |
 | --- | --- | --- | --- |
 | P0 | 1.0.0 | 仓库骨架: 构建链与身份, Icon Studio 图标, 测试与 CI | 已完成 (2026-11-05; 剩真机图标目视 E4 待维护者, Q9 - Q11 已按推荐先行待确认) |
-| P1 | 宿主 6.8.1 (本地构建号, D23) | 契约 `media-studio-api`, 录屏 / 录音内核泛化, 脚本模块 `video` / `audio`, `CREATE_SCRIPT` 入口, 注册与协议文档 | 进行中 (P1.1 / P1.2 已完成 2026-11-05, 宿主本地提交; P1.3 - P1.5 见看板) |
-| P2 | 1.0.0 | 插件加工核心: 执行器与任务模型, 视频基础加工, 叠加, 抽帧与 GIF, 音频加工, 设备矩阵 | 进行中 (P2.1 / P2.2 已完成 2026-11-06; 剩 P2.3 - P2.6) |
+| P1 | 宿主 6.8.1 (本地构建号, D23) | 契约 `media-studio-api`, 录屏 / 录音内核泛化, 脚本模块 `video` / `audio`, `CREATE_SCRIPT` 入口, 注册与协议文档 | 进行中 (P1.1-P1.5 与 P1.7 已完成 (2026-11-06), 宿主本地提交; P1.6 宿主侧已完成, 门面与 Node / Bun 真机验收等 Q30) |
+| P2 | 1.0.0 | 插件加工核心: 执行器与任务模型, 视频基础加工, 叠加, 抽帧与 GIF, 音频加工, 设备矩阵 | 进行中 (P2.1 - P2.5 已完成 2026-11-06; 剩 P2.6) |
 | P3 | 1.0.0 | 多轨合成: 时间线 JSON 与 `video.compose`, 转场, 字幕 | 未开始 |
 | P4 | 1.0.0 | Studio 界面: 应用骨架, 工具箱向导, 时间线剪辑器, 代码生成与宿主入口, Studio 录音 | 未开始 |
 | P5 | 1.0.0 | 文档, 声明, 四仓库同步, 样例, 兼容矩阵, 发布与索引登记 | 未开始 |
@@ -235,7 +235,7 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 2. 真机脚本回归: 附录 F 设备矩阵中的 Sony API 28 / 31 / 33, Xiaomi Pad API 35 四台通过, OnePlus API 35 (ColorOS) 至少跑一次; Studio 录音在两台真机 (含 API 29+ 内录) 通过 (D41, P4.5); Samsung 16 KB 设备在引入原生库的版本 (1.1.0 起) 必跑.
 3. 10 种语言资源与文档只用半角标点 (`COMMON_AGENTS.md` 规则), `prepush_check.py` 通过, `THIRD_PARTY_NOTICES.md` 与依赖一致.
 4. 发布 APK 为 release 签名, 用宿主插件中心安装并跑 `samples/` 冒烟脚本; versionCode, 文件名 CRC32 与索引清单一致.
-5. changelog 10 种语言同步 (zh-Hans 由子会话写, 其他语言由维护者同步或子会话按 `AUTOJS6_PLUGIN_NEW_REPO_AGENTS.md` 规则翻译后由维护者复核).
+5. changelog 10 种语言同步: 子会话以简体中文为源一次写全 10 种语言并完成翻译 (工作区规则 `.claude/rules/all-languages.md`, 2026-11-05 起), 维护者审阅时可改任何语言.
 
 ---
 
@@ -270,7 +270,7 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 
 ## P1: 宿主契约, 录制内核与脚本模块
 
-状态: 进行中 (P1.1 / P1.2 已完成, 2026-11-05). 全部为宿主本地提交 (不推送). 设备: Sony XQ-AT72 API 31, XQ-DQ72 API 33 (录屏与内录), G8441 API 28 (无内录), Xiaomi Pad API 35.
+状态: 进行中 (P1.1 / P1.2 已完成 2026-11-05, P1.3 - P1.5 与 P1.7 已完成 2026-11-06; P1.6 (附录 D Q22 B) 宿主侧已完成, Node / Bun 门面与真机验收等附录 D Q30). 全部为宿主本地提交 (不推送). 设备: Sony XQ-AT72 API 31, XQ-DQ72 API 33 (录屏与内录), G8441 API 28 (无内录), Xiaomi Pad API 35.
 
 ### P1.1 契约模块 `plugin-api/media-studio-api` (D20, D28)
 
@@ -286,27 +286,38 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 
 ### P1.3 脚本模块 `video` / `audio` (D6, D8, D27)
 
-- [ ] (宿主) `runtime/api/VideoModule`, `AudioModule` 与 JS 包装 (`modules/__video__.js` / `__audio__.js` 或同等位置): 录制方法自实现; 加工方法校验选项后经 `MediaStudioPluginHost` 转调插件; 同步方法禁止 UI 线程 (`INVALID_OPTIONS`), `xxxAsync` 返回 Promise; `onProgress` 回调经回调 Binder 投递到脚本线程; 停止脚本取消全部任务; `tasks()` / `cancelAll()`; 默认输出路径 (D14) 由宿主填充; 插件缺失 / 禁用 / 不兼容按 `PLUGIN_UNAVAILABLE` / `PLUGIN_DISABLED` / `PLUGIN_INCOMPATIBLE` 抛 `MediaStudioError` (`code`, `message`, `taskId`).
-- [ ] (宿主) 能力声明: `screen_capture`, `media.recording` + `RECORD_AUDIO`, `media`; 裸脚本 / MCP / Node 的能力声明一致; 绑定 flags 与 `allowActivityStarts` (D27).
-- [ ] (宿主) 样例脚本 `samples/` 草稿: 录屏 10 秒并转 GIF, 录音并转 FLAC, 裁剪 + 水印 + 拼接, 时间线合成 (P5.3 定稿).
-- 验收: 宿主 debug 构建装到 API 31 / 33 真机, 用插件 P2.1 的 `probe` 与 `trim` 走通脚本 -> 宿主 -> 插件 -> 回调全链路; 插件未安装时错误码正确; UI 线程调用同步方法被拒.
+- [x] (宿主) `runtime/api/VideoModule`, `AudioModule` 与 JS 包装 (`modules/__video__.js` / `__audio__.js` 或同等位置): 录制方法自实现; 加工方法校验选项后经 `MediaStudioPluginHost` 转调插件; 同步方法禁止 UI 线程 (`INVALID_OPTIONS`), `xxxAsync` 返回 Promise; `onProgress` 回调经回调 Binder 投递到脚本线程; 停止脚本取消全部任务; `tasks()` / `cancelAll()`; 默认输出路径 (D14) 由宿主填充; 插件缺失 / 禁用 / 不兼容按 `PLUGIN_UNAVAILABLE` / `PLUGIN_DISABLED` / `PLUGIN_INCOMPATIBLE` 抛 `MediaStudioError` (`code`, `message`, `taskId`). 证据 (E1 + E3, 2026-11-06, 3-slate-p1-3-5): 宿主本地提交 `3abe772fa0` (未推送); 包 `runtime/api/modules/mediastudio` (`Video`, `Audio`, `MediaStudioCalls`, `MediaRecordings`, `VideoSubtitles`, `MediaStudioJsErrors`), `$video` / `$audio` 与 `video` / `audio` 为同一对象, 仅 Rhino (Node / Bun 见 P1.6); 录制走 P1.2 的 `core/record` 内核; 必需参数之后按类型映射 (字符串 = 输出路径, null / undefined = 默认输出, 对象 = 选项, 函数 = `onProgress`, 附录 D Q27); 宿主只对插件已冻结的操作预检选项 (`MediaStudioOptionRules.CHECKED_OPS`, 附录 D Q24); `video.frame` 经隐藏临时图片传帧 (附录 D Q25); 错误映射 `MediaStudioErrorMapper` (无插件时 `tasks()` 抛 `PLUGIN_UNAVAILABLE`, `cancelAll()` 返回 0).
+- [x] (宿主) 能力声明: `screen_capture`, `media.recording` + `RECORD_AUDIO`, `media`; 裸脚本 / MCP / Node 的能力声明一致; 绑定 flags 与 `allowActivityStarts` (D27). 证据 (E1, 2026-11-06): 同上提交; `video.record` = `screen_capture` (录声音时另加 `media`, `media.recording`), `audio.record` = `media` + `media.recording`, 加工方法与 `tasks` / `cancelAll` = `media`; api-coverage 登记 (Node / Bun 由 P1.6 改为 portable).
+- [x] (宿主) 样例脚本 `samples/` 草稿: 录屏 10 秒并转 GIF, 录音并转 FLAC, 裁剪 + 水印 + 拼接, 时间线合成 (P5.3 定稿). 证据 (E1, 2026-11-06): 同上提交, 4 个示例.
+- 验收: 宿主 debug 构建装到 API 31 / 33 真机, 用插件 P2.1 的 `probe` 与 `trim` 走通脚本 -> 宿主 -> 插件 -> 回调全链路; 插件未安装时错误码正确; UI 线程调用同步方法被拒. 结果 (2026-11-06, 3-slate-p1-3-5, 宿主 6641 debug): 通过 (XQ-DQ72 当时未连接, 由 Xiaomi Pad API 35 代替). 968e9f18 (插件 1.0.0 (4)) 设备脚本 `tools/mediastudio/device_mediastudio_check.py` api + 插件中心 + create 23 / 0: `probe` 640x360 h264 / aac, `trim` 3008 ms, `trimAsync` 2005 ms, `tasks()` 1 项 completed, `cancelAll()` 0; XQ-AT72 QV710AF65F (API 31, 无插件) api 12 / 0: `probe` / `trim` / `probeAsync` / `version` / `tasks` 为 `PLUGIN_UNAVAILABLE` 的 `MediaStudioError`, UI 线程同步调用 `INVALID_OPTIONS`; 宿主单测 (mediastudio 4 个类, ScriptModule Arity / Installs / Order) 通过.
 
 ### P1.4 `CREATE_SCRIPT` 入口 (D19)
 
-- [ ] (宿主) `CreateScriptActivity` (action `org.autojs.autojs.action.CREATE_SCRIPT`, 受 `org.autojs.permission.PLUGIN` 保护, extras `code`, `suggestedName`, `source`), 打开编辑器并新建未保存文件 (文件名建议 = `suggestedName`, 冲突时加序号); 代码超过 512 KB 时拒绝并提示.
-- 验收: 用 `am start` 与插件 P4.4 各验一次; 无 PLUGIN 权限的应用调用被拒.
+- [x] (宿主) `CreateScriptActivity` (action `org.autojs.autojs.action.CREATE_SCRIPT`, 受 `org.autojs.permission.PLUGIN` 保护, extras `code`, `suggestedName`, `source`), 打开编辑器并新建未保存文件 (文件名建议 = `suggestedName`, 冲突时加序号); 代码超过 512 KB 时拒绝并提示. 证据 (E1 + E3, 2026-11-06, 3-slate-p1-3-5): 宿主本地提交 `5fc200c3ab` (未推送); 常量在 common-plugin-api 的 `AutoJs6CreateScriptContract`; 上限两条: 512 KiB UTF-8 (`MAX_CODE_BYTES`) 与 200000 字符 (`MAX_CODE_CHARS`), 超限返回 `CODE_TOO_LARGE` 并提示 (968e9f18 实测启动 parcel 503988 B 送达, 523988 B 起 `TransactionTooLargeException` 且系统直接杀掉宿主进程; 大代码改经 content URI 见 P1.7, 附录 D Q28); 打开为未保存的新文件, 重名加 " (1)", " (2)" ...; 每个被接受的请求各开一个新的编辑器任务 (`FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_MULTIPLE_TASK`, 真机发现只用 NEW_TASK 时第二份代码被静默丢弃, 已修).
+- 验收: 用 `am start` 与插件 P4.4 各验一次; 无 PLUGIN 权限的应用调用被拒. 结果 (2026-11-06): `am start` 部分通过 (968e9f18 create 用例与 MULTIPLE_TASK 构建复测 9 / 0, XQ-AT72 create 7 / 0, 含无权限调用被拒与超限拒绝); 宿主单测 `CreateScriptRequestTest` 通过; 插件 P4.4 一侧待 P4.4 实施时验.
 
 ### P1.5 注册, 协议文档, changelog 与版本回填 (D38)
 
-- [ ] (宿主) 插件中心登记 `three-slate-studio` (官方 ID, 包名, 最低插件版本), `PluginInstallWizardCatalog` `TOOLS` 条目, 协议文档 `docs/dev/media-studio-plugin-protocol.md` (契约, 能力声明, 错误码, 录制内核泛化说明), `.changelog/lang_zh-Hans.json` 条目 (通俗文案).
-- [ ] (宿主) 插件 `REQUIRES_HOST_VERSION` 临时值 = 含 P1.1-P1.4 的本地构建号, P5.4 回填.
-- 验收: 插件中心能发现, 安装, 启用插件并显示描述与图标; 协议文档与 AIDL 一致.
+- [x] (宿主) 插件中心登记 `three-slate-studio` (官方 ID, 包名, 最低插件版本), `PluginInstallWizardCatalog` `TOOLS` 条目, 协议文档 `docs/dev/media-studio-plugin-protocol.md` (契约, 能力声明, 错误码, 录制内核泛化说明), `.changelog/lang_zh-Hans.json` 条目 (通俗文案). 证据 (E1 + E3, 2026-11-06, 3-slate-p1-3-5): 宿主本地提交 `9fc8dd2012` (未推送); 向导分类 `TOOLS` (附录 D Q4); 协议文档含绑定, AIDL, 能力表, 脚本 API 与操作, 默认输出, 录制, CREATE_SCRIPT, 上限, 错误码与设备结果; 设备脚本 `tools/mediastudio/device_mediastudio_check.py`; changelog 6.8.1 10 种语言 4 条 (`check_translations` CHANGELOG_TRANSLATIONS_OK, `generate_markdown --check` MARKDOWN_OK).
+- [x] (宿主) 插件 `REQUIRES_HOST_VERSION` 临时值 = 含 P1.1-P1.4 的本地构建号, P5.4 回填. 证据 (E1, 2026-11-06): 临时值 6641 (与宿主契约常量 `MediaStudioPluginIds.REQUIRED_HOST_VERSION_CODE` 一致, P1.3 - P1.5 的验收构建即 6641 debug); 插件 `app/build.gradle.kts`, `ThreeSlateStudioContract.REQUIRED_HOST_VERSION` 与 `.readme/common.json` 本来就是 6641, 批次 3 插件卡片 3-slate-p2-3-5 只更新注释; P5.4 回填含全部宿主条目的公开构建号 (D23).
+- 验收: 插件中心能发现, 安装, 启用插件并显示描述与图标; 协议文档与 AIDL 一致. 结果 (2026-11-06): 通过; 968e9f18 插件中心显示 "3-Slate Studio 1.0.0 (4)" 已启用 (含描述与图标); 插件中心登记测试与向导目录 53 项单测通过.
+
+### P1.6 Node / Bun 桥接 `video` / `audio` (附录 D Q22 B)
+
+- [ ] (宿主) 按插件引擎桥接惯例把 `video` / `audio` 两个模块暴露给 Node 与 Bun, API 与 Rhino 一致 (录制, 加工方法与 `xxxAsync`, `onProgress`, `tasks()` / `cancelAll()`, `MediaStudioError`), 能力声明与 Rhino 一致; api-coverage 策略由 `media-studio-rhino-only` (not-portable) 改为 portable. 需改 Node / Bun Runtime 插件仓库时只本地提交并登记待决.
+- 验收: Node 与 Bun 脚本在真机上跑 `record` / `probe` / `trim` 与 `onProgress` / Promise 形态, 结果与 Rhino 一致; 宿主相关单测通过.
+- 进度 (2026-11-06, 3-slate-p1-6-7): 宿主侧已完成, 宿主本地提交 `734c5a785f` (Node 模块 `media_studio` = `RuntimeMediaStudioBridge`, 参数映射 `MediaStudioScriptArgs` 同 Rhino, Bun 新授权 `mediastudio.control` 默认关闭 + 设置开关 11 语言, api-coverage 策略改 portable 并登记 60 个 pending) 与 `3c26d999e9` (协议文档与 changelog 10 语言); 隔离克隆 JVM 570 例 0 失败. 未完成: Node / Bun Runtime 插件仓库里的门面, 声明与测试, 以及 Node / Bun 真机验收 (等附录 D Q30 拍板, 已按推荐 A 先行: 仓库空闲后由续接卡做). 桥接协议与门面待办见共享笔记 `3-slate-p1-6-7-handoff.md`.
+
+### P1.7 `CREATE_SCRIPT` 大代码经 content URI (附录 D Q28 C)
+
+- [x] (宿主) 契约 `AutoJs6CreateScriptContract` 增 content URI 字段 (调用方经 FileProvider 授予读权限); 内联 `code` 保留 512 KiB / 200000 字符上限; 宿主读流并设上限, 无授权, 读取失败或超上限时拒绝并提示 (多语言提示); 协议文档同步. 证据 (E1 + E2, 2026-11-06, 3-slate-p1-6-7): 宿主本地提交 `271949817a` (`codeUri` 只收 `content://`, 拒绝宿主自身 provider (含 `userId@` 前缀), 读取上限 4 MiB (附录 D Q31) / 10 s, 复制到私有缓存后按文件开新编辑器, 超过 512 KiB 走大文件模式; 4 个错误码提示 11 语言) 与 `3c26d999e9` (协议文档 "URI mode", changelog 10 语言); `CreateScriptRequestTest` 11 例 + `CreateScriptUriRequestTest` 7 例通过.
+- 验收: 单元测试 (URI 与内联互斥, 上限, 编码); 仪器测试或临时测试应用发送 content URI 打开编辑器; 无授权或超上限时被拒. 结果 (2026-11-06): 通过. 小米平板 968e9f18 (临时 6641 debug 宿主) 由宿主脚本自发 `CREATE_SCRIPT`, 设备脚本 `tools/mediastudio/device_mediastudio_check.py` create-uri 18 / 0 (含内联回归 4 例): 小文件 (含中文) 与 600 KiB 文件各开新编辑器, 副本 MD5 一致; 5 MiB 为 `CODE_TOO_LARGE`; 未授权 URI 与宿主自身 provider 为 `CODE_URI_DENIED`; 不存在的 id 为 `CODE_URI_UNREADABLE`; `file://` 与 `code` + `codeUri` 同给为 `INVALID_REQUEST`; 拒绝不留副本. 未覆盖: 真实发送方的 FileProvider 授权路径, 留插件 P4.4 (配方见共享笔记 `3-slate-p1-6-7-handoff.md`).
 
 ---
 
 ## P2: 插件加工核心
 
-状态: 进行中 (P2.1 / P2.2 已完成, 2026-11-06). 设备: API 35 AVD (仪器测试), Sony XQ-DQ72 API 33 与 Xiaomi Pad API 35 (硬件编码器), G8441 API 28 (低端机性能基线).
+状态: 进行中 (P2.1 - P2.5 已完成, 2026-11-06; 剩 P2.6 设备矩阵). 宿主选项预检已同步到全部 18 个已实现操作 (附录 D Q24, 宿主本地提交 `764b63b765`). 设备: API 35 AVD (仪器测试), Sony XQ-DQ72 API 33 与 Xiaomi Pad API 35 (硬件编码器), G8441 API 28 (低端机性能基线).
 
 ### P2.1 执行器, 任务模型与探测 (D28, D29, D14)
 
@@ -321,18 +332,18 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 
 ### P2.3 叠加 (D29)
 
-- [ ] (插件) `overlay`: 文字 (字体 / 字号 / 颜色 / 描边 / 阴影 / 对齐 / 位置 / 时间段 / 透明度, 系统字体或 TTF 路径) 与图片 (路径, 缩放, 位置, 时间段, 透明度), 多个叠加一次完成; 坐标支持像素与百分比.
-- 验收: 仪器测试对输出抽帧并比对叠加区域的像素差; 真机目视一次.
+- [x] (插件) `overlay`: 文字 (字体 / 字号 / 颜色 / 描边 / 阴影 / 对齐 / 位置 / 时间段 / 透明度, 系统字体或 TTF 路径) 与图片 (路径, 缩放, 位置, 时间段, 透明度), 多个叠加一次完成; 坐标支持像素与百分比. 证据 (2026-11-06, 3-slate-p2-3-5): 提交 `<P2.3-P2.5>`; `core/OverlayOptions` (`overlays[]` 1 - 64 项, `type` text / image; 文字 `text` 1 - 1000 字符, `font` 为 sans-serif / serif / monospace 或绝对字体路径, `fontSize` 默认 48, `bold` / `italic`, `color` 默认白, `stroke` / `strokeWidth` (给任一即描边, 默认黑, 宽度为字号 / 16), `shadow` / `shadowRadius` / `shadowDx` / `shadowDy` (给任一即加阴影, 默认黑, 半径 4, 偏移 2), `align` 默认 center; 图片 `src` 绝对路径, `scale` 与 `width` / `height` 互斥, 只给一边保持宽高比; 共用 `x` / `y` (数字为像素, `"25%"` 为帧宽 / 高百分比, 默认 50%), `anchor` (9 个方位, 默认 center), `from` (含) / `to` (不含), `alpha` 0 - 1; 颜色为 `#RGB` / `#RRGGBB` / `#AARRGGBB` / 颜色名 / ARGB 整数), `pipeline/OverlayRenderer` (全部叠加画进一张帧尺寸透明位图, 可见集合变化时才重画, 经 media3 `BitmapOverlay` 合成; 字体与图片在导出前加载, 图片不可解码为 `UNSUPPORTED_FORMAT`; 叠加起点晚于输入结尾时在 `warnings[]` 记一句). 字体文件与图片像输入一样检查存在, 可读与存储权限. 选项规则写在共享笔记 `3-slate-p2b-notes.md`.
+- 验收: 仪器测试对输出抽帧并比对叠加区域的像素差; 真机目视一次. 结果 (2026-11-06): 通过. `OverlayOperationsTest` 3 例 (图片的像素 / 百分比定位与锚点, 时间段, 半透明, 宽度百分比缩放逐像素核对颜色; 文字区域内像素变化 > 15%, 区域外 < 2%; 系统字体文件 + 左下锚点 + 阴影; 缺图 / 缺文字 / 非图片文件 / 起点晚于结尾的拒绝与提示) 在 AVD_API_35_16K 与 XQ-AT72 (API 31) 上通过; 真机首跑发现半透明叠加的 alpha 被乘两次 (黑底 50% 蓝为 0x39, 应为 0x80; media3 叠加着色器按非预乘 alpha 混合, Canvas 位图是预乘的), 改为把颜色拷进非预乘位图后交给 media3, 该断言容差收紧为 32. 真机目视: XQ-AT72 输出帧上红块, 缩放蓝块, 半透明深蓝, 红字黑描边粗体与左下带阴影小字均位置正确.
 
 ### P2.4 抽帧与 GIF (D32)
 
-- [ ] (插件) `frames` (按时间点 / 间隔 / 数量, PNG / JPG, 宽度, 输出目录) 与 `frame` (单帧返回 `Image`), `thumbnail`; `toGif` (起止, fps, 宽度, 循环, 抖动, 上限 600 帧), 自带 `GifEncoder` (中位切分调色板 + LZW).
-- 验收: GIF 输出能被 `MediaMetadataRetriever` / 浏览器解码且帧数与时长正确; 单元测试覆盖调色板与 LZW 边界 (256 色, 单色, 超长帧).
+- [x] (插件) `frames` (按时间点 / 间隔 / 数量, PNG / JPG, 宽度, 输出目录) 与 `frame` (单帧返回 `Image`), `thumbnail`; `toGif` (起止, fps, 宽度, 循环, 抖动, 上限 600 帧), 自带 `GifEncoder` (中位切分调色板 + LZW). 证据 (E1 + E2, 2026-11-06, 3-slate-p2-3-5): 提交 `<P2.3-P2.5>`; `core/OperationOptions` + `core/FrameTimes` (`frames`: `at` (一个时间点) 或 `times` (多个, 按给出顺序), 或在 `start` / `end` (不含) 内按 `every` (毫秒间隔) 或 `count` (每帧取所在时段中点) 取帧, 两者同给时取间隔序列的前 `count` 帧; 单次至多 1000 帧, 超出为 `LIMIT_EXCEEDED` (附录 D Q15); 图片 `format` 为 png / jpg / jpeg, `quality` 1 - 100 只用于 jpg, `width` 16 - 8192 (等比); `frames` / `frame` 默认 png, jpg 质量 90, 原宽; `frame` 必须给 `at`; `thumbnail` 的 `at` 默认为时长的 1 / 3, 默认 jpg 质量 85, 宽 min(320, 原宽); `toGif` 的 `start` (默认 0) / `end` (不含, 默认到结尾, 超出时截到结尾), `fps` 1 - 50 (默认 10), `width` (默认 min(480, 原宽)), `loop` (省略或 true 为无限循环, false 不写循环扩展只播一次, 整数为重复次数), `dither` (默认 false); 已知范围时帧数在 submit 检查, 否则探测后检查; 时间点晚于输入结尾为 `INVALID_OPTIONS`), `core/GifEncoder` (GIF89a; 每帧局部颜色表, 帧内不超过 256 色时用原色, 否则对 15 位直方图做中位切分, 可选 Floyd-Steinberg 抖动; 可变码宽 LZW, 码表满时发清除码; 帧延时按累计值取整, 总和等于片段时长), `pipeline/StillOperations` (`MediaMetadataRetriever` 按 `OPTION_CLOSEST` 取帧, 失败时退回 `OPTION_PREVIOUS_SYNC`; 按旋转元数据摆正; `frames` 每帧先写同目录隐藏 `.part` 文件再改名, 目标已有同名文件为 `IO_ERROR`, 失败或取消时删掉本任务写的帧, 文件夹由本任务新建时一并删除; 全部帧一次登记 MediaStore), `core/OutputPaths` (图片, GIF 与帧文件夹默认 `/sdcard/Pictures/3-Slate Studio/`, 附录 D Q14; 帧文件名 `<源名>-<n>.<ext>`, n 从 1 起, 至少 4 位). `frame` 按附录 D Q25 (a): 宿主把输出设为隐藏文件 `.frame-<uuid>.<ext>` 并关闭 `registerMedia`, 解码为 `Image` 后删除. 选项规则与结果字段写在共享笔记 `3-slate-p2b-notes.md`.
+- 验收: GIF 输出能被 `MediaMetadataRetriever` / 浏览器解码且帧数与时长正确; 单元测试覆盖调色板与 LZW 边界 (256 色, 单色, 超长帧). 结果 (2026-11-06): 通过. `MediaMetadataRetriever` 只读视频与音频, 不能解码 GIF, 改用平台的 GIF 解码器核对: `FrameOperationsTest` 7 例在 AVD_API_35_16K 通过 (`frames` 的 PNG / JPG 编号文件与彩条颜色, 同一文件夹追加, 重跑为 `IO_ERROR`; `times` 顺序, 晚于结尾与超过 1000 帧的拒绝; `frame` / `thumbnail` 的尺寸与像素, 纯音频输入为 `UNSUPPORTED_FORMAT`; 旋转 90 度的素材抽出的帧已摆正; 取消后帧与文件夹都删除; `toGif` 0.5 - 2.5 秒 10 fps 宽 160 为 20 帧, 每帧 10 cs, 循环 0, 共 2000 ms; 30 fps + 不循环 + 抖动为 90 帧, 延时 3 / 4 cs 交替, 合计 300 cs, 无 NETSCAPE 块; 两个 GIF 经 `android.graphics.Movie` (时长), `ImageDecoder` (`AnimatedImageDrawable`) 与 `BitmapFactory` (首帧) 解码; 已知范围超过 600 帧在 submit 时为 `LIMIT_EXCEEDED`); 拉回 PC 的两个 GIF: Pillow 读出 160x120 / 20 帧 / 2000 ms / loop 0 与 320x240 / 90 帧 / 3000 ms / 无 loop, 浏览器 (WebCodecs `ImageDecoder` + `<img>`) 读出 20 帧 / 2000 ms / 无限循环与 90 帧 / 3000 ms / 播放一次, 尺寸一致; JVM 单测 `GifEncoderTest` 9 例, 用 JDK ImageIO 的 GIF 读取器解码核对 (256 色逐像素原样保留; 单色帧用最小的 2 项颜色表; 600x400 随机 256 色的大帧远超 4096 个码, 码表清除后仍逐像素一致, 最长延时 65535 cs; 多帧的帧数与时长; 延时累计取整; 循环扩展有无; 4096 色渐变经中位切分平均误差 < 5; 抖动; 非法帧拒绝) 与 `FrameSamplingTest` 5 例, 全部单测 144 例通过. 性能提示: 每次 `OPTION_CLOSEST` 都从前一个关键帧解码, 帧数多且关键帧间隔长时耗时近似线性增长 (留 P2.6 记录基线).
 
 ### P2.5 音频加工 (D15)
 
-- [ ] (插件) `audio.trim`, `concat`, `mix` (多路, 各自音量与偏移), `volume` (增益 / 归一化 / 淡入淡出), `convert` (M4A / WAV / FLAC / OGG-Opus, 采样率, 声道, 码率), `speed`; `AudioPipeline` 用 media3 解码 + `AudioProcessor` + 平台编码器, OGG 用 `MediaMuxer` OGG (API 29+, 低版本报 `UNSUPPORTED_FORMAT`).
-- 验收: 每种输出格式有仪器测试 (可解码, 时长与声道正确); 混音结果在真机听一次.
+- [x] (插件) `audio.trim`, `concat`, `mix` (多路, 各自音量与偏移), `volume` (增益 / 归一化 / 淡入淡出), `convert` (M4A / WAV / FLAC / OGG-Opus, 采样率, 声道, 码率), `speed`; `AudioPipeline` 用 media3 解码 + `AudioProcessor` + 平台编码器, OGG 用 `MediaMuxer` OGG (API 29+, 低版本报 `UNSUPPORTED_FORMAT`). 证据 (E1 + E2, 2026-11-06, 3-slate-p2-3-5): 提交 `<P2.3-P2.5>`; `core/OperationOptions` (6 个操作共用 `format` (m4a / wav / flac / ogg, 省略时由输出扩展名补上, 都没有时 m4a, 附录 D Q16 (a); `audioConvert` 必须能确定格式), `bitRate` (8 - 512 kbps, 无损 wav / flac 不适用), `sampleRate` (ogg 只收 Opus 采样率), `channels` 1 / 2; `audioTrim` 的 `start` / `end` / `duration` 同 `trim`; `audioMix` 2 - 16 个输入 (超出 `LIMIT_EXCEEDED`, 附录 D Q18 (a)), `tracks[]` 每个输入一项 `volume` 0 - 16 (默认 1) 与 `at` (毫秒偏移, 默认 0); `audioVolume` 的 `gain` 0 - 16 (线性, 附录 D Q19 (a)) 与 `normalize` (`true` = -1 dBFS, 或 -60 - 0 dBFS 的目标峰值) 互斥, `fadeIn` / `fadeOut` 毫秒, 至少给一项; `audioSpeed` 的 `factor` 0.25 - 8 与 `keepPitch` (默认 true)), `core/AudioTargets` (未指定时的输出格式: wav 保留源声道, 其他至多 2 声道; ogg 48 kHz, m4a 取 AAC 支持的不低于源的采样率, wav / flac 保留源采样率; 多输入按最高采样率与最多声道; AAC 单声道 128 / 立体声 192 kbps, Opus 64 / 96 kbps), `pipeline/AudioOperations` (每个输入解码为同一目标格式的 16 位 PCM, 经 P2.2 的 `PcmSinks` 编码; `audioMix` 直接相加, 削波时在 `warnings[]` 报告比例并建议调低音量, 附录 D Q17 (a); `audioVolume` 的归一化与淡出先读一遍输入求峰值与时长; `audioSpeed` 用 Sonic; `extractAudio` 输出 wav / flac / ogg 也改走这条路径, m4a 仍走 media3 Transformer). 输出与编码器检查: 能力表 `mediaStudioAudioOutputFormats` 列出可用容器 (ogg 需 API 29+), 缺编码器时 `UNSUPPORTED_FORMAT`. 选项规则写在共享笔记 `3-slate-p2b-notes.md`; 宿主选项预检同步见附录 D Q24 (宿主本地提交 `764b63b765`).
+- 验收: 每种输出格式有仪器测试 (可解码, 时长与声道正确); 混音结果在真机听一次. 结果 (2026-11-06): 通过. AVD_API_35_16K 上 `AudioOperationsTest` 6 例: `audioConvert` 写出 m4a / wav / flac / ogg 的单声道与立体声, 经 `MediaExtractor` + `MediaCodec` 解码核对声道与 3000 ms (容差 150 ms), ogg 为 48 kHz, 重采样到 16 kHz 后 440 Hz 音调仍在 (3 %); 无音轨的视频为 `UNSUPPORTED_FORMAT`; `audioTrim` 的 wav 从第 22050 个样本逐样本一致, m4a 2000 ms, 超出结尾截到结尾, `start` 不早于结尾为 `INVALID_OPTIONS`; `audioConcat` 单声道 44.1 kHz + 立体声 48 kHz 拼成立体声 48 kHz 6000 ms, 三种来源拼成 m4a 9000 ms; `audioMix` 两路各 0.5 倍且第二路偏移 1000 ms 时 4000 ms, 各段峰值符合预期且无削波, 2 倍音量相加时 `warnings[]` 报削波; `audioVolume` 的 0.5 倍增益, 归一化到 -6 dBFS, 1 秒淡入淡出各点电平, flac 4 倍增益报削波; `audioSpeed` 2 倍保持音调约 440 Hz, 不保持约 880 Hz, 0.5 倍 m4a 6000 ms. 试听: `.python/listening_sample.py` 经 `ListeningSampleTest` 在 Sony XQ-AT72 (API 31) 上把 16 秒的三声部 (琶音 44.1 kHz 单声道 WAV, 4 秒进入的低音 22.05 kHz 单声道 FLAC, 鼓 48 kHz 立体声 M4A) 用 `audioMix` 混成 m4a (峰值 -7.05 dBFS, 0 个削波样本), 再用 `audioVolume` 归一化到 -1 dBFS 并淡出 3 秒 (峰值 -1.01 dBFS); 维护者 2026-11-06 在真机试听确认: 无破音或咔哒声, 低音在 4 秒合拍进入, 鼓与琶音对齐, 无失真. 全部单测 156 例通过.
 
 ### P2.6 设备矩阵与性能基线
 
@@ -368,7 +379,7 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 
 ### P4.1 应用骨架, 首页, 任务队列, 设置, 发行历史 (D37)
 
-- [ ] (插件) Compose 应用骨架 (导航, 主题, 阿拉伯语 RTL 与 FSI / PDI), 首页 (D37 目录的媒体列表, 缩略图, 详情页含 "用 MediaInfo 查看" 入口), 任务队列页 (进度, 取消, 失败原因), 设置页 (D37 各项 + 启动器图标模式 + "所有文件访问" 引导), 发行历史与更新检查 (照 Maple Image).
+- [ ] (插件) Compose 应用骨架 (导航, 主题, 阿拉伯语 RTL 与 FSI / PDI), 首页 (D37 目录的媒体列表, 缩略图, 详情页含 "用 MediaInfo 查看" 入口), 任务队列页 (进度, 取消, 失败原因), 设置页 (D37 各项 + 启动器图标模式 + "所有文件访问" 引导 + "电池无限制" 引导 (附录 D Q13: 系统限制插件后台时, 能力表 `mediaStudioWarnings` 已报警告, 设置页给出跳转)), 发行历史与更新检查 (照 Maple Image).
 - 验收: API 24 / 35 AVD 与两台真机界面可用; 亮暗主题与阿拉伯语各截一次图.
 
 ### P4.2 工具箱向导 (D35)
@@ -384,7 +395,7 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 
 ### P4.4 代码生成与宿主入口 (D11, D36)
 
-- [ ] (插件) `CodeGenerator` (向导选项 -> `video.*` / `audio.*` 代码; 时间线 -> `video.compose({...})` 代码), 复制按钮, "在 AutoJs6 中打开" (P1.4 入口, 宿主不可用时隐藏).
+- [ ] (插件) `CodeGenerator` (向导选项 -> `video.*` / `audio.*` 代码; 时间线 -> `video.compose({...})` 代码), 复制按钮, "在 AutoJs6 中打开" (P1.4 入口, 宿主不可用时隐藏; 超过内联上限 (512 KiB 或 200000 字符) 的代码经 FileProvider content URI 发送, P1.7, 附录 D Q28 C).
 - 验收: 单元测试: 生成的代码经 Rhino 解析无语法错误且选项对象与输入相等; 真机上从向导到宿主编辑器新建文件走通一次.
 
 ### P4.5 Studio 录音 (D41)
@@ -549,9 +560,9 @@ AutoJs6-Plugin-Three-Slate-Studio/
   "video": [
     {"clips": [
       {"src": "/sdcard/Movies/a.mp4", "start": 0, "end": 8000, "at": 0, "speed": 1.0, "volume": 1.0,
-       "transform": {"scale": 1.0, "rotate": 0, "crop": null},
-       "transition": {"type": "dissolve", "duration": 500}},
-      {"src": "/sdcard/Movies/b.mp4", "start": 2000, "end": 10000, "at": 7500}
+       "transform": {"scale": 1.0, "rotate": 0, "crop": null}},
+      {"src": "/sdcard/Movies/b.mp4", "start": 2000, "end": 10000, "at": 7500,
+       "transition": {"type": "dissolve", "duration": 500}}
     ]}
   ],
   "audio": [
@@ -633,7 +644,7 @@ oneway interface IMediaStudioCallback {
 | 编号 | 事项 | 选项 | 拍板时点 | 状态 |
 | --- | --- | --- | --- | --- |
 | Q1 | 内录 / 混合音频的声道数 | (a) 立体声 48 kHz (推荐, 内录多为立体声, 文件约大 1 倍) / (b) 沿用 Node 的单声道 | P1.2 | 已决 (2026-11-05, 维护者选 a): Rhino `audio.record` / `video.record` 的内录 (playback) 与混合 (mixed) 默认 2 声道 48 kHz (`channels` 可改 1), AAC 默认码率 192 kbps; 麦克风与 Node 桥接的默认值保持单声道 128 kbps 不变 |
-| Q2 | GIF 编码器 | (a) 自带纯 Kotlin (推荐, D32) / (b) 第三方 Apache-2.0 或 MIT 库 | P2.4 | 需拍板 |
+| Q2 | GIF 编码器 | (a) 自带纯 Kotlin (推荐, D32) / (b) 第三方 Apache-2.0 或 MIT 库 | P2.4 | 已决 (2026-11-06, 维护者选 a): 自带纯 Kotlin `GifEncoder` (中位切分调色板 + 可选 Floyd-Steinberg 抖动 + LZW), 不加新依赖 (P2.4 实施) |
 | Q3 | 时间线预览引擎 | (a) media3 `CompositionPlayer` (推荐, 实验 API, 由 spike 决定) / (b) 自写预览 | P4.3 spike 后 | 待 spike |
 | Q4 | 向导目录分类 | (a) `TOOLS` (推荐, 现有分类) / (b) 新增 `MEDIA` 分类 (需宿主改向导目录与 10 语言标题) | P1.5 | 已决 (2026-11-05, 维护者选 a): `TOOLS` 现有分类 |
 | Q5 | 1.1.0 FFmpeg 来源 | (a) 自建 (推荐, 许可与 16 KB 可控, 需交叉编译链) / (b) 社区分支 `dev.ffmpegkit-maintained` (省构建, 许可审查与补丁跟进由我们承担) | P6.1 | 需拍板 |
@@ -643,9 +654,24 @@ oneway interface IMediaStudioCallback {
 | Q9 | Compose 带入原生库: `androidx.graphics:graphics-path` 1.0.1 为 4 个 ABI 打包 `libandroidx.graphics.path.so`, 与 D25 "1.0.0 APK 无原生库" 不符 (影响 D25, P0.1, README / changelog 的原生库说明, P5.4 索引 `supportedAbis`) | (a) 保留 Compose, 构建与 CI 校验 4 个文件 STORED 且 16 KB 对齐, 索引 `supportedAbis` 列 4 个 ABI, D25 改为 "仅 Compose 自带的 graphics-path" (推荐, 已先行; 改选返工: 无) / (b) 界面改用 View, 去掉 Compose (P4 全部界面重写, 返工大) | P0.1 | 已决 (2026-11-05, 维护者确认推荐项 / 保持现状 a): 保留 Compose, D25 已改为 "仅 Compose 自带的 graphics-path" |
 | Q10 | D39 写 "1.0.0 依赖均为 Apache-2.0", 实际 guava 带入的 `org.checkerframework:checker-qual` 3.43.0 为 MIT (影响 D39, `THIRD_PARTY_NOTICES.md`) | (a) 声明里列出 MIT 并附全文, D39 改为 "Apache-2.0 为主, checker-qual 为 MIT" (推荐, 已先行; 改选返工: 无) / (b) 从运行时依赖排除 checker-qual (仅注解, 改依赖排除与锁文件, 返工小, 有缺类风险) | P0.1 | 已决 (2026-11-05, 维护者确认推荐项 / 保持现状 a): 声明列出 MIT 并附全文, D39 已改 |
 | Q11 | `release.yml` 只把 APK, `SHA256SUMS` 与索引清单草稿存为 workflow artifact, 不自动建 GitHub Release (影响 P0.3, P5.4) | (a) 保持, 建 Release 与索引登记在 P5.4 手动做 (推荐, 已先行; 改选返工: 无) / (b) 照 ImGui 由 tag 工作流自动建 Release 并上传附件 (加一个发布步骤与 `contents: write`, 返工小) | P5.4 | 已按推荐先行待确认 (2026-11-05, 3-slate-p0) |
-| Q12 | H.265 默认码率 (影响 P2.2 `transcode` / `concat` / `speed` / `transform` 的默认值, 附录 B.1, 脚本文档) | (a) H.264 估算值的 0.6 倍, 1080p30 为 4.8 Mbps (推荐, 已先行; 同画质下 HEVC 约省 40%; 改选返工: 无) / (b) 与 H.264 相同 (1080p30 8 Mbps, 改 `BitRates.estimateVideo` 一行与单测 / 文档, 返工小) | P2.2 | 已按推荐先行待确认 (2026-11-06, 3-slate-p2-1-2); 附录 F 基准: 平滑内容时 H.264 只有 1.57 - 4.15 Mbps (目标 8), H.265 为 2.15 - 4.78 Mbps (目标 4.8), 反而比 H.264 大; 每帧跳位的最坏内容时两台设备的硬件编码器都超出目标 2 - 5 倍; 0.6 倍的目标没有让 H.265 输出稳定变小 |
-| Q13 | HyperOS 默认限制新装应用后台 (`RUN_ANY_IN_BACKGROUND ignore`), 系统静默忽略 `startForeground()`: 长任务照常完成, 但没有前台服务与进度通知, 熄屏或内存紧张时可能被杀 (影响 P2.1 前台服务, P4.1 设置页引导) | (a) 保持: 能力表 `mediaStudioWarnings` 报后台受限 (API 28+ `isBackgroundRestricted`), P4.1 设置页加 "电池无限制" 引导 (推荐, 警告已先行; 改选返工: 无) / (b) 另加首次运行即弹的电池设置引导页 (新 Activity + 10 语言文案, 返工小) | P4.1 | 已按推荐先行待确认 (2026-11-06, 3-slate-p2-1-2) |
+| Q12 | H.265 默认码率 (影响 P2.2 `transcode` / `concat` / `speed` / `transform` 的默认值, 附录 B.1, 脚本文档) | (a) H.264 估算值的 0.6 倍, 1080p30 为 4.8 Mbps (推荐, 已先行; 同画质下 HEVC 约省 40%; 改选返工: 无) / (b) 与 H.264 相同 (1080p30 8 Mbps, 改 `BitRates.estimateVideo` 一行与单测 / 文档, 返工小) | P2.2 | 已决 (2026-11-06, 维护者选 a): 保持 H.264 估算值的 0.6 倍 (1080p30 4.8 Mbps), 已实施. 3-slate-p2-1-2 当时的附录 F 基准: 平滑内容时 H.264 只有 1.57 - 4.15 Mbps (目标 8), H.265 为 2.15 - 4.78 Mbps (目标 4.8), 反而比 H.264 大; 每帧跳位的最坏内容时两台设备的硬件编码器都超出目标 2 - 5 倍; 0.6 倍的目标没有让 H.265 输出稳定变小 |
+| Q13 | HyperOS 默认限制新装应用后台 (`RUN_ANY_IN_BACKGROUND ignore`), 系统静默忽略 `startForeground()`: 长任务照常完成, 但没有前台服务与进度通知, 熄屏或内存紧张时可能被杀 (影响 P2.1 前台服务, P4.1 设置页引导) | (a) 保持: 能力表 `mediaStudioWarnings` 报后台受限 (API 28+ `isBackgroundRestricted`), P4.1 设置页加 "电池无限制" 引导 (推荐, 警告已先行; 改选返工: 无) / (b) 另加首次运行即弹的电池设置引导页 (新 Activity + 10 语言文案, 返工小) | P4.1 | 已决 (2026-11-06, 维护者选 a): 保持能力表警告, P4.1 设置页加 "电池无限制" 引导 (已写进 P4.1 条目) |
+| Q14 | 图片类输出 (`frames` / `frame` / `thumbnail` / `toGif`) 省略输出路径时的默认位置 (D14 只规定了视频与音频) | (a) `/sdcard/Pictures/3-Slate Studio/`, 名称 `<源名>-<操作>-<时间戳>.<ext>`, `frames` 为同名文件夹 (推荐, 已先行; Pictures 是系统的图片标准目录, 相册按图片归类; 改选返工: 无) / (b) 与视频相同放 `/sdcard/Movies/3-Slate Studio/` (改 `OutputKind` 三处与单测, 宿主默认输出同步改, 返工小) | P2.4 | 已按推荐先行待确认 (2026-11-06, 3-slate-p2-3-5) |
+| Q15 | `frames` 单次抽帧上限 (D32 与契约只规定了 GIF 的 600 帧) | (a) 1000 帧, 超出报 `LIMIT_EXCEEDED` 并提示加大 `every` 或设 `count` (推荐, 已先行; 1080p 自然画面 PNG 每帧约 2 - 4 MB, 1000 帧约 2 - 4 GB; 改选返工: 无) / (b) 不设上限, 只按 Q6 在超过 2 GB 时返回 warning (删一处检查与单测, 返工小) / (c) 与 GIF 相同 600 帧 (改一个常量) | P2.4 | 已按推荐先行待确认 (2026-11-06, 3-slate-p2-3-5) |
+| Q16 | 音频操作 (`audioTrim` 等 6 个) 既没有 `options.format` 也没有输出扩展名 (省略输出路径) 时的输出格式 | (a) m4a (AAC), 与默认输出 `Music/3-Slate Studio/<源名>-<操作>-<时间戳>.m4a` 一致 (推荐, 已先行; 所有设备都有 AAC 编码器, 体积小; 改选返工: 无) / (b) 沿用第一个输入的扩展名 (输入为 mp3 / mp4 等无法写出的容器时仍要回退, 改 `audioOutput` 与宿主默认输出, 返工小) | P2.5 | 已按推荐先行待确认 (2026-11-06, 3-slate-p2-3-5) |
+| Q17 | `audioMix` 相加超出 16 位范围时的处理 | (a) 直接相加后硬削波, `warnings[]` 报削波样本比例并建议调低 `tracks[].volume` (推荐, 已先行; 与常见混音器的默认一致, 不改动未削波的电平; 改选返工: 无) / (b) 各路自动除以输入数 (永不削波, 但两路时整体低 6 dB, 改一处与单测) / (c) 两遍: 先求峰值再整体缩放到 -1 dBFS (读两遍输入, 耗时约翻倍) | P2.5 | 已按推荐先行待确认 (2026-11-06, 3-slate-p2-3-5) |
+| Q18 | `audioMix` 的输入数上限 (契约 `MAX_INPUTS` 为 256) | (a) 16 路, 每路一个解码器同时运行, 超出 `LIMIT_EXCEEDED` (推荐, 已先行; 设备硬件解码器实例通常在 16 - 32 个, 超出会随机失败; 改选返工: 无) / (b) 至多 256 路, 超过 16 路时先逐路解码到临时 PCM 文件再相加 (磁盘约 10 MB / 分钟 / 路, 返工中: 约半天, 含宿主预检) | P2.5 | 已按推荐先行待确认 (2026-11-06, 3-slate-p2-3-5) |
+| Q19 | `audioVolume` 的 `gain` 与 `audioMix` 的 `tracks[].volume` 的单位 | (a) 线性倍数 0 - 16 (1 为原样, 0.5 约 -6 dB) (推荐, 已先行; 与附录 B.4 时间线 `volume` (示例 1.0 / 0.4) 的写法一致; 改选返工: 无) / (b) 分贝 (-60 - +24 dB, 改选项名为 `gainDb` 或换算, 宿主同步改, 返工小) | P2.5 | 已按推荐先行待确认 (2026-11-06, 3-slate-p2-3-5) |
 | Q20 | 媒体工作室契约 AIDL 与附录 C 草案的差异: 实际为 `PluginInfo getInfo()`, `getCapabilities()` 居第 2, `probe` / `listTasks` 收 `Bundle` | (a) 保持实际定义, 按 speech / alarm 惯例 (推荐) / (b) 改回草案签名 (宿主契约返工) | P1.1 | 已决 (2026-11-05, 维护者确认推荐项 / 保持现状 a): 附录 C 已按实际定义改写 (2026-11-06) |
+| Q21 | Node 纯音频录音 (recorder 模块) 改用内核 `AudioRecorder` 后的两处行为变化: 目标文件改为 stop 时由同目录临时文件移入 (以前 start 即创建并截断目标); MediaRecorder 出错原因由 `recorder-error-<what>-<extra>` 统一为 `recorder-error` | (a) 保持 (推荐, 失败或取消不留文件, 与 P1.3 Rhino 录音一致) / (b) 恢复旧行为 | P1.2 | 已决 (2026-11-05, 维护者选 a): 保持, P1.5 changelog 写明 |
+| Q22 | `video` / `audio` 1.0.0 是否只登记 Rhino 模块 (api-coverage 策略 `media-studio-rhino-only` 标 not-portable) | (a) 保持, 插件引擎桥接以后按需另立条目 (推荐) / (b) 1.0.0 同时桥接 Node 与 Bun | P1.3 | 已决 (2026-11-06, 维护者选 b, 非推荐): 1.0.0 同时桥接 Node 与 Bun, 新增宿主条目 P1.6, api-coverage 策略改 portable (批次 3 宿主卡片 3-slate-p1-6-7) |
+| Q23 | `video.record` 复用脚本的截图会话 (先 `images.requestScreenCapture`; 录屏期间 `images.captureScreen` 读录屏当前画面) | (a) 保持 (推荐, 一次授权, 截图与录屏不抢投影) / (b) 录屏单独申请 MediaProjection | P1.3 | 已决 (2026-11-06, 维护者选 a): 保持复用截图会话 |
+| Q24 | 宿主只对插件已冻结的操作做选项预检 (`MediaStudioOptionRules.CHECKED_OPS`), 其余操作先由插件单独校验 | (a) 保持, P2.3 - P3.3 各卡片实现新操作时把规则抄进宿主并单独本地提交 (推荐) / (b) 宿主现在就按附录 B 草案校验全部操作 | P1.3 | 已决 (2026-11-06, 维护者选 a) |
+| Q25 | `video.frame` 的传帧方式 | (a) 插件把帧写成默认输出目录里的隐藏临时图片 `.frame-<uuid>.<format>` (不登记媒体库), 宿主解码为 `Image` 后删除 (推荐, 不受 Binder 大小限制) / (b) 经 Binder 直接传 Bitmap 字节 (受 1 MB 事务限制) | P1.3, P2.4 | 已决 (2026-11-06, 维护者选 a) |
+| Q26 | `video` / `audio` 的文档站, d.ts 与 Ace 补全的时点 | (a) 留到插件 P5.1 / P5.2 (推荐, API 随 P2 / P3 还会扩充; api-coverage `deferredNameGate` 暂时放行) / (b) 宿主卡片现在就写 | P1.3 | 已决 (2026-11-06, 维护者选 a) |
+| Q27 | 加工方法必需参数之后的参数映射 | (a) 按类型映射: 字符串 = 输出路径, null / undefined = 默认输出, 对象 = 选项, 函数 = `onProgress` (推荐, 与附录 B.1 写法一致) / (b) 只接受 (输入, 选项) 两参 | P1.3 | 已决 (2026-11-06, 维护者选 a) |
+| Q28 | `CREATE_SCRIPT` 的代码上限: Intent 按 UTF-16 传, 只限 512 KB 时 25 万字符以上的 ASCII 代码会让发送方把宿主杀掉 | (a) 加 200000 字符上限, 发送方先自查 (推荐) / (b) 只保留 512 KB, 协议文档提醒 / (c) 大代码改经 content URI 传 (契约增字段, 插件需 FileProvider) | P1.4 | 已决 (2026-11-06, 维护者选 c, 非推荐): 大代码经 content URI, 内联 `code` 保留 512 KiB / 200000 字符上限; 新增宿主条目 P1.7, 插件 P4.4 加 FileProvider |
+| Q29 | 附录 B.4 时间线 JSON 中 `transition` 的位置 (示例写在前一段上, 说明写 "写在后一段上") | (a) 按说明写在后一段上, 改示例 (推荐, 与 "at 省略时紧接前一段" 一致, 首段没有转场) / (b) 按示例写在前一段上, 改说明 | P3.1 前 | 已决 (2026-11-06, 维护者选 a): 附录 B.4 示例已改 (2026-11-06, 3-slate-p2-3-5) |
 
 ## 附录 E. 证据等级
 

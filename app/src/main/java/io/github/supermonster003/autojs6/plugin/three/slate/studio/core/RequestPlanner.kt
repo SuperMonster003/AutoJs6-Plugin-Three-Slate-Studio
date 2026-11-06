@@ -2,7 +2,6 @@ package io.github.supermonster003.autojs6.plugin.three.slate.studio.core
 
 import org.autojs.plugin.mediastudio.api.MediaStudioContract
 import org.autojs.plugin.mediastudio.api.MediaStudioErrorCodes
-import org.autojs.plugin.mediastudio.api.MediaStudioOps
 import java.io.File
 import java.util.TimeZone
 
@@ -17,7 +16,10 @@ internal data class SubmitEnvelope(
     val registerMedia: Boolean,
 )
 
-/** A request that passed every submit check. zh-CN: 通过全部 submit 检查的请求. */
+/**
+ * A request that passed every submit check; [output] is a folder for [OutputKind.DIRECTORY].
+ * zh-CN: 通过全部 submit 检查的请求; [OutputKind.DIRECTORY] 时 [output] 为文件夹.
+ */
 internal data class PlannedTask(
     val op: String,
     val inputs: List<String>,
@@ -26,7 +28,9 @@ internal data class PlannedTask(
     val origin: String,
     val registerMedia: Boolean,
 ) {
-    val audioOutput: Boolean get() = spec is OperationSpec.ExtractAudio
+    val kind: OutputKind get() = OutputKind.of(op)
+
+    val audioOutput: Boolean get() = kind == OutputKind.AUDIO
 }
 
 /** The file checks of [RequestPlanner], replaceable in JVM tests. zh-CN: [RequestPlanner] 的文件检查, JVM 测试中可替换. */
@@ -60,10 +64,15 @@ internal object EncoderIds {
  * The submit checks after the envelope, in contract order: output path and extension, options ([OperationOptions]),
  * storage permission, inputs (exist and readable), output (free and its folder creatable), encoders. Every failure is a
  * [MediaStudioException]; checks that need the media content (trim start beyond the duration, a missing video or audio
- * track) run in the task and end in onError.
+ * track) run in the task and end in onError. The output extension follows the [OutputKind]: `.mp4` for video, an
+ * [AudioContainer] for audio, `.png` / `.jpg` / `.jpeg` for images, `.gif`; `frames` takes a folder (a trailing `/` is
+ * allowed, an existing folder is used as it is). An image or audio extension fills a missing `format` option and must
+ * match a given one.
  * zh-CN: 外层字段之后的 submit 检查, 按契约顺序: 输出路径与扩展名, 选项 ([OperationOptions]), 存储权限, 输入 (存在且可读),
  * 输出 (未被占用且目录可建), 编码器. 每项失败都是 [MediaStudioException]; 需要媒体内容的检查 (裁剪起点超过时长, 缺视频轨或
- * 音频轨) 在任务中进行, 以 onError 结束.
+ * 音频轨) 在任务中进行, 以 onError 结束. 输出扩展名按 [OutputKind]: 视频 `.mp4`, 音频为某种 [AudioContainer], 图片 `.png` /
+ * `.jpg` / `.jpeg`, `.gif`; `frames` 接受文件夹 (可以 `/` 结尾, 已有文件夹按原样使用). 图片或音频扩展名在缺少 `format` 选项时
+ * 补上它, 给出时必须一致.
  */
 internal class RequestPlanner(
     private val storageRoot: String,
@@ -95,32 +104,23 @@ internal class RequestPlanner(
         val inputs = envelope.inputs.map { it!! }
         inputs.firstOrNull { !it.startsWith("/") }?.let { throw MediaStudioException.invalid("inputs must be absolute paths, got $it") }
 
+        val kind = OutputKind.of(op)
         var options = envelope.options
-        val explicitOutput = envelope.output?.takeIf { it.isNotBlank() }
-        if (explicitOutput != null) {
+        var explicitOutput = envelope.output?.takeIf { it.isNotBlank() }
+        if (explicitOutput != null && kind == OutputKind.DIRECTORY) {
+            if (!explicitOutput.startsWith("/")) throw MediaStudioException.invalid("output must be an absolute folder path, got $explicitOutput")
+            explicitOutput = explicitOutput.trimEnd('/').ifEmpty { "/" }
+        } else if (explicitOutput != null) {
             if (!explicitOutput.startsWith("/") || explicitOutput.endsWith("/")) {
                 throw MediaStudioException.invalid("output must be an absolute file path, got $explicitOutput")
             }
-            val name = explicitOutput.substringAfterLast('/')
-            val extension = if (name.lastIndexOf('.') > 0) name.substringAfterLast('.').lowercase() else ""
-            if (op == MediaStudioOps.EXTRACT_AUDIO) {
-                val container = AudioContainer.ofExtension(extension) ?: throw MediaStudioException.unsupported(
-                    "audio output must end with ${AudioContainer.entries.joinToString { "." + it.extension }}, got $name",
-                )
-                val format = options["format"]
-                if (format == null) {
-                    options = options + ("format" to container.id)
-                } else if (format is String && format != container.id && format in AudioContainer.entries.map { it.id }) {
-                    throw MediaStudioException.invalid("options.format $format does not match the output extension .$extension")
-                }
-            } else if (extension != VIDEO_EXTENSION) {
-                throw MediaStudioException.unsupported("video output must end with .$VIDEO_EXTENSION, got $name")
-            }
+            options = checkExtension(kind, explicitOutput.substringAfterLast('/'), options)
         }
         val spec = OperationOptions.parse(op, inputs.size, options)
 
-        val output = explicitOutput ?: defaultOutput(op, inputs, spec)
-        (inputs + output).firstOrNull(lacksStorageAccess)?.let { path ->
+        val output = explicitOutput ?: defaultOutput(op, inputs, spec, kind)
+        val resources = OperationOptions.resources(spec)
+        (inputs + resources + output).firstOrNull(lacksStorageAccess)?.let { path ->
             throw MediaStudioException(
                 MediaStudioErrorCodes.STORAGE_PERMISSION_DENIED,
                 "the plugin needs all files access for $path; grant it in the 3-Slate Studio storage screen",
@@ -130,7 +130,15 @@ internal class RequestPlanner(
             if (!files.isFile(input)) throw MediaStudioException.io("input not found: $input")
             if (!files.isReadableFile(input)) throw MediaStudioException.io("input is not readable: $input")
         }
-        if (files.exists(output)) throw MediaStudioException.io("output already exists: $output")
+        resources.forEach { resource ->
+            if (!files.isFile(resource)) throw MediaStudioException.io("file not found: $resource")
+            if (!files.isReadableFile(resource)) throw MediaStudioException.io("file is not readable: $resource")
+        }
+        if (kind == OutputKind.DIRECTORY) {
+            if (files.isFile(output)) throw MediaStudioException.io("output is a file, not a folder: $output")
+        } else if (files.exists(output)) {
+            throw MediaStudioException.io("output already exists: $output")
+        }
         if (isClaimed(output)) throw MediaStudioException.io("output $output is in use by another task")
         val parent = output.substringBeforeLast('/').ifEmpty { "/" }
         if (!files.ensureDirectory(parent)) throw MediaStudioException.io("cannot create the output folder $parent")
@@ -138,14 +146,57 @@ internal class RequestPlanner(
         return PlannedTask(op, inputs, output, spec, origin, envelope.registerMedia)
     }
 
-    private fun defaultOutput(op: String, inputs: List<String>, spec: OperationSpec): String {
-        val audio = spec is OperationSpec.ExtractAudio
-        val extension = (spec as? OperationSpec.ExtractAudio)?.container?.extension ?: VIDEO_EXTENSION
-        // Concat has no single source, so its default name uses the fallback (roadmap D14).
-        // zh-CN: 拼接没有单一来源, 默认文件名用后备名 (路线图 D14).
+    /**
+     * The options with `format` filled from the output [name], after checking its extension against [kind].
+     * zh-CN: 按 [kind] 检查输出 [name] 的扩展名后, 返回由扩展名补上 `format` 的选项.
+     */
+    private fun checkExtension(kind: OutputKind, name: String, options: Map<String, Any?>): Map<String, Any?> {
+        val extension = if (name.lastIndexOf('.') > 0) name.substringAfterLast('.').lowercase() else ""
+        val format = options["format"]
+        fun filled(id: String, known: Collection<String>, same: (String) -> Boolean): Map<String, Any?> = when {
+            format == null -> options + ("format" to id)
+            format is String && format in known && !same(format) ->
+                throw MediaStudioException.invalid("options.format $format does not match the output extension .$extension")
+            else -> options
+        }
+        return when (kind) {
+            OutputKind.AUDIO -> {
+                val container = AudioContainer.ofExtension(extension) ?: throw MediaStudioException.unsupported(
+                    "audio output must end with ${AudioContainer.entries.joinToString { "." + it.extension }}, got $name",
+                )
+                filled(container.id, AudioContainer.entries.map { it.id }) { it == container.id }
+            }
+            OutputKind.IMAGE -> {
+                val image = ImageFormat.of(extension)
+                    ?: throw MediaStudioException.unsupported("image output must end with .png, .jpg or .jpeg, got $name")
+                filled(extension, ImageFormat.NAMES) { ImageFormat.of(it) == image }
+            }
+            OutputKind.GIF -> options.also {
+                if (extension != GIF_EXTENSION) throw MediaStudioException.unsupported("GIF output must end with .$GIF_EXTENSION, got $name")
+            }
+            OutputKind.VIDEO -> options.also {
+                if (extension != VIDEO_EXTENSION) throw MediaStudioException.unsupported("video output must end with .$VIDEO_EXTENSION, got $name")
+            }
+            OutputKind.DIRECTORY -> options
+        }
+    }
+
+    private fun defaultOutput(op: String, inputs: List<String>, spec: OperationSpec, kind: OutputKind): String {
+        // Concat and audioMix have no single source, so their default name uses the fallback (roadmap D14).
+        // zh-CN: 拼接与混音没有单一来源, 默认文件名用后备名 (路线图 D14).
         val source = inputs.singleOrNull()
-        val candidate = OutputPaths.defaultOutput(storageRoot, source, op, extension, audio, clock(), zone())
-        return OutputPaths.uniquePath(candidate) { files.exists(it) || isClaimed(it) }
+        val candidate = when (kind) {
+            OutputKind.DIRECTORY -> OutputPaths.defaultDirectory(storageRoot, kind) + "/" + OutputPaths.defaultBaseName(source, op, clock(), zone())
+            else -> OutputPaths.defaultOutput(storageRoot, source, op, extensionOf(spec, kind), kind, clock(), zone())
+        }
+        return OutputPaths.uniquePath(candidate, folder = kind == OutputKind.DIRECTORY) { files.exists(it) || isClaimed(it) }
+    }
+
+    private fun extensionOf(spec: OperationSpec, kind: OutputKind): String = when (spec) {
+        is OperationSpec.AudioOutput -> spec.container.extension
+        is OperationSpec.Frame -> spec.image.format.extension
+        is OperationSpec.Thumbnail -> spec.image.format.extension
+        else -> if (kind == OutputKind.GIF) GIF_EXTENSION else VIDEO_EXTENSION
     }
 
     private fun checkEncoders(spec: OperationSpec) {
@@ -154,6 +205,7 @@ internal class RequestPlanner(
             is OperationSpec.Speed -> spec.video
             is OperationSpec.Transform -> spec.video
             is OperationSpec.Transcode -> spec.video
+            is OperationSpec.Overlay -> spec.video
             else -> null
         }
         if (video?.codec == VideoCodec.H265 && EncoderIds.H265 !in encoders) {
@@ -162,7 +214,7 @@ internal class RequestPlanner(
         if (video != null && video.codec == VideoCodec.H264 && EncoderIds.H264 !in encoders) {
             throw MediaStudioException.unsupported("this device has no H.264 encoder")
         }
-        if (spec is OperationSpec.ExtractAudio) {
+        if (spec is OperationSpec.AudioOutput) {
             when (spec.container) {
                 AudioContainer.M4A -> if (EncoderIds.AAC !in encoders) throw MediaStudioException.unsupported("this device has no AAC encoder")
                 AudioContainer.WAV -> Unit
@@ -177,6 +229,7 @@ internal class RequestPlanner(
 
     companion object {
         const val VIDEO_EXTENSION = "mp4"
+        const val GIF_EXTENSION = "gif"
     }
 
 }

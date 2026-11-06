@@ -17,12 +17,13 @@ plugins {
 
 val globalApplicationId = "io.github.supermonster003.autojs6.plugin.three.slate.studio"
 
-// Minimum host build (roadmap 5.5, D23): the temporary 6641, the first local host build after the baseline 6640 (host
-// master 340a0b511e, appendix F); roadmap P1.5 writes the local build that carries the media studio contract and P5.4
-// the final value. Keep it in sync with ThreeSlateStudioContract.REQUIRED_HOST_VERSION and .readme/common.json.
-// zh-CN: 最低宿主构建号 (路线图 5.5, D23): 临时值 6641, 即基线 6640 (宿主 master 340a0b511e, 附录 F) 之后的第一个本地宿主构建;
-// 路线图 P1.5 改为含媒体工作室契约的本地构建号, P5.4 回填最终值. 与 ThreeSlateStudioContract.REQUIRED_HOST_VERSION 及
-// .readme/common.json 保持一致.
+// Minimum host build (roadmap 5.5, D23): 6641, the first local host build after the baseline 6640 (host master
+// 340a0b511e, appendix F); roadmap P1.5 confirmed it as the local build that carries the media studio contract and the
+// script modules (P1.1 - P1.5), P5.4 writes the final value. Keep it in sync with
+// ThreeSlateStudioContract.REQUIRED_HOST_VERSION and .readme/common.json.
+// zh-CN: 最低宿主构建号 (路线图 5.5, D23): 6641, 即基线 6640 (宿主 master 340a0b511e, 附录 F) 之后的第一个本地宿主构建;
+// 路线图 P1.5 已确认它是含媒体工作室契约与脚本模块 (P1.1 - P1.5) 的本地构建号, P5.4 回填最终值.
+// 与 ThreeSlateStudioContract.REQUIRED_HOST_VERSION 及 .readme/common.json 保持一致.
 val requiredHostVersion = 6641
 
 val buildTypeDebug = "debug"

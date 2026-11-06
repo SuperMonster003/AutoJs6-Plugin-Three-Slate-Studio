@@ -59,7 +59,7 @@ class OutputPathsTest {
     fun `the default output joins the directory and the file name`() {
         assertEquals(
             "/storage/emulated/0/Music/3-Slate Studio/voice-audioTrim-20261105-090203.m4a",
-            OutputPaths.defaultOutput("/storage/emulated/0", "/sdcard/voice.m4a", "audioTrim", "m4a", audio = true, timestampMillis = instant, zone = shanghai),
+            OutputPaths.defaultOutput("/storage/emulated/0", "/sdcard/voice.m4a", "audioTrim", "m4a", OutputKind.AUDIO, timestampMillis = instant, zone = shanghai),
         )
     }
 
@@ -70,6 +70,37 @@ class OutputPathsTest {
         assertEquals("/m/a-3.mp4", OutputPaths.uniquePath("/m/a.mp4") { it in taken })
         assertEquals("/m/noext-1", OutputPaths.uniquePath("/m/noext") { it == "/m/noext" })
         assertEquals("/m/.hidden-1", OutputPaths.uniquePath("/m/.hidden") { it == "/m/.hidden" })
+    }
+
+    @Test
+    fun `images, GIF and frame folders go to Pictures`() {
+        assertEquals("/storage/emulated/0/Pictures/3-Slate Studio", OutputPaths.defaultDirectory("/storage/emulated/0", OutputKind.IMAGE))
+        assertEquals(
+            "/storage/emulated/0/Pictures/3-Slate Studio/clip-toGif-20261105-090203.gif",
+            OutputPaths.defaultOutput("/storage/emulated/0", "/sdcard/clip.mp4", "toGif", "gif", OutputKind.GIF, instant, shanghai),
+        )
+        assertEquals("clip.final-frames-20261105-090203", OutputPaths.defaultBaseName("/a/clip.final.mp4", "frames", instant, shanghai))
+        assertEquals(OutputKind.DIRECTORY, OutputKind.of("frames"))
+        assertEquals(OutputKind.IMAGE, OutputKind.of("thumbnail"))
+        assertEquals(OutputKind.AUDIO, OutputKind.of("extractAudio"))
+        assertEquals(OutputKind.VIDEO, OutputKind.of("overlay"))
+    }
+
+    @Test
+    fun `frame files are numbered from 1 with at least 4 digits`() {
+        assertEquals("clip-0001.png", OutputPaths.frameFileName("/a/clip.mp4", 0, 3, "png"))
+        assertEquals("clip-0999.jpg", OutputPaths.frameFileName("/a/clip.mp4", 998, 999, "jpg"))
+        assertEquals("slate-00010.png", OutputPaths.frameFileName(null, 9, 10_000, "png"))
+    }
+
+    @Test
+    fun `a taken folder keeps the dots of its name`() {
+        val taken = setOf("/p/clip.final-frames-1")
+        assertEquals(
+            "/p/clip.final-frames-1-1",
+            OutputPaths.uniquePath("/p/clip.final-frames-1", folder = true) { it in taken },
+        )
+        assertEquals("/p/clip-1.final", OutputPaths.uniquePath("/p/clip.final") { it == "/p/clip.final" })
     }
 
     @Test

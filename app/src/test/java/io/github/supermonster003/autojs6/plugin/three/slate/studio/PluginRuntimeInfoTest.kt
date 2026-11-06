@@ -44,7 +44,7 @@ class PluginRuntimeInfoTest {
         assertEquals("Nov 5, 2026", fields.versionDate)
         // Roadmap D25 / Q9: the Compose library exists for all four ABIs, so the universal APK reports an empty list.
         assertEquals(emptyList<String>(), fields.supportedAbis)
-        // Roadmap D23: the temporary floor; P1.5 writes the local build with the contract and P5.4 the final one.
+        // Roadmap D23: P1.5 confirmed 6641 as the local build with the contract; P5.4 writes the final one.
         assertEquals(6641L, fields.requiredHostVersion)
         assertEquals(ThreeSlateStudioContract.REQUIRED_HOST_VERSION, fields.requiredHostVersion)
         assertEquals(1, fields.contractVersion)

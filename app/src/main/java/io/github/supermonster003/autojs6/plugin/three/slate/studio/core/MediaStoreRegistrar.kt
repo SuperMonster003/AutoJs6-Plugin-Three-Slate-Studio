@@ -5,6 +5,7 @@ import android.media.MediaScannerConnection
 import android.net.Uri
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Registers a finished output in MediaStore (`registerMedia`, default true) through the media scanner, so galleries and
@@ -26,6 +27,23 @@ internal object MediaStoreRegistrar {
         }
         latch.await(TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
         return uri != null
+    }
+
+    /**
+     * One scan for many files of one [mime] (the images of `frames`); true when every file got a URI within
+     * [TIMEOUT_MILLIS] in total.
+     * zh-CN: 一次扫描登记同一 [mime] 的多个文件 (`frames` 的图片); 全部文件在合计 [TIMEOUT_MILLIS] 内取得 URI 时为 true.
+     */
+    fun registerAll(context: Context, paths: List<String>, mime: String?): Boolean {
+        if (paths.isEmpty()) return true
+        val latch = CountDownLatch(paths.size)
+        val registered = AtomicInteger()
+        MediaScannerConnection.scanFile(context.applicationContext, paths.toTypedArray(), mime?.let { type -> Array(paths.size) { type } }) { _, scanned ->
+            if (scanned != null) registered.incrementAndGet()
+            latch.countDown()
+        }
+        latch.await(TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
+        return registered.get() == paths.size
     }
 
 }

@@ -22,10 +22,11 @@ object ThreeSlateStudioContract {
     const val SERVICE_CATEGORY = MediaStudioPluginActions.SERVICE_CATEGORY
 
     /**
-     * The host build the plugin requires: temporary 6641, the first local build after the baseline 6640; roadmap P1.5
-     * moves it to the local build with the contract and P5.4 to the build with every host item (roadmap D23).
-     * zh-CN: 插件要求的宿主构建号: 临时值 6641 (基线 6640 之后的第一个本地构建号); 路线图 P1.5 改为含契约的本地构建号,
-     * P5.4 改为含全部宿主条目的构建号 (路线图 D23).
+     * The host build the plugin requires: 6641, the first local build after the baseline 6640, which roadmap P1.5
+     * confirmed as the local build with the contract and the script modules (P1.1 - P1.5); P5.4 moves it to the build
+     * with every host item (roadmap D23).
+     * zh-CN: 插件要求的宿主构建号: 6641 (基线 6640 之后的第一个本地构建号), 路线图 P1.5 已确认它含契约与脚本模块
+     * (P1.1 - P1.5); P5.4 改为含全部宿主条目的构建号 (路线图 D23).
      */
     const val REQUIRED_HOST_VERSION = 6641L
 
@@ -33,9 +34,9 @@ object ThreeSlateStudioContract {
     const val CONTRACT_VERSION = MediaStudioContract.CONTRACT_VERSION
 
     /**
-     * Operations the plugin implements (roadmap P2.1 / P2.2): `probe` and `audioProbe` through `probe()`, the others
+     * Operations the plugin implements (roadmap P2.1 - P2.5): `probe` and `audioProbe` through `probe()`, the others
      * through `submit`; every other contract operation answers `INVALID_OPTIONS: NOT_IMPLEMENTED`.
-     * zh-CN: 插件已实现的操作 (路线图 P2.1 / P2.2): `probe` 与 `audioProbe` 经 `probe()`, 其余经 `submit`; 其他契约操作回答
+     * zh-CN: 插件已实现的操作 (路线图 P2.1 - P2.5): `probe` 与 `audioProbe` 经 `probe()`, 其余经 `submit`; 其他契约操作回答
      * `INVALID_OPTIONS: NOT_IMPLEMENTED`.
      */
     val IMPLEMENTED_OPS: List<String> = listOf(
@@ -47,7 +48,18 @@ object ThreeSlateStudioContract {
         MediaStudioOps.EXTRACT_AUDIO,
         MediaStudioOps.REMOVE_AUDIO,
         MediaStudioOps.TRANSCODE,
+        MediaStudioOps.OVERLAY,
+        MediaStudioOps.FRAMES,
+        MediaStudioOps.FRAME,
+        MediaStudioOps.THUMBNAIL,
+        MediaStudioOps.TO_GIF,
         MediaStudioOps.AUDIO_PROBE,
+        MediaStudioOps.AUDIO_TRIM,
+        MediaStudioOps.AUDIO_CONCAT,
+        MediaStudioOps.AUDIO_MIX,
+        MediaStudioOps.AUDIO_VOLUME,
+        MediaStudioOps.AUDIO_CONVERT,
+        MediaStudioOps.AUDIO_SPEED,
     )
 
     /** Detail prefix of operations not implemented yet. zh-CN: 尚未实现的操作的详情前缀. */
