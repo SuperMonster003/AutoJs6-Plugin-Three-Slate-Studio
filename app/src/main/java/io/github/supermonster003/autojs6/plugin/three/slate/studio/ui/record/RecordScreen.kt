@@ -80,6 +80,7 @@ import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.components
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.components.SlateScreen
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.library.MediaKind
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.toolbox.CodeCard
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.toolbox.OpenInAutoJs6Button
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
@@ -209,7 +210,7 @@ internal fun RecordScreen(onBack: () -> Unit, onOpenDetail: (String) -> Unit, on
                 )
             }
             when (val current = phase) {
-                is StudioRecorder.Phase.Finished -> SavedRecording(current, onOpenDetail = onOpenDetail, onSend = { dialog = DIALOG_SEND })
+                is StudioRecorder.Phase.Finished -> SavedRecording(current, snackbar, onOpenDetail = onOpenDetail, onSend = { dialog = DIALOG_SEND })
                 is StudioRecorder.Phase.Failed -> Text(
                     stringResource(R.string.record_failed, current.message),
                     color = MaterialTheme.colorScheme.error,
@@ -367,7 +368,7 @@ private fun Controls(
 
 /** The saved file, its actions and the equivalent script. zh-CN: 保存的文件, 其操作与等价脚本. */
 @Composable
-private fun SavedRecording(finished: StudioRecorder.Phase.Finished, onOpenDetail: (String) -> Unit, onSend: () -> Unit) {
+private fun SavedRecording(finished: StudioRecorder.Phase.Finished, snackbar: SnackbarHostState, onOpenDetail: (String) -> Unit, onSend: () -> Unit) {
     val context = LocalContext.current
     val result = finished.result
     SectionHeader(stringResource(R.string.record_saved))
@@ -400,7 +401,9 @@ private fun SavedRecording(finished: StudioRecorder.Phase.Finished, onOpenDetail
     val explicit = remember(result.path) {
         result.path.takeUnless { File(it).parent == OutputPaths.defaultDirectory(sharedStorageRoot(), OutputKind.AUDIO) }
     }
-    CodeCard(RecordCalls.code(finished.settings, explicit, result.durationMillis), copyable = true, tag = "slate.record.code")
+    val script = remember(result.path) { RecordCalls.script(finished.settings, explicit, result.durationMillis) }
+    CodeCard(script.code, copyable = true, tag = "slate.record.code")
+    OpenInAutoJs6Button(script, snackbar, Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
 }
 
 /** Source, format and quality options. zh-CN: 音源, 格式与音质选项. */

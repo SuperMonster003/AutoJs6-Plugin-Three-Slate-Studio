@@ -1,6 +1,7 @@
 package io.github.supermonster003.autojs6.plugin.three.slate.studio.codegen.record
 
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.codegen.CodeGenerator
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.codegen.GeneratedScript
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.record.AudioOutputFormat
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.record.RecordSettings
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.record.RecordingAudioSource
@@ -10,10 +11,12 @@ import io.github.supermonster003.autojs6.plugin.three.slate.studio.record.Record
  * long as the recording and `stop()`. Only `source` and the options that differ from the defaults of that source
  * (roadmap appendix B.2, appendix D Q1) are written; `source` uses the short key `mic` of the script API. The path is
  * written only for a custom output folder (D37): the script's default output is `Music/AutoJs6/` (D14), like an absent
- * wizard output means the script default.
+ * wizard output means the script default. The script itself comes from [CodeGenerator.recordScript] (roadmap P4.4),
+ * shared with "Open in AutoJs6".
  * zh-CN: 与 Studio 录音等价的脚本 (路线图 P4.5, D11): 带页面选项的 `audio.record`, 与录音等长的等待, 以及 `stop()`. 只写出
  * `source` 与不同于该音源默认值的选项 (路线图附录 B.2, 附录 D Q1); `source` 使用脚本 API 的简写 `mic`. 只有自定义输出目录
- * (D37) 时写出路径: 脚本的默认输出为 `Music/AutoJs6/` (D14), 与向导输出留空表示脚本默认值相同.
+ * (D37) 时写出路径: 脚本的默认输出为 `Music/AutoJs6/` (D14), 与向导输出留空表示脚本默认值相同. 脚本本身由
+ * [CodeGenerator.recordScript] (路线图 P4.4) 生成, 与 "在 AutoJs6 中打开" 共用.
  */
 internal object RecordCalls {
 
@@ -36,16 +39,8 @@ internal object RecordCalls {
      * recorded duration, rounded up to 100 ms, at least 100 ms).
      * zh-CN: 脚本: [output] 为显式路径 (默认输出为 null), [durationMillis] 为等待时长 (已录时长, 向上取整到 100 ms, 至少 100 ms).
      */
-    fun code(settings: RecordSettings, output: String?, durationMillis: Long): String {
-        val arguments = listOfNotNull(output, options(settings)).toTypedArray()
-        val wait = ((durationMillis.coerceAtLeast(1) + 99) / 100) * 100
-        return listOf(
-            "let recording = " + CodeGenerator.call("audio", "record", *arguments),
-            "sleep($wait);",
-            "let result = recording.stop();",
-            "console.log(result.path);",
-        ).joinToString("\n")
-    }
+    fun script(settings: RecordSettings, output: String?, durationMillis: Long): GeneratedScript =
+        CodeGenerator.recordScript(output, options(settings), ((durationMillis.coerceAtLeast(1) + 99) / 100) * 100)
 
     /** The script key of [source]; `mic` is the documented short form. zh-CN: [source] 的脚本键; `mic` 是文档中的简写. */
     fun sourceKey(source: RecordingAudioSource): String = when (source) {

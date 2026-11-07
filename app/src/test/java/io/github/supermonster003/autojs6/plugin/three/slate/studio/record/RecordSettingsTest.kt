@@ -1,5 +1,6 @@
 package io.github.supermonster003.autojs6.plugin.three.slate.studio.record
 
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.codegen.CodeGenerator
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.codegen.record.RecordCalls
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -122,17 +123,13 @@ class RecordSettingsTest {
             linkedMapOf<String, Any?>("source" to "mixed", "sampleRate" to 44_100, "bitRate" to 128_000),
             RecordCalls.options(RecordSettings(RecordingAudioSource.MIXED, sampleRate = 44_100, channels = 2, bitRate = 128_000)),
         )
-        assertEquals(
-            listOf(
-                "let recording = audio.record({ source: \"mic\" });",
-                "sleep(3100);",
-                "let result = recording.stop();",
-                "console.log(result.path);",
-            ).joinToString("\n"),
-            RecordCalls.code(RecordSettings(), null, 3_021),
-        )
-        val explicit = RecordCalls.code(RecordSettings(RecordingAudioSource.MIXED), "/sdcard/Podcasts/a.m4a", 0)
-        assertTrue(explicit, explicit.startsWith("let recording = audio.record(\"/sdcard/Podcasts/a.m4a\", { source: \"mixed\" });\nsleep(100);"))
+        // The script comes from CodeGenerator.recordScript (P4.4), with the wait rounded up to 100 ms.
+        val script = RecordCalls.script(RecordSettings(), null, 3_021)
+        assertEquals(CodeGenerator.recordScript(null, linkedMapOf("source" to "mic"), 3_100), script)
+        assertEquals("audio.record", script.api)
+        assertTrue(script.code, script.code.contains("audio.record(null, { source: \"mic\" });\nsleep(3100);\nlet result = recording.stop();\n"))
+        val explicit = RecordCalls.script(RecordSettings(RecordingAudioSource.MIXED), "/sdcard/Podcasts/a.m4a", 0).code
+        assertTrue(explicit, explicit.contains("let recording = audio.record(\"/sdcard/Podcasts/a.m4a\", { source: \"mixed\" });\nsleep(100);"))
     }
 
     @Test
