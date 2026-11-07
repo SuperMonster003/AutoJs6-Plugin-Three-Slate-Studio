@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.codegen.OperationSchema
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.codegen.timeline.TimelineCalls
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.TaskRunner
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.service.MediaStudioEngine
 import org.autojs.plugin.mediastudio.api.IMediaStudioCallback
@@ -127,11 +128,15 @@ internal object StudioTasks {
         output: String?,
         onComplete: ((Bundle) -> Unit)?,
     ) {
+        // A timeline export of the editor (roadmap P4.3) carries its timeline beside the options, as `video.compose` sends it.
+        // zh-CN: 剪辑器的时间线导出 (路线图 P4.3) 把时间线放在选项旁边, 与 `video.compose` 的发送方式相同.
+        val timeline = (options[TimelineCalls.TIMELINE] as? Map<*, *>)?.takeIf { op == MediaStudioOps.COMPOSE }
         val request = Bundle().apply {
             putString(MediaStudioRequestKeys.OP, op)
             putStringArray(MediaStudioRequestKeys.INPUTS, inputs.toTypedArray())
             output?.let { putString(MediaStudioRequestKeys.OUTPUT, it) }
-            putBundle(MediaStudioRequestKeys.OPTIONS, RequestBundles.of(options))
+            putBundle(MediaStudioRequestKeys.OPTIONS, RequestBundles.of(if (timeline == null) options else options - TimelineCalls.TIMELINE))
+            timeline?.let { putBundle(MediaStudioRequestKeys.TIMELINE, RequestBundles.of(it.entries.associate { (k, v) -> k.toString() to v })) }
             putString(MediaStudioRequestKeys.HOST_TOKEN, HOST_TOKEN)
             putString(MediaStudioRequestKeys.ORIGIN, MediaStudioContract.ORIGIN_STUDIO)
         }

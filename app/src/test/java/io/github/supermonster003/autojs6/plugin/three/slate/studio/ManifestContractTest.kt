@@ -101,13 +101,20 @@ class ManifestContractTest {
     }
 
     @Test
-    fun `the activities are the wake, home, settings, release history and storage guide screens`() {
+    fun `the activities are the wake, home, settings, timeline editor, release history and storage guide screens`() {
         assertEquals(
-            listOf(".WakeActivity", ".ui.home.HomeActivity", ".ui.settings.SettingsActivity", ".ui.release.ReleaseHistoryActivity", ".ui.storage.StorageAccessActivity"),
+            listOf(
+                ".WakeActivity",
+                ".ui.home.HomeActivity",
+                ".ui.settings.SettingsActivity",
+                ".ui.timeline.TimelineActivity",
+                ".ui.release.ReleaseHistoryActivity",
+                ".ui.storage.StorageAccessActivity",
+            ),
             application.children("activity").map { it.android("name") },
         )
-        // The settings and release history pages are opened by the plugin only (roadmap P4.1).
-        for (name in listOf(".ui.settings.SettingsActivity", ".ui.release.ReleaseHistoryActivity")) {
+        // The settings, timeline editor and release history pages are opened by the plugin only (roadmap P4.1, P4.3).
+        for (name in listOf(".ui.settings.SettingsActivity", ".ui.timeline.TimelineActivity", ".ui.release.ReleaseHistoryActivity")) {
             val screen = activity(name)
             assertEquals("false", screen.android("exported"))
             assertTrue(screen.children("intent-filter").isEmpty())

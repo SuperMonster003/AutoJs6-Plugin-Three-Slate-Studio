@@ -106,6 +106,16 @@
             android:name=".ui.settings.SettingsActivity"
             android:exported="false" />
 
+        <!--
+            The timeline editor (roadmap P4.3): rotation and resizing keep the playback and the open dialogs (Compose
+            relayouts); the project and its undo history live in the view model.
+        -->
+        <activity
+            android:name=".ui.timeline.TimelineActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
         <activity
             android:name=".ui.release.ReleaseHistoryActivity"
             android:exported="false" />

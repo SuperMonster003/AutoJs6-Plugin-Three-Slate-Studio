@@ -51,12 +51,14 @@ import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.release.Re
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.settings.SettingsActivity
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.tasks.StudioTasks
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.tasks.TasksScreen
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.timeline.TimelineActivity
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.toolbox.ResultScreen
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.toolbox.ToolboxScreen
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.toolbox.WizardScreen
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.update.AppUpdateController
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.update.AppUpdateStore
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.update.UpdateDialogs
+import org.autojs.plugin.mediastudio.api.MediaStudioOps
 
 /**
  * The Studio home (roadmap P4.1, D37, D35): three tabs (library, toolbox, tasks) with a bottom bar below 600 dp and a
@@ -132,6 +134,9 @@ class HomeActivity : StandaloneActivity() {
             val route = requestedRoute ?: return@LaunchedEffect
             requestedRoute = null
             if (route == ROUTE_RECORD && currentRoute != ROUTE_RECORD) nav.navigate(ROUTE_RECORD) { launchSingleTop = true }
+            // A wizard opened from another Studio screen (the media detail of the timeline editor, roadmap P4.3).
+            // zh-CN: 从其他 Studio 界面打开的向导 (时间线剪辑器的媒体详情, 路线图 P4.3).
+            if (route.startsWith("$ROUTE_WIZARD/")) nav.navigate(route)
         }
         NavHost(navController = nav, startDestination = ROUTE_MAIN) {
             composable(ROUTE_MAIN) { MainScreen(nav) }
@@ -171,7 +176,7 @@ class HomeActivity : StandaloneActivity() {
                     key = back.arguments?.getString("key").orEmpty(),
                     onBack = { nav.popBackStack() },
                     onOpenDetail = { path -> nav.navigate(detailRoute(path)) },
-                    onRunAgain = { op, input -> nav.navigate(wizardRoute(op, input)) },
+                    onRunAgain = { op, input -> if (op == MediaStudioOps.COMPOSE) nav.popBackStack() else nav.navigate(wizardRoute(op, input)) },
                 )
             }
         }
@@ -195,7 +200,12 @@ class HomeActivity : StandaloneActivity() {
                         onOpenSettings = ::openSettings,
                         onProcess = { op, path -> nav.navigate(wizardRoute(op, path)) },
                     )
-                    Tab.TOOLBOX -> ToolboxScreen(onOpen = { op -> nav.navigate(wizardRoute(op, null)) }, onRecord = { nav.navigate(ROUTE_RECORD) })
+                    Tab.TOOLBOX -> ToolboxScreen(
+                        onOpen = { op -> nav.navigate(wizardRoute(op, null)) },
+                        onRecord = { nav.navigate(ROUTE_RECORD) },
+                        onTimeline = { startActivity(TimelineActivity.newProject(this@HomeActivity)) },
+                        onOpenProjects = { startActivity(TimelineActivity.openProjects(this@HomeActivity)) },
+                    )
                     Tab.TASKS -> TasksScreen(
                         onOpenResult = { key -> nav.navigate("$ROUTE_RESULT/$key") },
                         onOpenDetail = { path -> nav.navigate(detailRoute(path)) },
@@ -210,6 +220,9 @@ class HomeActivity : StandaloneActivity() {
             actions = {
                 if (tab == Tab.TASKS && StudioTasks.rows.any { it.isFinal && it.request != null }) {
                     TopBarAction(R.drawable.ic_delete_24, stringResource(R.string.tasks_clear_finished), "slate.tasks.clear") { StudioTasks.clearFinished() }
+                }
+                TopBarAction(R.drawable.ic_timeline_24, stringResource(R.string.timeline_title), "slate.home.timeline") {
+                    startActivity(TimelineActivity.newProject(this@HomeActivity))
                 }
                 TopBarAction(R.drawable.ic_mic_24, stringResource(R.string.record_title), "slate.home.record") { nav.navigate(ROUTE_RECORD) }
                 TopBarAction(R.drawable.ic_settings_24, stringResource(R.string.settings_title), "slate.home.settings", ::openSettings)
