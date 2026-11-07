@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="action_failed">تعذر إكمال الإجراء</string>
+    <string name="action_open_in_autojs6">فتح في AutoJs6</string>
     <string name="action_open_with">فتح باستخدام</string>
     <string name="action_share">مشاركة</string>
     <string name="alt_length_duration">المدة</string>
@@ -122,6 +123,8 @@
     <string name="op_transform_title">تغيير الحجم والتدوير والاقتصاص</string>
     <string name="op_trim_summary">الاحتفاظ بنطاق زمني من الفيديو</string>
     <string name="op_trim_title">قص الفيديو</string>
+    <string name="open_in_autojs6_failed">تعذّر فتح محرر AutoJs6</string>
+    <string name="open_in_autojs6_too_large">الكود أكبر من 4 MiB التي يقبلها AutoJs6; انسخه بدلًا من ذلك</string>
     <string name="option_align">محاذاة النص</string>
     <string name="option_alpha">العتامة</string>
     <string name="option_anchor">نقطة الارتكاز</string>
@@ -261,8 +264,22 @@
     <string name="settings_bit_rate_small_note">0.6 من التقدير</string>
     <string name="settings_codec">ترميز الفيديو الافتراضي</string>
     <string name="settings_codec_unavailable">لا يحتوي هذا الجهاز على مرمّز له</string>
+    <string name="settings_concurrency">المهام المتزامنة</string>
+    <string name="settings_concurrency_message">عدد مهام المعالجة التي تعمل في الوقت نفسه, لمهام الأدوات والسكربتات معًا. كلما زاد العدد زاد احتمال نفاد موارد الترميز في الجهاز (CODEC_ERROR)</string>
+    <string name="settings_concurrency_one">1 (مهمة واحدة في كل مرة)</string>
+    <string name="settings_concurrency_one_note">تعمل مهمة واحدة وتنتظر البقية في قائمة الانتظار</string>
+    <string name="settings_concurrency_two">2 (افتراضي)</string>
+    <string name="settings_concurrency_two_note">تعمل مهمتان في الوقت نفسه وتنتظر البقية في قائمة الانتظار</string>
     <string name="settings_dark_mode_dark">داكن</string>
     <string name="settings_dark_mode_light">فاتح</string>
+    <string name="settings_encoder">تفضيل المرمّز المادي</string>
+    <string name="settings_encoder_auto">تلقائي</string>
+    <string name="settings_encoder_auto_note">ترتيب قائمة الترميزات في النظام (عادةً المادية أولًا)</string>
+    <string name="settings_encoder_hardware">المادي أولًا</string>
+    <string name="settings_encoder_hardware_note">المرمّزات المادية أولًا, ثم البرمجية إذا لم تدعم التنسيق أو الحجم</string>
+    <string name="settings_encoder_message">ترتيب اختيار مرمّزات الفيديو, لمهام الأدوات والسكربتات معًا</string>
+    <string name="settings_encoder_software">البرمجي أولًا</string>
+    <string name="settings_encoder_software_note">المرمّزات البرمجية أولًا (أبطأ), ثم المادية إذا لم تدعم التنسيق أو الحجم</string>
     <string name="settings_folder_unsupported">اختر مجلدًا في التخزين المشترك</string>
     <string name="settings_follow_autojs6">اتباع AutoJs6</string>
     <string name="settings_follow_autojs6_summary">اتباع AutoJs6 - %1$s</string>

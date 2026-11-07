@@ -42,7 +42,10 @@ import io.github.supermonster003.autojs6.plugin.three.slate.studio.BuildConfig
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.R
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ThreeSlateStudioApplication
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.CodecSupport
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.EncoderPreference
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.ProcessingSettings
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.VideoCodec
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.service.MediaStudioEngine
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.service.StorageAccess
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.StandaloneActivity
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.StudioPreferences
@@ -79,15 +82,17 @@ import java.util.Locale
  * scripts keep the defaults of roadmap D14 / D29), permissions and background (all files access of D9, notifications,
  * unrestricted battery use of appendix D Q13, the task notification channel) and about (version, release history, the
  * update check with its automatic check and ignored releases). Every choice dialog edits a draft and saves on confirm.
- * The hardware encoder preference and the task concurrency of D37 are not shown yet (appendix D Q50).
+ * The hardware encoder preference and the task concurrency of D37 (appendix D Q50 (b), `core/ProcessingSettings`) apply to
+ * Studio and script tasks alike, since both run on the executor of this process.
  * zh-CN: 设置页 (路线图 P4.1, D37, 独立设置规范, 先例 3-Prism Camera): 外观 (语言, 夜间模式, 主题色, 启动器图标; 前三项默认跟随 AutoJs6),
  * 媒体与输出 (工具箱向导的输出目录, 默认视频编码与码率策略, 首页的附加目录; 脚本仍用路线图 D14 / D29 的默认值), 权限与后台 (D9 的所有文件
  * 访问, 通知, 附录 D Q13 的电池不受限制, 任务通知渠道) 与关于 (版本, 发行历史, 更新检查及其自动检查与已忽略版本). 每个选择对话框编辑草稿,
- * 确定时保存. D37 的硬件编码器偏好与任务并发数暂不显示 (附录 D Q50).
+ * 确定时保存. D37 的硬件编码器偏好与任务并发数 (附录 D Q50 (b), `core/ProcessingSettings`) 对 Studio 任务与脚本任务同样生效, 因为两者都在本进程的
+ * 执行器上运行.
  */
 class SettingsActivity : StandaloneActivity() {
 
-    private enum class Dialog { LANGUAGE, DARK_MODE, THEME_COLOR, LAUNCHER_ICON, OUTPUT_FOLDER, CODEC, BIT_RATE, FOLDERS, BATTERY, IGNORED }
+    private enum class Dialog { LANGUAGE, DARK_MODE, THEME_COLOR, LAUNCHER_ICON, OUTPUT_FOLDER, CODEC, BIT_RATE, ENCODER, CONCURRENCY, FOLDERS, BATTERY, IGNORED }
 
     private val snackbar = SnackbarHostState()
     private var revision by mutableIntStateOf(0)
@@ -97,6 +102,7 @@ class SettingsActivity : StandaloneActivity() {
     private var notificationsGranted by mutableStateOf(true)
     private var battery by mutableStateOf(Battery.OPTIMIZED)
     private lateinit var prefs: StudioPreferences
+    private lateinit var processing: ProcessingSettings
     private lateinit var updates: AppUpdateController
 
     /** A denial without rationale means "don't ask again": the next tap opens the app settings. zh-CN: 无理由的拒绝即 "不再询问": 下次点按打开应用设置. */
@@ -132,6 +138,7 @@ class SettingsActivity : StandaloneActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         prefs = StudioPreferences.of(this)
+        processing = ProcessingSettings.of(this)
         updates = AppUpdateController(AppUpdateStore.of(this), BuildConfig.VERSION_CODE.toLong())
     }
 
@@ -188,6 +195,12 @@ class SettingsActivity : StandaloneActivity() {
                     Hairline()
                     SettingsRow(stringResource(R.string.settings_bit_rate), summary = stringResource(bitRateLabel(prefs.bitRatePolicy)), icon = R.drawable.ic_tune_24,
                         onClick = { dialog = Dialog.BIT_RATE }, modifier = Modifier.testTag("slate.settings.bitRate"))
+                    Hairline()
+                    SettingsRow(stringResource(R.string.settings_encoder), summary = stringResource(encoderLabel(processing.encoderPreference)), icon = R.drawable.ic_build_24,
+                        onClick = { dialog = Dialog.ENCODER }, modifier = Modifier.testTag("slate.settings.encoder"))
+                    Hairline()
+                    SettingsRow(stringResource(R.string.settings_concurrency), summary = stringResource(concurrencyLabel(processing.concurrency)),
+                        icon = R.drawable.ic_list_24, onClick = { dialog = Dialog.CONCURRENCY }, modifier = Modifier.testTag("slate.settings.concurrency"))
                     Hairline()
                     val folders = prefs.libraryFolders
                     SettingsRow(stringResource(R.string.settings_library_folders),
@@ -348,6 +361,33 @@ class SettingsActivity : StandaloneActivity() {
                 onConfirm = { index -> close(); prefs.bitRatePolicy = BitRatePolicy.entries[index]; revision++ },
                 tag = "slate.dialog.bitRate",
             )
+            Dialog.ENCODER -> ChoiceDialog(
+                title = stringResource(R.string.settings_encoder),
+                message = stringResource(R.string.settings_encoder_message),
+                options = EncoderPreference.entries.map { Choice(stringResource(encoderLabel(it)), stringResource(encoderNote(it))) },
+                selectedIndex = processing.encoderPreference.ordinal,
+                onDismissRequest = close,
+                onConfirm = { index -> close(); processing.encoderPreference = EncoderPreference.entries[index]; revision++ },
+                tag = "slate.dialog.encoder",
+            )
+            Dialog.CONCURRENCY -> {
+                val counts = (ProcessingSettings.MIN_CONCURRENCY..ProcessingSettings.MAX_CONCURRENCY).toList()
+                ChoiceDialog(
+                    title = stringResource(R.string.settings_concurrency),
+                    message = stringResource(R.string.settings_concurrency_message),
+                    options = counts.map { count -> Choice(stringResource(concurrencyLabel(count)), stringResource(concurrencyNote(count))) },
+                    selectedIndex = counts.indexOf(processing.concurrency),
+                    onDismissRequest = close,
+                    onConfirm = { index ->
+                        close()
+                        processing.concurrency = counts[index]
+                        // A raised limit starts queued tasks now. zh-CN: 调高上限后立即启动排队中的任务.
+                        MediaStudioEngine.peek()?.runner?.limitsChanged()
+                        revision++
+                    },
+                    tag = "slate.dialog.concurrency",
+                )
+            }
             Dialog.FOLDERS -> FoldersDialog(close)
             Dialog.BATTERY -> MessageDialog(
                 title = stringResource(R.string.settings_battery),
@@ -535,6 +575,26 @@ class SettingsActivity : StandaloneActivity() {
         BitRatePolicy.AUTO -> R.string.settings_bit_rate_auto
         BitRatePolicy.HIGH -> R.string.settings_bit_rate_high
         BitRatePolicy.SMALL -> R.string.settings_bit_rate_small
+    }
+
+    @StringRes
+    private fun concurrencyLabel(count: Int): Int = if (count <= 1) R.string.settings_concurrency_one else R.string.settings_concurrency_two
+
+    @StringRes
+    private fun concurrencyNote(count: Int): Int = if (count <= 1) R.string.settings_concurrency_one_note else R.string.settings_concurrency_two_note
+
+    @StringRes
+    private fun encoderLabel(preference: EncoderPreference): Int = when (preference) {
+        EncoderPreference.AUTO -> R.string.settings_encoder_auto
+        EncoderPreference.HARDWARE -> R.string.settings_encoder_hardware
+        EncoderPreference.SOFTWARE -> R.string.settings_encoder_software
+    }
+
+    @StringRes
+    private fun encoderNote(preference: EncoderPreference): Int = when (preference) {
+        EncoderPreference.AUTO -> R.string.settings_encoder_auto_note
+        EncoderPreference.HARDWARE -> R.string.settings_encoder_hardware_note
+        EncoderPreference.SOFTWARE -> R.string.settings_encoder_software_note
     }
 
     @StringRes

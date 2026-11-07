@@ -78,6 +78,19 @@ val hostApiAars: List<File> = run {
     }
 }
 
+// The host's slim Rhino jar (roadmap P4.4), locked in locks/rhino-jar.lock: the JVM tests compile and run the generated
+// scripts with the same Rhino as AutoJs6 scripts. Test classpath only; the APK carries no Rhino.
+// zh-CN: 宿主的 slim Rhino jar (路线图 P4.4), 锁定在 locks/rhino-jar.lock 中: JVM 测试用与 AutoJs6 脚本相同的 Rhino 编译并运行生成的脚本.
+// 只在测试类路径上; APK 不含 Rhino.
+val rhinoTestJar: File = run {
+    val entries = readLock("locks/rhino-jar.lock")
+    check(entries.keys == setOf("format", "rhino.file", "rhino.sha256", "rhino.source")) { "Unexpected keys in locks/rhino-jar.lock" }
+    val fileName = entries.getValue("rhino.file")
+    check(fileName == File(fileName).name && fileName.endsWith("-slim.jar")) { "Invalid rhino.file in locks/rhino-jar.lock" }
+    check(entries.getValue("rhino.source").matches(Regex("[0-9a-f]{40}"))) { "rhino.source must be the full host commit" }
+    verifiedFile("libs/$fileName", entries["rhino.sha256"], "rhino")
+}
+
 android {
     namespace = globalApplicationId
     compileSdk = versions.sdkVersionCompile
@@ -235,6 +248,7 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.org.json)
+    testImplementation(files(rhinoTestJar))
     androidTestImplementation(libs.test.ext.junit)
     androidTestImplementation(libs.test.runner)
     androidTestImplementation(libs.test.rules)

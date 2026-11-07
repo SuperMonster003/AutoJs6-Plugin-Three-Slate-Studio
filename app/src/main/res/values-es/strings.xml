@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="action_failed">No se pudo completar la acción</string>
+    <string name="action_open_in_autojs6">Abrir en AutoJs6</string>
     <string name="action_open_with">Abrir con</string>
     <string name="action_share">Compartir</string>
     <string name="alt_length_duration">Duración</string>
@@ -122,6 +123,8 @@
     <string name="op_transform_title">Redimensionar, girar y recortar</string>
     <string name="op_trim_summary">Conserva un intervalo de tiempo de un video</string>
     <string name="op_trim_title">Recortar video</string>
+    <string name="open_in_autojs6_failed">No se puede abrir el editor de AutoJs6</string>
+    <string name="open_in_autojs6_too_large">El código supera los 4 MiB que acepta AutoJs6; cópialo en su lugar</string>
     <string name="option_align">Alineación del texto</string>
     <string name="option_alpha">Opacidad</string>
     <string name="option_anchor">Punto de anclaje</string>
@@ -261,8 +264,22 @@
     <string name="settings_bit_rate_small_note">0,6 veces la estimación</string>
     <string name="settings_codec">Códec de video predeterminado</string>
     <string name="settings_codec_unavailable">Este dispositivo no tiene un codificador para él</string>
+    <string name="settings_concurrency">Tareas simultáneas</string>
+    <string name="settings_concurrency_message">Cuántas tareas de procesamiento se ejecutan a la vez, tanto de las herramientas como de los scripts. Cuantas más, más probable es que el dispositivo se quede sin recursos de códec (CODEC_ERROR)</string>
+    <string name="settings_concurrency_one">1 (de una en una)</string>
+    <string name="settings_concurrency_one_note">Se ejecuta una sola tarea y las demás esperan en la cola</string>
+    <string name="settings_concurrency_two">2 (predeterminado)</string>
+    <string name="settings_concurrency_two_note">Se ejecutan dos tareas a la vez y las demás esperan en la cola</string>
     <string name="settings_dark_mode_dark">Oscuro</string>
     <string name="settings_dark_mode_light">Claro</string>
+    <string name="settings_encoder">Preferencia de codificador por hardware</string>
+    <string name="settings_encoder_auto">Automática</string>
+    <string name="settings_encoder_auto_note">El orden de la lista de códecs del sistema (normalmente primero el hardware)</string>
+    <string name="settings_encoder_hardware">Primero hardware</string>
+    <string name="settings_encoder_hardware_note">Primero los codificadores por hardware; los de software si no admiten el formato o el tamaño</string>
+    <string name="settings_encoder_message">El orden en que se eligen los codificadores de video, tanto para las herramientas como para los scripts</string>
+    <string name="settings_encoder_software">Primero software</string>
+    <string name="settings_encoder_software_note">Primero los codificadores por software (más lentos); los de hardware si no admiten el formato o el tamaño</string>
     <string name="settings_folder_unsupported">Elige una carpeta del almacenamiento compartido</string>
     <string name="settings_follow_autojs6">Seguir AutoJs6</string>
     <string name="settings_follow_autojs6_summary">Seguir AutoJs6 - %1$s</string>

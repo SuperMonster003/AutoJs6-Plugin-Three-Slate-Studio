@@ -262,4 +262,50 @@ class TaskRunnerTest {
         assertEquals(listOf(1, 1, 0), seen)
     }
 
+    @Test
+    fun `the concurrency setting limits starts and a raised limit starts queued tasks (appendix D Q50 (b))`() {
+        var limit = 1
+        val limited = TaskRunner<String>(executor, monotonicClock = { now }, wallClock = { 42L }, concurrency = { limit })
+        fun add(token: String) = limited.submit(token, "trim", null, MediaStudioContract.ORIGIN_STUDIO, emptyList(), ScriptedJob(), Recorder())
+        (1..3).forEach { add("host-$it") }
+        assertEquals("one at a time", 1, executor.pending.size)
+        assertEquals(1, limited.concurrencyLimit())
+        limit = 2
+        limited.limitsChanged()
+        assertEquals("the raised limit starts one more", 2, executor.pending.size)
+        limit = 1
+        executor.runNext()
+        assertEquals("a lowered limit starts nothing while one still runs", 1, executor.pending.size)
+        executor.runNext()
+        assertEquals(1, executor.pending.size)
+        executor.runNext()
+        assertTrue(limited.unfinished().isEmpty())
+        // Out of range values stay within 1 - the contract limit. zh-CN: 超出范围的值限定在 1 - 契约上限.
+        limit = 0
+        assertEquals(1, limited.concurrencyLimit())
+        limit = 9
+        assertEquals(2, limited.concurrencyLimit())
+    }
+
+    @Test
+    fun `snapshots keep the failure code and detail for the Studio screens (appendix D Q51 (b))`() {
+        val failed = submit(job = ScriptedJob { throw MediaStudioException(MediaStudioErrorCodes.CODEC_ERROR, "no encoder for 8000x8000") })
+        val crashed = submit(job = ScriptedJob { throw IllegalStateException("boom") })
+        executor.runNext()
+        executor.runNext()
+        val cancelled = submit()
+        assertTrue(runner.cancel(cancelled))
+        val done = submit()
+        while (executor.pending.isNotEmpty()) executor.runNext()
+        val byId = runner.list("host-a").associateBy { it.taskId }
+        assertEquals(MediaStudioErrorCodes.CODEC_ERROR, byId.getValue(failed).errorCode)
+        assertEquals("the detail has no code prefix", "no encoder for 8000x8000", byId.getValue(failed).errorMessage)
+        assertEquals(MediaStudioErrorCodes.INTERNAL_ERROR, byId.getValue(crashed).errorCode)
+        assertEquals("IllegalStateException: boom", byId.getValue(crashed).errorMessage)
+        assertEquals(MediaStudioErrorCodes.TASK_CANCELLED, byId.getValue(cancelled).errorCode)
+        assertEquals("task $cancelled was cancelled", byId.getValue(cancelled).errorMessage)
+        assertEquals(null, byId.getValue(done).errorCode)
+        assertEquals(null, byId.getValue(done).errorMessage)
+    }
+
 }

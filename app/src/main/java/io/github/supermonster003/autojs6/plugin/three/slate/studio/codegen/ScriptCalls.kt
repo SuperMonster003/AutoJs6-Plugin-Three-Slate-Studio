@@ -3,11 +3,12 @@ package io.github.supermonster003.autojs6.plugin.three.slate.studio.codegen
 import org.autojs.plugin.mediastudio.api.MediaStudioOps
 
 /**
- * The script call equivalent to a wizard request (roadmap D11, D35; the full generator with "open in AutoJs6" is
- * roadmap P4.4). [options] are in the contract shape the wizard submits (`overlays`, `at`, `subtitles`, `style`,
+ * The script call equivalent to a wizard request (roadmap D11, D35; the complete script for the result page and "open
+ * in AutoJs6" is [CodeGenerator.wizardScript], roadmap P4.4). [options] are in the contract shape the wizard submits (`overlays`, `at`, `subtitles`, `style`,
  * `tracks` included); the call moves them into the argument slots of the script API (roadmap appendix B, the host
  * mapping of appendix D Q27 (a)). An absent [output] means the default output (D14), which the call leaves out.
- * zh-CN: 与向导请求等价的脚本调用 (路线图 D11, D35; 带 "在 AutoJs6 中打开" 的完整生成器属于路线图 P4.4). [options] 为向导
+ * zh-CN: 与向导请求等价的脚本调用 (路线图 D11, D35; 结果页与 "在 AutoJs6 中打开" 使用的完整脚本为 [CodeGenerator.wizardScript],
+ * 路线图 P4.4). [options] 为向导
  * 提交的契约形态 (含 `overlays`, `at`, `subtitles`, `style`, `tracks`); 调用把它们放进脚本 API 的参数位置 (路线图附录 B, 附录 D
  * Q27 (a) 的宿主映射). [output] 为空表示默认输出 (D14), 调用中省略.
  */
@@ -22,7 +23,11 @@ internal object ScriptCalls {
         }
     }
 
-    private fun arguments(schema: OperationSchema, inputs: List<String>, options: Map<String, Any?>, output: String?): List<Any?> {
+    /**
+     * The arguments of the script call in slot order; [options] without null values.
+     * zh-CN: 按参数位置排列的脚本调用参数; [options] 不含 null 值.
+     */
+    internal fun arguments(schema: OperationSchema, inputs: List<String>, options: Map<String, Any?>, output: String?): List<Any?> {
         val pulled = setOf("overlays", "at", "subtitles", "style", "tracks").filter { key ->
             when (key) {
                 "overlays" -> Slot.OVERLAYS in schema.slots
@@ -66,14 +71,15 @@ internal object ScriptCalls {
     private fun frame(schema: OperationSchema, inputs: List<String>, options: Map<String, Any?>, output: String?): String {
         val call = CodeGenerator.call(schema.module, schema.method, *arguments(schema, inputs, options, null).toTypedArray())
         val target = output ?: return call
+        return listOf("let image = $call", saveImage(options, target), "image.recycle();").joinToString("\n")
+    }
+
+    /** `images.save` of the `video.frame` image in the format of [options]. zh-CN: 按 [options] 的格式保存 `video.frame` 的图片. */
+    internal fun saveImage(options: Map<String, Any?>, target: String): String {
         val format = (options["format"] as? String)?.lowercase() ?: "png"
-        val save = if (format == "png") {
-            "images.save(image, ${CodeGenerator.literal(target)});"
-        } else {
-            val quality = (options["quality"] as? Number)?.toInt() ?: io.github.supermonster003.autojs6.plugin.three.slate.studio.core.OperationOptions.DEFAULT_IMAGE_QUALITY
-            "images.save(image, ${CodeGenerator.literal(target)}, \"jpg\", $quality);"
-        }
-        return listOf("let image = $call", save, "image.recycle();").joinToString("\n")
+        if (format == "png") return "images.save(image, ${CodeGenerator.literal(target)});"
+        val quality = (options["quality"] as? Number)?.toInt() ?: io.github.supermonster003.autojs6.plugin.three.slate.studio.core.OperationOptions.DEFAULT_IMAGE_QUALITY
+        return "images.save(image, ${CodeGenerator.literal(target)}, \"jpg\", $quality);"
     }
 
     private fun subtitlesConvert(inputs: List<String>, options: Map<String, Any?>, output: String?): String {

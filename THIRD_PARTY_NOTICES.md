@@ -290,4 +290,5 @@ THE SOFTWARE.
 ```
 
 Libraries used only by the debug build (Compose UI tooling) and by the JVM and device tests (JUnit,
-AndroidX Test, Espresso, Compose UI test) are not part of the release APK.
+org.json, the host's slim Rhino jar of `locks/rhino-jar.lock`, AndroidX Test, Espresso, Compose UI test) are not
+part of the release APK.

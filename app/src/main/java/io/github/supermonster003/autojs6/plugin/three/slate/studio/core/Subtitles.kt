@@ -424,7 +424,7 @@ internal object SubtitleFiles {
                 String(bytes, Charsets.UTF_8)
             }
         }
-        return text.removePrefix("﻿")
+        return text.removePrefix("\uFEFF")
     }
 
     /**

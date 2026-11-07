@@ -14,6 +14,12 @@ values of both outputs). Needs a host with media studio contract version 2 (6641
 deleted, the test APK is uninstalled, and the host and plugin found before the run are installed again and checked by
 MD5 (a plugin that was not installed is uninstalled).
 
+With ``--open-in-autojs6`` (roadmap P4.4; the host must be a debug build of 6641 or later) the instrumented
+``OpenInAutoJs6DeviceTest`` then presses "Open in AutoJs6" once on a wizard result page (inline code) and once on a
+script over the inline limits (content URI through the plugin's FileProvider); each case waits for the host's
+``CREATE_SCRIPT accepted`` and its editor on top, the URI case also finds the MD5 of the sent code in the host's private
+copy (run-as). The editors are closed by force-stopping the host, and both private copies are deleted afterwards.
+
 zh-CN: 3-Slate Studio 向导真机检查 (路线图 P4.2). 每个 Studio 向导运行一次, 其输出与向导显示的脚本调用的输出比对: 在 PC 上用 ffmpeg
 生成小素材 (两段 640x360 3 秒带音调的片段, 5 秒 M4A 音调, PNG 图标, SRT 文件), 推到插件自己的外部文件目录, 运行期间经 appops
 授予插件全部文件访问权限 (结束后还原原模式; Android 11 之前改为授予存储权限), 安装 debug 插件与测试 APK (给出 ``--host-apk`` 时
@@ -23,7 +29,12 @@ zh-CN: 3-Slate Studio 向导真机检查 (路线图 P4.2). 每个 Studio 向导�
 已启用 3-Slate Studio; 手机上无需点按 (页面测试操作的是插件自己的页面). 结束后删除推送的文件, 输出及其 MediaStore 记录, 卸载
 测试 APK, 并重新安装运行前的宿主与插件且按 MD5 核对 (运行前未安装插件时卸载).
 
-Usage: py -3.12 .python/device_wizard_check.py --serial QV770340J7 [--host-apk host-6641.apk] [--json result.json]
+给出 ``--open-in-autojs6`` 时 (路线图 P4.4; 宿主须为 6641 或更新的 debug 构建), 随后运行仪器测试 ``OpenInAutoJs6DeviceTest``:
+在向导结果页按一次 "在 AutoJs6 中打开" (内联代码), 对一个超过内联上限的脚本再按一次 (经插件 FileProvider 的 content URI); 每种
+情形都等待宿主的 ``CREATE_SCRIPT accepted`` 与其编辑器到前台, URI 情形还在宿主私有副本中找到所发送代码的 MD5 (run-as). 编辑器
+经强制停止宿主关闭, 两边的私有副本随后删除.
+
+Usage: py -3.12 .python/device_wizard_check.py --serial QV770340J7 [--host-apk host-6641.apk] [--open-in-autojs6] [--json result.json]
 """
 
 from __future__ import annotations
@@ -44,6 +55,8 @@ PLUGIN_APK = ROOT / "app" / "build" / "outputs" / "apk" / "debug" / "autojs6-plu
 TEST_APK = ROOT / "app" / "build" / "outputs" / "apk" / "androidTest" / "debug" / "app-debug-androidTest.apk"
 TEST_PACKAGE = PLUGIN + ".test"
 TEST_CLASS = PLUGIN + ".ui.WizardDeviceTest"
+OPEN_CLASS = PLUGIN + ".ui.OpenInAutoJs6DeviceTest"
+OPEN_CASES = ("inline", "contentUri")
 WORK = f"/sdcard/Android/data/{PLUGIN}/files/wizard-check"
 REMOTE = "/sdcard/Download/slate-wizard-check"
 STAGING = "/data/local/tmp/slate-wizard-check"
@@ -125,9 +138,10 @@ def push_sources(serial: str, files: dict[str, Path]) -> None:
     adb(serial, "shell", f"rm -rf '{STAGING}'; chmod 666 '{WORK}'/*", check=False)
 
 
-def instrument(serial: str, timeout: int) -> tuple[bool, list[str]]:
-    output = adb(serial, "shell", "am", "instrument", "-w", "-r", "-e", "class", TEST_CLASS, "-e", "wizardIn", WORK,
-                 "-e", "wizardOut", f"{REMOTE}/wizard", "-e", "wizardLibrary", f"'{LIBRARY_FIXTURE}'", f"{TEST_PACKAGE}/androidx.test.runner.AndroidJUnitRunner", check=False, timeout=timeout)
+def instrument(serial: str, timeout: int, test_class: str = TEST_CLASS, extra: tuple[str, ...] = ()) -> tuple[bool, list[str]]:
+    output = adb(serial, "shell", "am", "instrument", "-w", "-r", "-e", "class", test_class, "-e", "wizardIn", WORK,
+                 "-e", "wizardOut", f"{REMOTE}/wizard", "-e", "wizardLibrary", f"'{LIBRARY_FIXTURE}'", *extra,
+                 f"{TEST_PACKAGE}/androidx.test.runner.AndroidJUnitRunner", check=False, timeout=timeout)
     lines, test, failed = [], None, set()
     for line in output.splitlines():
         if line.startswith("INSTRUMENTATION_STATUS: test="):
@@ -224,6 +238,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--test-apk", type=Path, default=TEST_APK)
     parser.add_argument("--ffmpeg", default=DEFAULT_FFMPEG)
     parser.add_argument("--timeout", type=int, default=900)
+    parser.add_argument("--open-in-autojs6", action="store_true", help="also check \"Open in AutoJs6\" inline and by content URI (roadmap P4.4)")
     parser.add_argument("--json", type=Path, help="save the wizard report and the comparison here")
     parser.add_argument("--cache", type=Path, default=Path(tempfile.gettempdir()) / "slate-wizard-check-sources")
     args = parser.parse_args(argv)
@@ -239,7 +254,7 @@ def main(argv: list[str] | None = None) -> int:
         saved_host = backup(args.serial, HOST, folder) if args.host_apk else None
         saved_plugin = backup(args.serial, PLUGIN, folder)
         mode = adb(args.serial, "shell", "appops", "get", PLUGIN, "MANAGE_EXTERNAL_STORAGE", check=False).partition(":")[2].split(";")[0].strip() or "default"
-        report, result, ok = [], None, False
+        report, result, ok, opened, open_ok = [], None, False, [], True
         try:
             if args.host_apk:
                 adb(args.serial, "install", "-r", "-d", str(args.host_apk))
@@ -267,9 +282,24 @@ def main(argv: list[str] | None = None) -> int:
             report = json.loads(raw) if raw.startswith("[") else []
             if report:
                 result = run_script(args.serial, report, args.timeout)
+            if args.open_in_autojs6:
+                adb(args.serial, "shell", "input", "keyevent", "KEYCODE_WAKEUP", check=False)
+                open_ok, lines = instrument(args.serial, args.timeout, OPEN_CLASS, ("-e", "openInAutoJs6", "1"))
+                print(chr(10).join(lines))
+                for case in OPEN_CASES:
+                    raw = adb(args.serial, "shell", "cat", f"{REMOTE}/wizard/open-in-autojs6-{case}.json", check=False)
+                    opened.append(json.loads(raw) if raw.startswith("{") else {"case": case})
+                    # A failed case leaves a screenshot. zh-CN: 失败的情形留有截图.
+                    if not raw.startswith("{") and args.json:
+                        adb(args.serial, "pull", f"{REMOTE}/wizard/open-in-autojs6-{case}.png", str(args.json.with_name(f"{args.json.stem}-{case}.png")), check=False)
         finally:
             adb(args.serial, "shell", "am", "force-stop", HOST, check=False)
             adb(args.serial, "shell", "am", "force-stop", PLUGIN, check=False)
+            if args.open_in_autojs6:
+                # The force-stopped editors leave the host's private copy; the plugin's copy waits for a host answer.
+                # zh-CN: 被强制停止的编辑器留下宿主私有副本; 插件的副本等待宿主应答后才删除.
+                for package in (HOST, PLUGIN):
+                    adb(args.serial, "shell", "run-as", package, "rm", "-rf", "cache/create-script", check=False)
             clean(args.serial)
             adb(args.serial, "uninstall", TEST_PACKAGE, check=False)
             adb(args.serial, "shell", "appops", "set", PLUGIN, "MANAGE_EXTERNAL_STORAGE", mode if mode in ("allow", "ignore", "deny", "default") else "default", check=False)
@@ -301,6 +331,16 @@ def main(argv: list[str] | None = None) -> int:
             detail = problem or f"wizard {describe(kind, entry['wizard'])} / script {describe(kind, entry['script'])}"
             print(f"{'FAIL' if problem else 'PASS'} {entry['op']} {entry['ms']} ms {detail}")
         print(f"{len(result['results']) - sum(1 for e in result['results'] if not e['ok'] or compare(kinds[e['op']], e['wizard'], e['script']))} / {len(report)} wizards match their script call")
+    if args.open_in_autojs6:
+        failures += 0 if open_ok else 1
+        for entry in opened:
+            if "md5" not in entry:
+                print(f"FAIL open-in-autojs6 {entry['case']}: no summary")
+                failures += 1
+                continue
+            copy = f", host copy {entry['hostCopy']} has md5 {entry['md5'][:8]}" if entry.get("hostCopy") else ""
+            print(f"PASS open-in-autojs6 {entry['case']}: {entry['transport']} {entry['chars']} chars / {entry['bytes']} bytes, "
+                  f"{entry['suggestedName']} accepted, editor on top{copy}")
     for line in status:
         print(("PASS " if "NOT" not in line else "FAIL ") + line)
         failures += "NOT" in line

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="action_failed">작업을 완료하지 못했습니다</string>
+    <string name="action_open_in_autojs6">AutoJs6에서 열기</string>
     <string name="action_open_with">다른 앱으로 열기</string>
     <string name="action_share">공유</string>
     <string name="alt_length_duration">길이</string>
@@ -122,6 +123,8 @@
     <string name="op_transform_title">크기 조정, 회전, 잘라내기</string>
     <string name="op_trim_summary">동영상의 일부 구간만 남깁니다</string>
     <string name="op_trim_title">동영상 자르기</string>
+    <string name="open_in_autojs6_failed">AutoJs6 편집기를 열 수 없습니다</string>
+    <string name="open_in_autojs6_too_large">코드가 AutoJs6이 받을 수 있는 4 MiB를 넘습니다. 복사해서 사용하세요</string>
     <string name="option_align">텍스트 정렬</string>
     <string name="option_alpha">불투명도</string>
     <string name="option_anchor">기준점</string>
@@ -261,8 +264,22 @@
     <string name="settings_bit_rate_small_note">추정값의 0.6배</string>
     <string name="settings_codec">기본 비디오 코덱</string>
     <string name="settings_codec_unavailable">이 기기에는 해당 인코더가 없습니다</string>
+    <string name="settings_concurrency">동시 작업 수</string>
+    <string name="settings_concurrency_message">동시에 실행하는 처리 작업 수이며, 도구 상자와 스크립트 작업 모두에 적용됩니다. 많을수록 기기의 코덱 리소스 부족 (CODEC_ERROR)이 발생하기 쉽습니다</string>
+    <string name="settings_concurrency_one">1 (하나씩 실행)</string>
+    <string name="settings_concurrency_one_note">한 번에 작업 하나만 실행하고 나머지는 대기합니다</string>
+    <string name="settings_concurrency_two">2 (기본값)</string>
+    <string name="settings_concurrency_two_note">작업 두 개를 동시에 실행하고 나머지는 대기합니다</string>
     <string name="settings_dark_mode_dark">다크</string>
     <string name="settings_dark_mode_light">라이트</string>
+    <string name="settings_encoder">하드웨어 인코더 우선순위</string>
+    <string name="settings_encoder_auto">자동</string>
+    <string name="settings_encoder_auto_note">시스템 코덱 목록의 순서를 따릅니다 (보통 하드웨어가 먼저)</string>
+    <string name="settings_encoder_hardware">하드웨어 우선</string>
+    <string name="settings_encoder_hardware_note">하드웨어 인코더를 먼저 고르고, 필요한 형식이나 크기를 지원하지 않으면 소프트웨어 인코더를 사용합니다</string>
+    <string name="settings_encoder_message">비디오 인코더를 고르는 순서이며, 도구 상자와 스크립트 작업 모두에 적용됩니다</string>
+    <string name="settings_encoder_software">소프트웨어 우선</string>
+    <string name="settings_encoder_software_note">소프트웨어 인코더를 먼저 고르고 (더 느림), 필요한 형식이나 크기를 지원하지 않으면 하드웨어 인코더를 사용합니다</string>
     <string name="settings_folder_unsupported">공유 저장소의 폴더를 선택하세요</string>
     <string name="settings_follow_autojs6">AutoJs6 따르기</string>
     <string name="settings_follow_autojs6_summary">AutoJs6 따르기 - %1$s</string>

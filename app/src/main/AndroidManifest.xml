@@ -204,7 +204,10 @@
             </intent-filter>
         </service>
 
-        <!-- Opening and sharing outputs from the Studio screens (roadmap P4.1, P4.2). -->
+        <!--
+            Opening and sharing outputs from the Studio screens (roadmap P4.1, P4.2), and generated code too large for
+            the AutoJs6 "new script" Intent (roadmap P4.4, cache/create-script/).
+        -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.files"

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="action_failed">操作未能完成</string>
+    <string name="action_open_in_autojs6">在 AutoJs6 中開啟</string>
     <string name="action_open_with">開啟方式</string>
     <string name="action_share">分享</string>
     <string name="alt_length_duration">長度</string>
@@ -122,6 +123,8 @@
     <string name="op_transform_title">縮放, 旋轉與裁切</string>
     <string name="op_trim_summary">保留影片中的一段時間</string>
     <string name="op_trim_title">剪輯影片</string>
+    <string name="open_in_autojs6_failed">無法開啟 AutoJs6 的編輯器</string>
+    <string name="open_in_autojs6_too_large">程式碼超過 AutoJs6 可接收的 4 MiB, 請複製後使用</string>
     <string name="option_align">文字對齊</string>
     <string name="option_alpha">不透明度</string>
     <string name="option_anchor">錨點</string>
@@ -261,8 +264,22 @@
     <string name="settings_bit_rate_small_note">估算值的 0.6 倍</string>
     <string name="settings_codec">預設影片編碼</string>
     <string name="settings_codec_unavailable">本裝置沒有該編碼器</string>
+    <string name="settings_concurrency">工作並行數</string>
+    <string name="settings_concurrency_message">同時執行的處理工作數, 對工具箱與指令碼的工作都生效. 並行數越高, 越容易遇到裝置的編解碼器資源不足 (CODEC_ERROR)</string>
+    <string name="settings_concurrency_one">1 (逐一執行)</string>
+    <string name="settings_concurrency_one_note">一次只執行一個工作, 其餘排隊</string>
+    <string name="settings_concurrency_two">2 (預設)</string>
+    <string name="settings_concurrency_two_note">同時執行兩個工作, 其餘排隊</string>
     <string name="settings_dark_mode_dark">深色</string>
     <string name="settings_dark_mode_light">淺色</string>
+    <string name="settings_encoder">硬體編碼器偏好</string>
+    <string name="settings_encoder_auto">自動</string>
+    <string name="settings_encoder_auto_note">沿用系統編解碼器清單的順序 (通常硬體在前)</string>
+    <string name="settings_encoder_hardware">優先硬體</string>
+    <string name="settings_encoder_hardware_note">先選硬體編碼器, 不支援所需格式或尺寸時改用軟體編碼器</string>
+    <string name="settings_encoder_message">選擇影片編碼器的順序, 對工具箱與指令碼的工作都生效</string>
+    <string name="settings_encoder_software">優先軟體</string>
+    <string name="settings_encoder_software_note">先選軟體編碼器 (較慢), 不支援所需格式或尺寸時改用硬體編碼器</string>
     <string name="settings_folder_unsupported">請選擇共用儲存空間中的資料夾</string>
     <string name="settings_follow_autojs6">跟隨 AutoJs6</string>
     <string name="settings_follow_autojs6_summary">跟隨 AutoJs6 - %1$s</string>

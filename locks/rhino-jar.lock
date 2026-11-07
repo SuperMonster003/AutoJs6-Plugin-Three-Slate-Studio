@@ -1,0 +1,8 @@
+# Slim Rhino jar for the JVM tests of the code generator (roadmap P4.4, GeneratedScriptRhinoTest): generated scripts are
+#   compiled and run by the same Rhino as AutoJs6 scripts. Produced by the host task :app:slimRhinoJar (the host's own
+#   org-mozilla-rhino-2_0_0-SNAPSHOT.jar without JLine, the optimizer and JFR) at host commit 549ff67974 on 2026-11-07;
+#   the host jar itself last changed in cfc2ae7118. Test classpath only, never in the APK. See libs/README.md.
+format=1
+rhino.file=org-mozilla-rhino-2_0_0-SNAPSHOT-slim.jar
+rhino.sha256=3e4d74bcd2569d53ec79cc980acc462fc28ae11f387fa5f7ca15bc52f14ecf70
+rhino.source=549ff67974e78a222e18d10743ab1f16ac1cb3b3

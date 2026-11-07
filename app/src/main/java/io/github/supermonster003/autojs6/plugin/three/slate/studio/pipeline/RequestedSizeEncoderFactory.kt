@@ -11,10 +11,12 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.transformer.AudioEncoderSettings
 import androidx.media3.transformer.Codec
 import androidx.media3.transformer.DefaultEncoderFactory
+import androidx.media3.transformer.EncoderSelector
 import androidx.media3.transformer.EncoderUtil
 import androidx.media3.transformer.ExportException
 import androidx.media3.transformer.VideoEncoderSettings
 import com.google.common.collect.ImmutableList
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.EncoderPreference
 
 /**
  * The encoder factory of every export (appendix D Q38 (a), the maintainer's choice of 2026-11-07): media3's
@@ -23,21 +25,26 @@ import com.google.common.collect.ImmutableList
  * Google encoders of the Redmi 22120RN86C that answer `isSizeSupported` false for 1920x1080 and 640x360 although they
  * run them, which made media3 encode 1920x1088 / 640x368 with black bars) the same encoder is configured and started at
  * the requested size first. Only when that fails does the media3 fallback size stay, and [onNote] reports the requested
- * and the encoded size (also when only the width changed, which media3's own fallback report leaves out).
+ * and the encoded size (also when only the width changed, which media3's own fallback report leaves out). The video
+ * encoder candidates follow the [preference] of the settings (roadmap D37, appendix D Q50 (b)): hardware or software
+ * encoders first, the others as fallbacks.
  * zh-CN: 每次导出使用的编码器工厂 (附录 D Q38 (a), 维护者 2026-11-07 选): 由带回退的 media3 [DefaultEncoderFactory] 照旧选择编码器,
  * MIME 类型与码率; 但它同时改变了画面尺寸时 (编码器能力表比编码器本身更严, 例如 Redmi 22120RN86C 的 MTK 与谷歌编码器对 1920x1080 与
  * 640x360 的 `isSizeSupported` 回答 false, 实际却能运行, 导致 media3 编出带黑边的 1920x1088 / 640x368), 先以请求尺寸配置并启动同一个
  * 编码器. 只有失败时才保留 media3 的回退尺寸, 并由 [onNote] 报告请求与实际的尺寸 (只改宽度时也报告, media3 自己的回退报告不含宽度).
+ * 视频编码器的候选顺序按设置中的 [preference] (路线图 D37, 附录 D Q50 (b)): 硬件或软件编码器在前, 其余作为回退.
  */
 internal class RequestedSizeEncoderFactory(
     private val context: Context,
     private val videoSettings: VideoEncoderSettings,
     audioSettings: AudioEncoderSettings,
+    private val preference: EncoderPreference = EncoderPreference.AUTO,
     private val onNote: (String) -> Unit,
 ) : Codec.EncoderFactory {
 
     private val fallback: DefaultEncoderFactory = DefaultEncoderFactory.Builder(context)
         .setEnableFallback(true)
+        .setVideoEncoderSelector(selector(preference))
         .setRequestedVideoEncoderSettings(videoSettings)
         .setRequestedAudioEncoderSettings(audioSettings)
         .build()
@@ -96,6 +103,18 @@ internal class RequestedSizeEncoderFactory(
     companion object {
 
         private const val TAG = "SlateStudioEncoders"
+
+        /**
+         * media3's default candidates in the order of [preference]; hardware acceleration as media3 reports it.
+         * zh-CN: 按 [preference] 排序的 media3 默认候选; 是否硬件加速取 media3 的判断.
+         */
+        fun selector(preference: EncoderPreference): EncoderSelector = if (preference == EncoderPreference.AUTO) {
+            EncoderSelector.DEFAULT
+        } else {
+            EncoderSelector { mime ->
+                ImmutableList.copyOf(preference.order(EncoderSelector.DEFAULT.selectEncoderInfos(mime)) { EncoderUtil.isHardwareAccelerated(it, mime) })
+            }
+        }
 
         /**
          * The warning when the media3 fallback size stays, for example `the encoder c2.mtk.avc.encoder did not run

@@ -2,9 +2,14 @@
 <!--
     Files the Studio screens open or share (roadmap P4.1, P4.2): outputs and library files in the shared storage. The
     plugin process holds all files access, the receiving app only gets a temporary grant for the one URI.
+    create-script holds generated code too large for the AutoJs6 "new script" Intent, sent as a content URI with a read
+    grant (roadmap P4.4, P1.7, appendix D Q28 (c)).
 -->
 <paths>
     <external-path
         name="shared"
         path="." />
+    <cache-path
+        name="create-script"
+        path="create-script/" />
 </paths>

@@ -35,9 +35,10 @@ internal data class StudioRequest(
 
 /**
  * One row of the task queue (roadmap D35: script and Studio tasks in one list). Studio rows carry their request,
- * result and failure; script rows come from the shared [TaskRunner] and carry the state only.
+ * result and failure; script rows come from the shared [TaskRunner] and carry the state and, since appendix D Q51 (b),
+ * the failure code and detail the runner keeps.
  * zh-CN: 任务队列中的一行 (路线图 D35: 脚本与 Studio 任务同列). Studio 行带有请求, 结果与失败原因; 脚本行取自共用的 [TaskRunner],
- * 只有状态.
+ * 带有状态, 以及 (附录 D Q51 (b) 起) 执行器保存的失败错误码与详情.
  */
 internal data class TaskRow(
     val key: String,
@@ -241,7 +242,8 @@ internal object StudioTasks {
         val scripts = if (runner == null) emptyList() else {
             runner.unfinished().forEach { if (it.origin != MediaStudioContract.ORIGIN_STUDIO) scriptTokens += it.tokenKey }
             scriptTokens.flatMap { token -> runner.list(token) }.filter { it.origin != MediaStudioContract.ORIGIN_STUDIO }.map { task ->
-                TaskRow("t${task.taskId}", task.taskId, task.op, task.origin, task.state, task.percent, task.stage, task.output, task.submittedAt)
+                TaskRow("t${task.taskId}", task.taskId, task.op, task.origin, task.state, task.percent, task.stage, task.output, task.submittedAt,
+                    errorCode = task.errorCode, errorMessage = task.errorMessage)
             }
         }
         rows = (studio.values + scripts).sortedByDescending { it.submittedAt }

@@ -41,10 +41,10 @@ import org.autojs.plugin.mediastudio.api.MediaStudioContract
 
 /**
  * The task queue (roadmap P4.1, D35): Studio and script tasks of the shared executor, newest first, with progress, stage,
- * cancel and the failure reason; finished Studio tasks open their result page, finished script tasks their output.
- * Script tasks show the state only: their failure reasons stay with the script (appendix D Q51).
- * zh-CN: 任务队列 (路线图 P4.1, D35): 共用执行器中的 Studio 与脚本任务, 最新在前, 带进度, 阶段, 取消与失败原因; 已结束的 Studio 任务
- * 打开结果页, 已结束的脚本任务打开输出. 脚本任务只显示状态: 失败原因留在脚本中 (附录 D Q51).
+ * cancel and the failure reason (for script tasks too, kept by the runner: appendix D Q51 (b)); finished Studio tasks open
+ * their result page, finished script tasks their output.
+ * zh-CN: 任务队列 (路线图 P4.1, D35): 共用执行器中的 Studio 与脚本任务, 最新在前, 带进度, 阶段, 取消与失败原因 (脚本任务的失败原因由
+ * 执行器保存: 附录 D Q51 (b)); 已结束的 Studio 任务打开结果页, 已结束的脚本任务打开输出.
  */
 @Composable
 internal fun TasksScreen(onOpenResult: (String) -> Unit, onOpenDetail: (String) -> Unit) {

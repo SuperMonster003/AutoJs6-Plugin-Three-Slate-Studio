@@ -6,13 +6,18 @@ import org.autojs.plugin.mediastudio.api.MediaStudioLimits
 import java.util.concurrent.Executor
 
 /**
- * The task queue of roadmap D28 / P2.1: at most [maxConcurrent] jobs run at once (one encode each), a host token has at
- * most [maxPerToken] unfinished tasks, and every task ends with exactly one [Listener.onComplete] or [Listener.onError].
- * Listeners are called outside the runner lock; progress is monotonic and at least [minProgressIntervalMillis] apart.
- * The runner is plain Kotlin so the JVM tests drive it with a manual executor and a fake clock.
- * zh-CN: 路线图 D28 / P2.1 的任务队列: 同时最多运行 [maxConcurrent] 个作业 (每个占一路编码), 每个宿主 token 最多
- * [maxPerToken] 个未完成任务, 每个任务恰好以一次 [Listener.onComplete] 或 [Listener.onError] 结束. 监听器在执行器锁外调用;
- * 进度不递减, 两次至少间隔 [minProgressIntervalMillis]. 执行器是纯 Kotlin, JVM 测试用手动执行器与假时钟驱动.
+ * The task queue of roadmap D28 / P2.1: at most [concurrency] jobs run at once (one encode each; the setting of roadmap
+ * D37 / appendix D Q50 (b), read at every start and held within 1 - [maxConcurrent], the contract limit), a host token
+ * has at most [maxPerToken] unfinished tasks, and every task ends with exactly one [Listener.onComplete] or
+ * [Listener.onError]. Listeners are called outside the runner lock; progress is monotonic and at least
+ * [minProgressIntervalMillis] apart. Snapshots keep the code and detail of a failure for the Studio screens (appendix D
+ * Q51 (b); the contract's `listTasks` does not carry them). The runner is plain Kotlin so the JVM tests drive it with a
+ * manual executor and a fake clock.
+ * zh-CN: 路线图 D28 / P2.1 的任务队列: 同时最多运行 [concurrency] 个作业 (每个占一路编码; 路线图 D37 / 附录 D Q50 (b) 的设置,
+ * 每次启动任务时读取, 限定在 1 - [maxConcurrent] (契约上限) 之间), 每个宿主 token 最多 [maxPerToken] 个未完成任务, 每个任务恰好以
+ * 一次 [Listener.onComplete] 或 [Listener.onError] 结束. 监听器在执行器锁外调用; 进度不递减, 两次至少间隔
+ * [minProgressIntervalMillis]. 快照保存失败的错误码与详情, 供 Studio 界面使用 (附录 D Q51 (b); 契约的 `listTasks` 不带这两项).
+ * 执行器是纯 Kotlin, JVM 测试用手动执行器与假时钟驱动.
  */
 internal class TaskRunner<R>(
     private val executor: Executor,
@@ -22,6 +27,7 @@ internal class TaskRunner<R>(
     private val maxPerToken: Int = MediaStudioLimits.MAX_TASKS_PER_TOKEN,
     private val minProgressIntervalMillis: Long = MediaStudioLimits.MIN_PROGRESS_INTERVAL_MILLIS,
     private val keepFinishedPerToken: Int = KEEP_FINISHED_PER_TOKEN,
+    private val concurrency: () -> Int = { maxConcurrent },
 ) {
 
     /** One operation. zh-CN: 一个操作. */
@@ -87,6 +93,10 @@ internal class TaskRunner<R>(
         val submittedAt: Long,
         /** Monotonic start time, null while queued. zh-CN: 单调时钟的开始时间, 排队中为 null. */
         val startedAt: Long?,
+        /** The contract code of a failed or cancelled task (appendix D Q51 (b)). zh-CN: 失败或已取消任务的契约错误码. */
+        val errorCode: String? = null,
+        /** The detail of [errorCode], without the code prefix. zh-CN: [errorCode] 的详情, 不含错误码前缀. */
+        val errorMessage: String? = null,
     )
 
     private inner class Task(
@@ -109,6 +119,8 @@ internal class TaskRunner<R>(
         var onCancel: (() -> Unit)? = null
         var cancelled: Boolean = false
         var finishedAt: Long = 0L
+        var errorCode: String? = null
+        var errorMessage: String? = null
 
         override val taskId: Int get() = id
 
@@ -149,7 +161,7 @@ internal class TaskRunner<R>(
             return (elapsed * (100.0 - percent) / percent).toLong()
         }
 
-        fun snapshot() = TaskSnapshot(id, tokenKey, op, state, percent, stage, output, origin, submittedAt, startedAt)
+        fun snapshot() = TaskSnapshot(id, tokenKey, op, state, percent, stage, output, origin, submittedAt, startedAt, errorCode, errorMessage)
 
     }
 
@@ -221,6 +233,7 @@ internal class TaskRunner<R>(
             task.cancelled = true
             handler = task.onCancel
             task.onCancel = null
+            task.fail(MediaStudioErrorCodes.TASK_CANCELLED, cancelledMessage(taskId))
             finish(task, MediaStudioContract.TASK_CANCELLED)
         }
         handler?.let { safely(it) }
@@ -254,10 +267,21 @@ internal class TaskRunner<R>(
         synchronized(lock) { observers -= observer }
     }
 
+    /** The current concurrency limit, 1 - [maxConcurrent]. zh-CN: 当前并发上限, 1 - [maxConcurrent]. */
+    fun concurrencyLimit(): Int = runCatching { concurrency() }.getOrDefault(maxConcurrent).coerceIn(1, maxConcurrent)
+
+    /**
+     * Starts queued tasks after the concurrency setting was raised; a lowered limit lets running tasks finish and starts
+     * no new one until fewer run.
+     * zh-CN: 并发设置调高后启动排队中的任务; 调低时运行中的任务照常完成, 运行数降到上限以下才启动新任务.
+     */
+    fun limitsChanged() = pump()
+
     private fun pump() {
         val starting = mutableListOf<Task>()
         synchronized(lock) {
-            while (running < maxConcurrent && queue.isNotEmpty()) {
+            val limit = concurrencyLimit()
+            while (running < limit && queue.isNotEmpty()) {
                 val task = queue.removeFirst()
                 task.state = MediaStudioContract.TASK_RUNNING
                 task.startedAt = monotonicClock()
@@ -287,11 +311,11 @@ internal class TaskRunner<R>(
                     completed = true
                 } else if (task.cancelled || (error as? MediaStudioException)?.code == MediaStudioErrorCodes.TASK_CANCELLED) {
                     task.cancelled = true
+                    failure = (MediaStudioErrorCodes.TASK_CANCELLED to cancelledMessage(task.id)).also { (code, message) -> task.fail(code, message) }
                     finish(task, MediaStudioContract.TASK_CANCELLED)
-                    failure = MediaStudioErrorCodes.TASK_CANCELLED to cancelledMessage(task.id)
                 } else {
+                    failure = describe(error).also { (code, message) -> task.fail(code, message) }
                     finish(task, MediaStudioContract.TASK_FAILED)
-                    failure = describe(error)
                 }
             }
         }
@@ -321,6 +345,12 @@ internal class TaskRunner<R>(
             MediaStudioErrorCodes.INTERNAL_ERROR,
             listOfNotNull(error.javaClass.simpleName, error.message).joinToString(": "),
         )
+    }
+
+    /** Keeps the code and the detail (without `CODE: `) for the snapshots. zh-CN: 为快照保存错误码与详情 (不含 `CODE: `). */
+    private fun Task.fail(code: String, message: String) {
+        errorCode = code
+        errorMessage = MediaStudioErrorCodes.decode(message)?.second ?: message
     }
 
     private fun cancelledMessage(taskId: Int) =

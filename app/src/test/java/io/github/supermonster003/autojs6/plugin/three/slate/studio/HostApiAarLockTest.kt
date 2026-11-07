@@ -18,6 +18,8 @@ class HostApiAarLockTest {
 
     private val lock: Map<String, String> by lazy { LockFiles.read("locks/host-api-aars.lock") }
 
+    private val rhino: Map<String, String> by lazy { LockFiles.read("locks/rhino-jar.lock") }
+
     private val ids: Set<String> get() = lock.keys.filter { it.endsWith(".file") }.map { it.removeSuffix(".file") }.toSet()
 
     @Test
@@ -32,11 +34,32 @@ class HostApiAarLockTest {
     }
 
     @Test
-    fun `libs holds exactly the locked host AARs`() {
+    fun `libs holds exactly the locked host AARs and the test-only Rhino jar`() {
         Files.list(RepositoryFiles.path("libs")).use { files ->
             val staged = files.map { it.fileName.toString() }.filter { it.endsWith(".aar") || it.endsWith(".jar") }.sorted().toList()
-            assertEquals(ids.map { lock.getValue("$it.file") }.sorted(), staged)
+            assertEquals((ids.map { lock.getValue("$it.file") } + rhino.getValue("rhino.file")).sorted(), staged)
         }
+    }
+
+    /**
+     * The host's slim Rhino jar of roadmap P4.4 runs the generated scripts in the JVM tests only: locked by digest and
+     * host commit, recorded in `libs/README.md` and kept off the APK.
+     * zh-CN: 路线图 P4.4 的宿主 slim Rhino jar 只在 JVM 测试中运行生成的脚本: 按摘要与宿主提交锁定, 记录在 `libs/README.md`, 不进 APK.
+     */
+    @Test
+    fun `the Rhino jar is locked, recorded and test only`() {
+        assertEquals(setOf("format", "rhino.file", "rhino.sha256", "rhino.source"), rhino.keys)
+        val file = rhino.getValue("rhino.file")
+        assertEquals("org-mozilla-rhino-2_0_0-SNAPSHOT-slim.jar", file)
+        assertEquals("digest drifted from the lock", rhino.getValue("rhino.sha256"), LockFiles.sha256("libs/$file"))
+        assertTrue("rhino.source is a full host commit", rhino.getValue("rhino.source").matches(Regex("[0-9a-f]{40}")))
+        val readme = RepositoryFiles.text("libs/README.md")
+        assertTrue(readme.contains("`$file`") && readme.contains(rhino.getValue("rhino.sha256")))
+        assertTrue(RepositoryFiles.text("THIRD_PARTY_NOTICES.md").contains("`locks/rhino-jar.lock`"))
+        val build = RepositoryFiles.text("app/build.gradle.kts")
+        assertTrue(build.contains("readLock(\"locks/rhino-jar.lock\")"))
+        assertTrue(build.contains("testImplementation(files(rhinoTestJar))"))
+        assertFalse("never on the app classpath", Regex("""(?m)^\s*(implementation|api|runtimeOnly|compileOnly)\(files\(rhinoTestJar""").containsMatchIn(build))
     }
 
     @Test

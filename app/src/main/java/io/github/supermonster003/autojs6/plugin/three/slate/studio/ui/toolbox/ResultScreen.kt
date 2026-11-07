@@ -32,6 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.R
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.codegen.CodeGenerator
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.Formats
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.MediaActions
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.components.EmptyState
@@ -51,10 +52,10 @@ import org.autojs.plugin.mediastudio.api.MediaStudioResultKeys
 
 /**
  * The result page of a wizard task (roadmap P4.2): state and progress until it ends, then the output path(s), the media
- * info of the result, open / share, the failure code and detail, and the equivalent script call (copyable). The full
- * code generator with the host entry is roadmap P4.4.
+ * info of the result, open / share, the failure code and detail, and the complete equivalent script with copy and
+ * "Open in AutoJs6" (roadmap P4.4).
  * zh-CN: 向导任务的结果页 (路线图 P4.2): 结束前显示状态与进度, 之后显示输出路径, 结果的媒体信息, 打开 / 分享, 失败码与详情, 以及等价
- * 的脚本调用 (可复制). 完整的代码生成器与宿主入口是路线图 P4.4.
+ * 的完整脚本, 可复制或 "在 AutoJs6 中打开" (路线图 P4.4).
  */
 @Composable
 internal fun ResultScreen(key: String, onBack: () -> Unit, onOpenDetail: (String) -> Unit, onRunAgain: (op: String, input: String?) -> Unit) {
@@ -158,12 +159,17 @@ internal fun ResultScreen(key: String, onBack: () -> Unit, onOpenDetail: (String
             }
             val request = row.request
             if (request != null) {
+                // The complete script of the request (roadmap P4.4). zh-CN: 请求的完整脚本 (路线图 P4.4).
+                val script = remember(request) { CodeGenerator.wizardScript(request.schema, request.inputs, request.options, request.output) }
                 SectionHeader(stringResource(R.string.wizard_code))
-                CodeCard(request.code, copyable = true, tag = "slate.result.code")
-                OutlinedButton(
-                    onClick = { onRunAgain(request.schema.op, request.inputs.singleOrNull()) },
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp).testTag("slate.result.again"),
-                ) { Text(stringResource(R.string.result_run_again)) }
+                CodeCard(script.code, copyable = true, tag = "slate.result.code")
+                Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OpenInAutoJs6Button(script, snackbar)
+                    OutlinedButton(
+                        onClick = { onRunAgain(request.schema.op, request.inputs.singleOrNull()) },
+                        modifier = Modifier.testTag("slate.result.again"),
+                    ) { Text(stringResource(R.string.result_run_again)) }
+                }
             }
             Spacer(Modifier.height(24.dp))
         }

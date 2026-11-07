@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="action_failed">Impossible de terminer l\'action</string>
+    <string name="action_open_in_autojs6">Ouvrir dans AutoJs6</string>
     <string name="action_open_with">Ouvrir avec</string>
     <string name="action_share">Partager</string>
     <string name="alt_length_duration">Durée</string>
@@ -122,6 +123,8 @@
     <string name="op_transform_title">Redimensionner, pivoter et rogner</string>
     <string name="op_trim_summary">Garder un intervalle de temps d\'une vidéo</string>
     <string name="op_trim_title">Couper une vidéo</string>
+    <string name="open_in_autojs6_failed">Impossible d\'ouvrir l\'éditeur d\'AutoJs6</string>
+    <string name="open_in_autojs6_too_large">Le code dépasse les 4 Mio qu\'AutoJs6 accepte; copiez-le plutôt</string>
     <string name="option_align">Alignement du texte</string>
     <string name="option_alpha">Opacité</string>
     <string name="option_anchor">Point d\'ancrage</string>
@@ -261,8 +264,22 @@
     <string name="settings_bit_rate_small_note">0,6 fois l\'estimation</string>
     <string name="settings_codec">Codec vidéo par défaut</string>
     <string name="settings_codec_unavailable">Cet appareil n\'a pas d\'encodeur pour ce codec</string>
+    <string name="settings_concurrency">Tâches simultanées</string>
+    <string name="settings_concurrency_message">Nombre de tâches de traitement exécutées en même temps, pour les tâches de la boîte à outils comme pour celles des scripts. Plus il est élevé, plus l\'appareil risque de manquer de ressources de codec (CODEC_ERROR)</string>
+    <string name="settings_concurrency_one">1 (une à la fois)</string>
+    <string name="settings_concurrency_one_note">Une seule tâche s\'exécute, les autres attendent dans la file</string>
+    <string name="settings_concurrency_two">2 (par défaut)</string>
+    <string name="settings_concurrency_two_note">Deux tâches s\'exécutent en même temps, les autres attendent dans la file</string>
     <string name="settings_dark_mode_dark">Sombre</string>
     <string name="settings_dark_mode_light">Clair</string>
+    <string name="settings_encoder">Préférence d\'encodeur matériel</string>
+    <string name="settings_encoder_auto">Automatique</string>
+    <string name="settings_encoder_auto_note">L\'ordre de la liste des codecs du système (en général le matériel d\'abord)</string>
+    <string name="settings_encoder_hardware">Matériel d\'abord</string>
+    <string name="settings_encoder_hardware_note">Les encodeurs matériels d\'abord, les encodeurs logiciels s\'ils ne prennent pas en charge le format ou la taille</string>
+    <string name="settings_encoder_message">L\'ordre dans lequel les encodeurs vidéo sont choisis, pour les tâches de la boîte à outils comme pour celles des scripts</string>
+    <string name="settings_encoder_software">Logiciel d\'abord</string>
+    <string name="settings_encoder_software_note">Les encodeurs logiciels d\'abord (plus lents), les encodeurs matériels s\'ils ne prennent pas en charge le format ou la taille</string>
     <string name="settings_folder_unsupported">Choisissez un dossier du stockage partagé</string>
     <string name="settings_follow_autojs6">Suivre AutoJs6</string>
     <string name="settings_follow_autojs6_summary">Suivre AutoJs6 - %1$s</string>

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="action_failed">Не удалось выполнить действие</string>
+    <string name="action_open_in_autojs6">Открыть в AutoJs6</string>
     <string name="action_open_with">Открыть с помощью</string>
     <string name="action_share">Поделиться</string>
     <string name="alt_length_duration">Длительность</string>
@@ -122,6 +123,8 @@
     <string name="op_transform_title">Размер, поворот и кадрирование</string>
     <string name="op_trim_summary">Оставить фрагмент видео по времени</string>
     <string name="op_trim_title">Обрезать видео</string>
+    <string name="open_in_autojs6_failed">Не удалось открыть редактор AutoJs6</string>
+    <string name="open_in_autojs6_too_large">Код больше 4 МиБ, которые принимает AutoJs6; скопируйте его</string>
     <string name="option_align">Выравнивание текста</string>
     <string name="option_alpha">Непрозрачность</string>
     <string name="option_anchor">Точка привязки</string>
@@ -261,8 +264,22 @@
     <string name="settings_bit_rate_small_note">0,6 от оценки</string>
     <string name="settings_codec">Видеокодек по умолчанию</string>
     <string name="settings_codec_unavailable">На этом устройстве нет такого кодировщика</string>
+    <string name="settings_concurrency">Одновременные задачи</string>
+    <string name="settings_concurrency_message">Сколько задач обработки выполняется одновременно, для задач инструментов и скриптов. Чем их больше, тем вероятнее нехватка ресурсов кодеков на устройстве (CODEC_ERROR)</string>
+    <string name="settings_concurrency_one">1 (по одной)</string>
+    <string name="settings_concurrency_one_note">Выполняется одна задача, остальные ждут в очереди</string>
+    <string name="settings_concurrency_two">2 (по умолчанию)</string>
+    <string name="settings_concurrency_two_note">Две задачи выполняются одновременно, остальные ждут в очереди</string>
     <string name="settings_dark_mode_dark">Темная</string>
     <string name="settings_dark_mode_light">Светлая</string>
+    <string name="settings_encoder">Предпочтение аппаратного кодировщика</string>
+    <string name="settings_encoder_auto">Автоматически</string>
+    <string name="settings_encoder_auto_note">Порядок системного списка кодеков (обычно сначала аппаратные)</string>
+    <string name="settings_encoder_hardware">Сначала аппаратные</string>
+    <string name="settings_encoder_hardware_note">Сначала аппаратные кодировщики, программные, если формат или размер не поддерживается</string>
+    <string name="settings_encoder_message">Порядок выбора видеокодировщиков, для задач инструментов и скриптов</string>
+    <string name="settings_encoder_software">Сначала программные</string>
+    <string name="settings_encoder_software_note">Сначала программные кодировщики (медленнее), аппаратные, если формат или размер не поддерживается</string>
     <string name="settings_folder_unsupported">Выберите папку в общем хранилище</string>
     <string name="settings_follow_autojs6">Следовать AutoJs6</string>
     <string name="settings_follow_autojs6_summary">Следовать AutoJs6 - %1$s</string>

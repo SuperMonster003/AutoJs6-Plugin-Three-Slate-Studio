@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="action_failed">操作を完了できませんでした</string>
+    <string name="action_open_in_autojs6">AutoJs6 で開く</string>
     <string name="action_open_with">アプリで開く</string>
     <string name="action_share">共有</string>
     <string name="alt_length_duration">長さ</string>
@@ -122,6 +123,8 @@
     <string name="op_transform_title">サイズ変更, 回転, 切り抜き</string>
     <string name="op_trim_summary">動画の一部の時間範囲を残します</string>
     <string name="op_trim_title">動画をトリミング</string>
+    <string name="open_in_autojs6_failed">AutoJs6 のエディターを開けません</string>
+    <string name="open_in_autojs6_too_large">コードが AutoJs6 の受け取れる 4 MiB を超えています. コピーして使ってください</string>
     <string name="option_align">文字揃え</string>
     <string name="option_alpha">不透明度</string>
     <string name="option_anchor">基準点</string>
@@ -261,8 +264,22 @@
     <string name="settings_bit_rate_small_note">見積もりの 0.6 倍</string>
     <string name="settings_codec">既定の映像コーデック</string>
     <string name="settings_codec_unavailable">この端末には対応するエンコーダーがありません</string>
+    <string name="settings_concurrency">同時実行タスク数</string>
+    <string name="settings_concurrency_message">同時に実行する処理タスクの数です. ツールボックスとスクリプトのタスクの両方に適用されます. 数が多いほど端末のコーデックリソース不足 (CODEC_ERROR) が起きやすくなります</string>
+    <string name="settings_concurrency_one">1 (1 つずつ実行)</string>
+    <string name="settings_concurrency_one_note">一度に 1 つのタスクだけを実行し, 残りは待機します</string>
+    <string name="settings_concurrency_two">2 (既定)</string>
+    <string name="settings_concurrency_two_note">2 つのタスクを同時に実行し, 残りは待機します</string>
     <string name="settings_dark_mode_dark">ダーク</string>
     <string name="settings_dark_mode_light">ライト</string>
+    <string name="settings_encoder">ハードウェアエンコーダーの優先</string>
+    <string name="settings_encoder_auto">自動</string>
+    <string name="settings_encoder_auto_note">システムのコーデック一覧の順序に従います (通常はハードウェアが先)</string>
+    <string name="settings_encoder_hardware">ハードウェアを優先</string>
+    <string name="settings_encoder_hardware_note">先にハードウェアエンコーダーを選び, 必要な形式やサイズに対応しない場合はソフトウェアエンコーダーを使います</string>
+    <string name="settings_encoder_message">映像エンコーダーを選ぶ順序です. ツールボックスとスクリプトのタスクの両方に適用されます</string>
+    <string name="settings_encoder_software">ソフトウェアを優先</string>
+    <string name="settings_encoder_software_note">先にソフトウェアエンコーダーを選び (低速), 必要な形式やサイズに対応しない場合はハードウェアエンコーダーを使います</string>
     <string name="settings_folder_unsupported">共有ストレージ内のフォルダーを選択してください</string>
     <string name="settings_follow_autojs6">AutoJs6 に従う</string>
     <string name="settings_follow_autojs6_summary">AutoJs6 に従う - %1$s</string>

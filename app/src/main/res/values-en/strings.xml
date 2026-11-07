@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="action_failed">Could not complete the action</string>
+    <string name="action_open_in_autojs6">Open in AutoJs6</string>
     <string name="action_open_with">Open with</string>
     <string name="action_share">Share</string>
     <string name="alt_length_duration">Duration</string>
@@ -122,6 +123,8 @@
     <string name="op_transform_title">Resize, rotate and crop</string>
     <string name="op_trim_summary">Keep a time range of a video</string>
     <string name="op_trim_title">Trim video</string>
+    <string name="open_in_autojs6_failed">Cannot open the AutoJs6 editor</string>
+    <string name="open_in_autojs6_too_large">The code is larger than the 4 MiB AutoJs6 accepts; copy it instead</string>
     <string name="option_align">Text alignment</string>
     <string name="option_alpha">Opacity</string>
     <string name="option_anchor">Anchor</string>
@@ -261,8 +264,22 @@
     <string name="settings_bit_rate_small_note">0.6 times the estimate</string>
     <string name="settings_codec">Default video codec</string>
     <string name="settings_codec_unavailable">This device has no encoder for it</string>
+    <string name="settings_concurrency">Concurrent tasks</string>
+    <string name="settings_concurrency_message">How many processing tasks run at the same time, for toolbox and script tasks alike. The more at once, the more likely the device runs short of codec resources (CODEC_ERROR)</string>
+    <string name="settings_concurrency_one">1 (one at a time)</string>
+    <string name="settings_concurrency_one_note">One task runs, the others wait in the queue</string>
+    <string name="settings_concurrency_two">2 (default)</string>
+    <string name="settings_concurrency_two_note">Two tasks run at once, the others wait in the queue</string>
     <string name="settings_dark_mode_dark">Dark</string>
     <string name="settings_dark_mode_light">Light</string>
+    <string name="settings_encoder">Hardware encoder preference</string>
+    <string name="settings_encoder_auto">Automatic</string>
+    <string name="settings_encoder_auto_note">The order of the system codec list (usually hardware first)</string>
+    <string name="settings_encoder_hardware">Prefer hardware</string>
+    <string name="settings_encoder_hardware_note">Hardware encoders first, software ones when they do not support the format or size</string>
+    <string name="settings_encoder_message">The order in which video encoders are chosen, for toolbox and script tasks alike</string>
+    <string name="settings_encoder_software">Prefer software</string>
+    <string name="settings_encoder_software_note">Software encoders first (slower), hardware ones when they do not support the format or size</string>
     <string name="settings_folder_unsupported">Choose a folder in the shared storage</string>
     <string name="settings_follow_autojs6">Follow AutoJs6</string>
     <string name="settings_follow_autojs6_summary">Follow AutoJs6 - %1$s</string>

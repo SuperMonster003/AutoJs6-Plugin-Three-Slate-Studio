@@ -17,6 +17,7 @@ import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.BundleVa
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.CodecSupport
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.MediaProbe
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.MediaStudioException
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.ProcessingSettings
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.RequestPlanner
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.SubtitleCueFiles
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.SubmitEnvelope
@@ -53,7 +54,10 @@ internal class MediaStudioEngine private constructor(private val context: Contex
         Thread(runnable, "SlateStudio-task-${threadCount.incrementAndGet()}").apply { isDaemon = true }
     }
 
-    val runner = TaskRunner<Bundle>(executor, SystemClock::elapsedRealtime)
+    private val settings = ProcessingSettings.of(context)
+
+    // The concurrency setting is read at every start (appendix D Q50 (b)). zh-CN: 每次启动任务时读取并发设置 (附录 D Q50 (b)).
+    val runner = TaskRunner<Bundle>(executor, SystemClock::elapsedRealtime, concurrency = { settings.concurrency })
 
     private val main = Handler(Looper.getMainLooper())
 

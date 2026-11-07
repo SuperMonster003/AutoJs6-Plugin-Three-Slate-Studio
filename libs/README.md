@@ -30,6 +30,17 @@ Provenance (2026-11-05, roadmap P0.1):
   there), so both are staged. The Maven coordinate `io.github.supermonster003:autojs6-media-studio-api:1.0.0` is
   reserved but not published yet; its first release carries contract version 2.
 
+## Rhino for the JVM tests (lock `../locks/rhino-jar.lock`)
+
+`org-mozilla-rhino-2_0_0-SNAPSHOT-slim.jar` (2,653,406 B, SHA-256
+`3e4d74bcd2569d53ec79cc980acc462fc28ae11f387fa5f7ca15bc52f14ecf70`) is the output of the host task `:app:slimRhinoJar`
+at host commit `549ff67974` (2026-11-07): the host's own `libs/org-mozilla-rhino-2_0_0-SNAPSHOT.jar` (last changed in
+`cfc2ae7118`, the AutoJs6 fork of Rhino, MPL-2.0) without JLine, the optimizer and JFR. Roadmap P4.4 runs every generated
+script through it (`GeneratedScriptRhinoTest`), in interpreted mode like the host. It is a `testImplementation`
+dependency only and never part of the APK. To update: run `:app:slimRhinoJar` in the host, copy
+`app/build/slim-libs/org-mozilla-rhino-2_0_0-SNAPSHOT-slim.jar` here and record the digest, size and host commit in the
+lock and in this section.
+
 Do not commit locally assembled debug AARs or rename debug outputs to bypass this policy.
 
 To update: assemble `:plugin-api:<module>:assembleRelease` in the host, copy the AAR here, record its

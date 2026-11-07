@@ -46,6 +46,7 @@ import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.MediaStu
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.OperationSpec
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.SubtitleFiles
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.SubtitleWarnings
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.ProcessingSettings
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.TaskRunner
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.VideoCodec
 import org.autojs.plugin.mediastudio.api.MediaStudioContract
@@ -170,12 +171,14 @@ internal class TransformerExport(private val context: Context, private val task:
     }
 
     private fun build(settings: Settings, looper: Looper, listener: Transformer.Listener): Transformer {
-        // The requested size first, the media3 fallback only when the encoder refuses it (appendix D Q38 (a)).
-        // zh-CN: 先用请求尺寸, 编码器拒绝时才用 media3 的回退 (附录 D Q38 (a)).
+        // The requested size first, the media3 fallback only when the encoder refuses it (appendix D Q38 (a)); the
+        // encoder preference of the settings applies to Studio and script tasks (appendix D Q50 (b)).
+        // zh-CN: 先用请求尺寸, 编码器拒绝时才用 media3 的回退 (附录 D Q38 (a)); 设置中的编码器偏好对 Studio 与脚本任务都生效 (附录 D Q50 (b)).
         val encoders = RequestedSizeEncoderFactory(
             context.applicationContext,
             settings.videoBitRate?.let { VideoEncoderSettings.Builder().setBitrate(it).build() } ?: VideoEncoderSettings.DEFAULT,
             settings.audioBitRate?.let { AudioEncoderSettings.Builder().setBitrate(it).build() } ?: AudioEncoderSettings.DEFAULT,
+            ProcessingSettings.of(context).encoderPreference,
         ) { note -> notes += note }
         val builder = Transformer.Builder(context.applicationContext)
             .setLooper(looper)
