@@ -427,7 +427,7 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 ### P5.2 声明 (AutoJs6-TypeScript-Declarations, Ace Editor, Offline Docs)
 
 - [ ] (文档) `video.d.ts` / `audio.d.ts` (与插件 `OptionSchemas` 同源, 单元测试比对), Ace 补全与高亮, Offline Docs 打包.
-- 验收: d.ts 通过 `tsc` 检查; Ace 补全在宿主编辑器里能提示 `video.` 的方法.
+- 验收: d.ts 通过 `tsc` 检查; Ace 补全在宿主编辑器里能提示 `video.` 的方法. 结果 (2026-11-08, 部分; Offline Docs 打包等 P5.1 文档站提交后做, 届时勾选): d.ts 与 Ace 两项通过. (E1) TypeScript-Declarations `aj6-int-video.d.ts` / `aj6-int-audio.d.ts` (`c00b698`, 运行时声明同步 `b4e4930`), `npm test` 通过 (含 `tsc` 编译 smoke); 同源测试 `tools/verify-media-studio-declarations.mjs` 比对插件 `docs/development/media-studio-options.d.ts` (副本与兄弟仓库一致) 的 148 个选项, 20 个方法与 29 个时间线键 (另对照 `core/Timeline.kt`), 以及 Node 声明 53 个类型 356 个键, 删 dither, 去掉 flip 的 both, 插件新增选项, factor 改可选等变异都会失败. Node / Bun 声明修正 P1.6 的不一致 (frames 无 webp, frame / thumbnail 无 height, toGif 的 dither 只收布尔值, flip 有 both, record 默认尺寸按编码器能力) 并补上 P2 - P4 选项: Node `be5b8697`, Bun `dbb5a24` (`sync-media-studio --check`, `tsc` 与 `media-studio.test` 3 / 3). Ace `76134aa` + 宿主 `422f730331` (补全源), `verifyAutoJs6LspRuntime` 通过, 离线补全器 `video.` 37 项 / `audio.` 20 项. (E3) XQ-AT72 宿主 6641 + Ace 2.50.0 debug, `tools/device/ace_completion_check.py` 7 / 7: `video.` / `audio.` / `video.subtitles.` 的成员与 trim / record / mix 的选项字段都有提示, 带类型说明 (截图在共享笔记 `3-slate-p5-visual/p5-2/`). Ace 没有按模块区分的高亮规则, video / audio 与其他模块一样按 JS 语法着色.
 
 ### P5.3 README, changelog, 样例与兼容矩阵
 
