@@ -23,8 +23,9 @@
 
     <!--
         Long tasks run in a data sync foreground service with a progress notification (roadmap P2.1); the Studio
-        recorder records the microphone and the playback capture (roadmap D41, P4.5). The processing service is
-        declared below; the recorder service comes with P4.5.
+        recorder records the microphone and the playback capture (roadmap D41, P4.5) in a microphone / media
+        projection foreground service and keeps a partial wake lock, so it continues with the screen off. Both
+        services are declared below.
     -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -32,6 +33,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!-- The update check and, from 1.1.0, the FFmpeg library download (roadmap D39). -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -218,6 +220,15 @@
             android:name=".service.ProcessingForegroundService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <!--
+            The Studio recorder (roadmap D41, P4.5): microphone, plus media projection for the playback capture
+            (API 29+); roadmap P7.1 reuses it for screen recording.
+        -->
+        <service
+            android:name=".record.RecordingService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection|microphone" />
 
     </application>
 

@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <plurals name="record_minutes">
+        <item quantity="one">%1$d minuto</item>
+        <item quantity="many">%1$d minutos</item>
+        <item quantity="other">%1$d minutos</item>
+    </plurals>
     <plurals name="update_ignored_count">
         <item quantity="one">%1$d versión ignorada</item>
         <item quantity="many">%1$d versiones ignoradas</item>

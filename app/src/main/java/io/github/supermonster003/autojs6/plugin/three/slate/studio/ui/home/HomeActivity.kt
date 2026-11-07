@@ -46,6 +46,7 @@ import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.components
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.components.TopBarAction
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.library.DetailScreen
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.library.LibraryScreen
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.record.RecordScreen
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.release.ReleaseHistoryActivity
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.settings.SettingsActivity
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.tasks.StudioTasks
@@ -75,6 +76,9 @@ class HomeActivity : StandaloneActivity() {
     private lateinit var updates: AppUpdateController
     private var storageGranted by mutableStateOf(false)
 
+    /** A route asked for by an Intent (the recording notification). zh-CN: Intent 请求的路由 (录音通知). */
+    private var requestedRoute by mutableStateOf<String?>(null)
+
     /** Bumped on resume so the library lists again (files may have changed meanwhile). zh-CN: 恢复时递增, 媒体库重新列出. */
     private var resumes by mutableIntStateOf(0)
     private var currentRoute: String? = null
@@ -82,7 +86,15 @@ class HomeActivity : StandaloneActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         updates = AppUpdateController(AppUpdateStore.of(this), BuildConfig.VERSION_CODE.toLong())
-        if (savedInstanceState == null) updates.checkAutomaticallyIfDue()
+        if (savedInstanceState == null) {
+            updates.checkAutomaticallyIfDue()
+            requestedRoute = intent?.getStringExtra(EXTRA_ROUTE)
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        intent.getStringExtra(EXTRA_ROUTE)?.let { requestedRoute = it }
     }
 
     override fun onResume() {
@@ -116,8 +128,20 @@ class HomeActivity : StandaloneActivity() {
         val nav = rememberNavController()
         val entry by nav.currentBackStackEntryAsState()
         currentRoute = entry?.destination?.route
+        LaunchedEffect(requestedRoute) {
+            val route = requestedRoute ?: return@LaunchedEffect
+            requestedRoute = null
+            if (route == ROUTE_RECORD && currentRoute != ROUTE_RECORD) nav.navigate(ROUTE_RECORD) { launchSingleTop = true }
+        }
         NavHost(navController = nav, startDestination = ROUTE_MAIN) {
             composable(ROUTE_MAIN) { MainScreen(nav) }
+            composable(ROUTE_RECORD) {
+                RecordScreen(
+                    onBack = { nav.popBackStack() },
+                    onOpenDetail = { path -> nav.navigate(detailRoute(path)) },
+                    onProcess = { op, path -> nav.navigate(wizardRoute(op, path)) },
+                )
+            }
             composable(
                 "$ROUTE_DETAIL/{path}",
                 arguments = listOf(navArgument("path") { type = NavType.StringType }),
@@ -169,8 +193,9 @@ class HomeActivity : StandaloneActivity() {
                         onGrantStorage = ::requestStorage,
                         onOpen = { path -> nav.navigate(detailRoute(path)) },
                         onOpenSettings = ::openSettings,
+                        onProcess = { op, path -> nav.navigate(wizardRoute(op, path)) },
                     )
-                    Tab.TOOLBOX -> ToolboxScreen(onOpen = { op -> nav.navigate(wizardRoute(op, null)) })
+                    Tab.TOOLBOX -> ToolboxScreen(onOpen = { op -> nav.navigate(wizardRoute(op, null)) }, onRecord = { nav.navigate(ROUTE_RECORD) })
                     Tab.TASKS -> TasksScreen(
                         onOpenResult = { key -> nav.navigate("$ROUTE_RESULT/$key") },
                         onOpenDetail = { path -> nav.navigate(detailRoute(path)) },
@@ -186,6 +211,7 @@ class HomeActivity : StandaloneActivity() {
                 if (tab == Tab.TASKS && StudioTasks.rows.any { it.isFinal && it.request != null }) {
                     TopBarAction(R.drawable.ic_delete_24, stringResource(R.string.tasks_clear_finished), "slate.tasks.clear") { StudioTasks.clearFinished() }
                 }
+                TopBarAction(R.drawable.ic_mic_24, stringResource(R.string.record_title), "slate.home.record") { nav.navigate(ROUTE_RECORD) }
                 TopBarAction(R.drawable.ic_settings_24, stringResource(R.string.settings_title), "slate.home.settings", ::openSettings)
             },
             bottomBar = {
@@ -232,6 +258,12 @@ class HomeActivity : StandaloneActivity() {
         const val ROUTE_DETAIL = "detail"
         const val ROUTE_WIZARD = "wizard"
         const val ROUTE_RESULT = "result"
+
+        /** The Studio recording page (roadmap P4.5). zh-CN: Studio 录音页 (路线图 P4.5). */
+        const val ROUTE_RECORD = "record"
+
+        /** Intent extra naming a route to open (the recording notification opens [ROUTE_RECORD]). zh-CN: 指定要打开的路由的 Intent extra. */
+        const val EXTRA_ROUTE = "route"
 
         fun detailRoute(path: String) = "$ROUTE_DETAIL/${Uri.encode(path)}"
 

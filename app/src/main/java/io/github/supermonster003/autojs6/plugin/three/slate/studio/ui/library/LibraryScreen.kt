@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,6 +51,8 @@ import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.Formats
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.components.EmptyAction
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.components.EmptyState
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.components.Hairline
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.record.SendToToolboxDialog
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.record.ToolboxTargets
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -63,8 +66,10 @@ private enum class Filter(@param:StringRes val label: Int, val kind: MediaKind?)
 
 /**
  * The library tab (roadmap D37): the media of the library folders, newest first, with a kind filter; without storage
- * access it explains why and asks for it.
- * zh-CN: 媒体库标签 (路线图 D37): 媒体库目录中的媒体, 最新在前, 可按类型筛选; 没有存储权限时说明原因并申请.
+ * access it explains why and asks for it. Each video or audio row can be sent to a toolbox wizard ([onProcess], roadmap
+ * P4.5).
+ * zh-CN: 媒体库标签 (路线图 D37): 媒体库目录中的媒体, 最新在前, 可按类型筛选; 没有存储权限时说明原因并申请. 每个视频或音频行都可以
+ * 送进工具箱向导 ([onProcess], 路线图 P4.5).
  */
 @Composable
 internal fun LibraryScreen(
@@ -73,6 +78,7 @@ internal fun LibraryScreen(
     onGrantStorage: () -> Unit,
     onOpen: (String) -> Unit,
     onOpenSettings: () -> Unit,
+    onProcess: (op: String, path: String) -> Unit = { _, _ -> },
 ) {
     if (!storageGranted) {
         EmptyState(
@@ -86,6 +92,7 @@ internal fun LibraryScreen(
     val context = LocalContext.current
     var entries by remember { mutableStateOf<List<MediaEntry>?>(null) }
     var filter by rememberSaveable { mutableStateOf(Filter.ALL) }
+    var sending by remember { mutableStateOf<MediaEntry?>(null) }
     LaunchedEffect(refreshKey) {
         entries = withContext(Dispatchers.IO) { MediaLibrary.query(context, MediaLibrary.folders(context)) }
     }
@@ -116,9 +123,12 @@ internal fun LibraryScreen(
                         secondary = listOf(EmptyAction(stringResource(R.string.library_manage_folders), onOpenSettings, "slate.library.folders")),
                     )
                 } else {
+                    sending?.let { entry ->
+                        SendToToolboxDialog(entry.path, entry.kind, onDismiss = { sending = null }, onChoose = { op -> sending = null; onProcess(op, entry.path) })
+                    }
                     LazyColumn(Modifier.fillMaxSize()) {
                         items(shown, key = { it.id }) { entry ->
-                            MediaRow(entry, onClick = { onOpen(entry.path) })
+                            MediaRow(entry, onClick = { onOpen(entry.path) }, onSend = { sending = entry })
                             Hairline(insetStart = 88.dp)
                         }
                     }
@@ -129,7 +139,7 @@ internal fun LibraryScreen(
 }
 
 @Composable
-private fun MediaRow(entry: MediaEntry, onClick: () -> Unit) {
+private fun MediaRow(entry: MediaEntry, onClick: () -> Unit, onSend: () -> Unit) {
     val context = LocalContext.current
     Row(
         Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 8.dp).testTag("slate.library.item"),
@@ -157,6 +167,12 @@ private fun MediaRow(entry: MediaEntry, onClick: () -> Unit) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+        }
+        if (ToolboxTargets.operations(entry.kind).isNotEmpty()) {
+            IconButton(onClick = onSend, modifier = Modifier.testTag("slate.library.send")) {
+                Icon(painterResource(R.drawable.ic_build_24), contentDescription = stringResource(R.string.record_send_to_toolbox),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }

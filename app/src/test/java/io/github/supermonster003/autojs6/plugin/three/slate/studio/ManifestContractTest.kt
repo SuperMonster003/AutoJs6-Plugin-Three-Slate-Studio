@@ -41,6 +41,7 @@ class ManifestContractTest {
                 "android.permission.RECORD_AUDIO",
                 "android.permission.FOREGROUND_SERVICE_MICROPHONE",
                 "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION",
+                "android.permission.WAKE_LOCK",
                 "android.permission.INTERNET",
                 "android.permission.ACCESS_NETWORK_STATE",
             ),
@@ -149,7 +150,7 @@ class ManifestContractTest {
     @Test
     fun `the INFO and MEDIA_STUDIO services match the discovery constants`() {
         assertEquals(
-            listOf(".service.ThreeSlateStudioInfoService", ".service.ThreeSlateStudioService", ".service.ProcessingForegroundService"),
+            listOf(".service.ThreeSlateStudioInfoService", ".service.ThreeSlateStudioService", ".service.ProcessingForegroundService", ".record.RecordingService"),
             application.children("service").map { it.android("name") },
         )
         val info = service(".service.ThreeSlateStudioInfoService")
@@ -171,13 +172,24 @@ class ManifestContractTest {
 
     @Test
     fun `the processing service is a private data sync foreground service`() {
-        // Roadmap P2.1; the recorder foreground service arrives with P4.5.
+        // Roadmap P2.1.
         val processing = service(".service.ProcessingForegroundService")
         assertEquals("false", processing.android("exported"))
         assertEquals("dataSync", processing.android("foregroundServiceType"))
         assertNull("the plugin starts it itself", processing.androidOrNull("permission"))
         assertNull("services run in the plugin's default process", processing.androidOrNull("process"))
         assertTrue(processing.children("intent-filter").isEmpty())
+    }
+
+    @Test
+    fun `the recorder service is a private microphone and media projection foreground service`() {
+        // Roadmap P4.5, D41: the playback capture needs the media projection type, the microphone the microphone type.
+        val recorder = service(".record.RecordingService")
+        assertEquals("false", recorder.android("exported"))
+        assertEquals("mediaProjection|microphone", recorder.android("foregroundServiceType"))
+        assertNull("the plugin starts it itself", recorder.androidOrNull("permission"))
+        assertNull("services run in the plugin's default process", recorder.androidOrNull("process"))
+        assertTrue(recorder.children("intent-filter").isEmpty())
     }
 
     @Test
