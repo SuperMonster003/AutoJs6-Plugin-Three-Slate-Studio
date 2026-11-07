@@ -24,52 +24,256 @@
   "p_roadmap": "功能規劃, 設計決策與完成情況以可勾選清單維護在 ROADMAP.md 中. 未勾選條目表示規劃意向, 不代表目前版本能力.",
   "p_introduction_what": "3-Slate Studio 是 AutoJs6 的影片與音訊插件, 也是不安裝 AutoJs6 也能單獨使用的剪輯應用程式. 它可以剪裁, 拼接, 變速, 縮放, 旋轉, 裁切影片並加上水印, 擷取影格, 轉 GIF 與轉碼; 可以剪裁, 拼接, 混音, 淡入淡出與轉換音訊; 多軌時間線剪輯器把片段與轉場, 疊加和字幕合成為一段影片.",
   "p_introduction_how": "處理在插件內以 Jetpack Media3 Transformer 與裝置的硬件編解碼器完成, AutoJs6 主程式因此保持精簡. AutoJs6 腳本透過全域模組 `video` 與 `audio` 處理媒體; 螢幕錄影 (`video.record`) 與錄音 (`audio.record`) 內置於 AutoJs6, 不安裝插件也能使用. 插件的每個工具畫面都會顯示等價的腳本程式碼, 可以複製, 也可以在 AutoJs6 中新增為腳本.",
-  "p_status_note": "目前為開發預覽版: 插件可以被 AutoJs6 插件中心識別, 但處理功能, Studio 畫面與 `video` / `audio` 模組的處理方法尚未交付. 下文描述的是各版本的設計目標, 進度請見開發路線圖.",
+  "p_status_note": "1.0.0 是首個正式版本. 在腳本中處理媒體需要 AutoJs6 {{ required_host_version_name }} (內部版本號 {{ required_host_version_code }}) 或更新版本; 插件畫面, 時間線剪輯器與 Studio 錄音不依賴 AutoJs6.",
   "features": [
-    "影片剪輯: 按時間剪裁, 拼接, 變速 (0.25 到 8 倍), 縮放, 旋轉, 裁切與翻轉, 文字或圖片水印, 擷取或移除音軌, 轉碼 (預設 H.264, 裝置支援時可選 H.265).",
-    "影格與 GIF: 單一影格, 影格序列與縮圖, 可儲存為圖片檔或傳回 `Image` 物件; 內置編碼器生成 GIF 動畫.",
-    "音訊: 剪裁, 拼接, 多路混音, 音量調整與淡入淡出, 變速, 轉換為 M4A, WAV, FLAC 或 OGG.",
-    "多軌時間線: 影片, 音訊與疊加多軌, 7 種轉場 (切換, 淡入淡出, 交叉溶解, 推移, 擦除, 縮放, 模糊), 字幕支援 SRT 匯入匯出與 ASS 基礎子集, 匯出時燒錄進畫面.",
-    "程式碼生成: 每個工具畫面與時間線匯出都會生成等價的 `video.*` / `audio.*` 程式碼, 可直接複製, 也可在 AutoJs6 中新增為腳本.",
-    "Studio 錄音: 在插件畫面中錄製咪高峰, 裝置內部聲音 (Android 10 或以上) 或兩者混合.",
-    "FFmpeg 大型程式庫 (1.1.0): 按需下載, 提供 MP3, WebM 與 MKV 輸出, `video.ffmpeg` 指令傳遞與完整的 ASS 渲染."
+    "影片剪輯: 按時間剪裁, 拼接, 變速 (0.25 到 8 倍), 縮放, 旋轉, 裁切與翻轉, 文字或圖片水印, 擷取或移除音軌, 轉碼 (預設 H.264, 裝置有 H.265 編碼器時可選 H.265).",
+    "影格與 GIF: 單一影格, 影格序列與縮圖, 可儲存為 PNG 或 JPG 檔案, 也可傳回 `Image` 物件; 內置編碼器生成 GIF 動畫.",
+    "音訊: 剪裁, 拼接, 多路混音 (相加會削波時自動縮放), 音量調整與淡入淡出, 變速, 轉換為 M4A, WAV, FLAC 或 OGG (OGG 需要 Android 10 或以上).",
+    "多軌時間線剪輯器: 影片, 音訊, 疊加與字幕軌, 7 種轉場 (切換, 淡入淡出, 交叉溶解, 推移, 擦除, 縮放, 模糊), 即時預覽, 復原與重做, 項目儲存為 `.slate.json`; 字幕支援 SRT 匯入匯出與 ASS 基礎子集, 匯出時燒錄進畫面.",
+    "工具箱: 每個處理功能都有嚮導頁, 表單列出預設值與取值範圍; 工作在隊列中執行, 顯示進度與失敗原因, 長時間的工作帶前景通知.",
+    "代碼生成: 每個嚮導, 時間線匯出與錄音都會生成等價的 `video.*` / `audio.*` 腳本, 可以複製, 也可以在 AutoJs6 中新增為腳本.",
+    "Studio 錄音: 在插件畫面中錄製咪高峰, 裝置內部聲音 (Android 10 或以上) 或兩者混合, 儲存為 M4A 或 WAV, 可以暫停, 熄屏時繼續錄製.",
+    "FFmpeg 大型程式庫 (計劃於 1.1.0): 按需下載, 增加 MP3, WebM 與 MKV 等格式以及完整的 ASS 字幕渲染."
   ],
+  "h3_screenshots": "截圖",
+  "p_screenshots": "以下截圖來自 Android 12 與 13 手機, 淺色主題, 簡體中文介面.",
+  "text_screenshot_library": "媒體庫",
+  "text_screenshot_toolbox": "工具箱",
+  "text_screenshot_timeline": "時間線剪輯器",
+  "text_screenshot_recorder": "Studio 錄音",
   "usage_steps": [
-    "從 [Releases]({{ repo_url }}/releases) 下載 APK 並安裝. 所有 ABI 共用一個安裝套件.",
+    "在 AutoJs6 的插件中心安裝 3-Slate Studio, 也可以從 [Releases]({{ repo_url }}/releases) 下載 APK 安裝. 所有 ABI 共用一個安裝套件.",
     "開啟插件, 按提示授予所有檔案存取權限, 以便讀寫你選擇的路徑.",
-    "如需在腳本中使用 `video` 與 `audio` 的處理方法, 請將 AutoJs6 升級到內部版本 {{ required_host_version_code }} ({{ required_host_version_name }}) 或更新版本, 並在插件中心啟用本插件."
+    "如需在腳本中使用 `video` 與 `audio` 的處理方法, 請使用 AutoJs6 {{ required_host_version_name }} (內部版本號 {{ required_host_version_code }}) 或更新版本, 並在插件中心啟用本插件."
   ],
   "p_usage_note": "插件支援 Android {{ min_android_version }} (API {{ android_min_sdk }}) 或以上的裝置. 唯一的原生程式庫來自 Jetpack Compose, 已按 16 KB 記憶體分頁對齊, 因此所有 ABI 共用一個安裝套件.",
-  "p_script_api_intro": "腳本透過全域模組 `video` 與 `audio` (也可寫作 `$video` 與 `$audio`) 使用這些功能 (1.0.0 設計草案, 以發佈版本的文件為準)",
+  "p_script_api_intro": "腳本透過全域模組 `video` 與 `audio` (也可寫作 `$video` 與 `$audio`) 使用這些功能 (所有方法與選項見 AutoJs6 文檔的 [video](https://docs.autojs6.com/#/video) 與 [audio](https://docs.autojs6.com/#/audio) 章節)",
   "api_points": [
     "每個處理方法都有阻塞形式與傳回 Promise 的 `xxxAsync` 形式; `options.onProgress(progress)` 回報 `percent`, `stage` 與 `etaMillis`, 停止腳本即取消其工作.",
-    "省略 `output` 時, 影片輸出到 `Movies/3-Slate Studio/`, 音訊輸出到 `Music/3-Slate Studio/`, 檔名由來源檔名, 操作與時間組成; 結果附帶實際路徑與媒體資訊, 並登記到媒體庫.",
-    "`video.compose(timeline)` 渲染以物件描述的多軌時間線 (軌道, 片段, 轉場, 疊加, 字幕), 與時間線剪輯器匯出的格式相同.",
+    "省略 `output` 時, 影片輸出到 `Movies/3-Slate Studio/`, 音訊輸出到 `Music/3-Slate Studio/`, 影格, 縮圖與 GIF 輸出到 `Pictures/3-Slate Studio/`, 檔名由來源檔名, 操作與時間組成; 結果附帶實際路徑與媒體資訊, 並登記到媒體庫.",
+    "`video.compose(timeline)` 渲染以物件描述的多軌時間線 (最多 8 條影片軌與 16 條音訊軌, 片段, 轉場, 疊加, 字幕), 與時間線剪輯器匯出的格式相同.",
+    "`video.record` 與 `audio.record` 由 AutoJs6 錄製, 省略路徑時分別儲存到 `Movies/AutoJs6/` 與 `Music/AutoJs6/`; 螢幕錄影前要先呼叫 `images.requestScreenCapture`.",
     "`video.tasks()` / `audio.tasks()` 列出並可取消本腳本進行中的工作; 失敗時拋出 `MediaStudioError`, 其 `code` 為穩定的錯誤碼, 例如 `INVALID_OPTIONS` 或 `STORAGE_PERMISSION_DENIED`."
+  ],
+  "h3_samples": "示例腳本",
+  "p_samples": "倉庫的 [samples]({{ repo_url }}/tree/master/samples) 資料夾有 4 個可以直接執行的示例, AutoJs6 內置的示例代碼中也有同樣的腳本 (3-Slate Studio 資料夾)",
+  "samples": [
+    "螢幕錄影 10 秒轉 GIF: 用 `video.record` 錄製無聲螢幕, 再用 `video.toGif` 轉為每秒 10 格, 寬 480 像素的 GIF (首次執行時需要確認螢幕擷取).",
+    "錄音轉 FLAC: 用 `audio.record` 錄製咪高峰, 再用 `audio.convert` 轉為無損 FLAC (首次執行時需要授予錄音權限).",
+    "剪裁加水印再拼接: `video.probe` 讀取素材資訊, `video.trim` 截取前 5 秒, `video.overlay` 加上文字水印, `video.concat` 拼接並回報進度.",
+    "時間線合成: `video.compose` 把兩段影片 (交叉溶解轉場), 背景音樂 (淡入淡出) 與文字疊加合成為一段直向影片."
+  ],
+  "p_samples_note": "後兩個示例預設讀取 `/sdcard/Movies/a.mp4`, `/sdcard/Movies/b.mp4` 與 `/sdcard/Music/bgm.m4a`, 請先放好素材或改成你自己的路徑.",
+  "h3_compatibility": "兼容性",
+  "p_compatibility_host": "插件支援 Android {{ min_android_version }} (API {{ android_min_sdk }}) 或以上, 不安裝 AutoJs6 也能單獨使用. 在插件中心啟用本插件, 在腳本中使用 `video` 與 `audio` 的處理方法需要 AutoJs6 {{ required_host_version_name }} (內部版本號 {{ required_host_version_code }}) 或更新版本 (F10); 這兩個模組可在 Rhino, Node.js 與 Bun 引擎中使用.",
+  "p_compatibility_evidence": "表中括號裡的編號指向 [開發路線圖附錄 F]({{ roadmap_url }}) 的證據條目; \"未測試\" 表示 1.0.0 發佈前沒有在該版本或格式上驗證, 不代表不能使用.",
+  "text_compat_android_title": "按 Android 版本",
+  "compat_android_header": [
+    "Android",
+    "驗證裝置",
+    "處理",
+    "插件畫面",
+    "Studio 錄音",
+    "示例腳本"
+  ],
+  "compat_android_rows": [
+    [
+      "7.0 (API 24)",
+      "Android 模擬器",
+      "通過 (F5)",
+      "通過 (F4, F6)",
+      "未測試",
+      "未測試"
+    ],
+    [
+      "7.1 - 8.1 (API 25 - 27)",
+      "-",
+      "未測試",
+      "未測試",
+      "未測試",
+      "未測試"
+    ],
+    [
+      "9 (API 28)",
+      "Sony G8441",
+      "通過 (F3)",
+      "錄音頁通過 (F8)",
+      "通過, 只有咪高峰 (F8)",
+      "未測試"
+    ],
+    [
+      "10 - 11 (API 29 - 30)",
+      "-",
+      "未測試",
+      "未測試",
+      "未測試",
+      "未測試"
+    ],
+    [
+      "12 (API 31)",
+      "Sony XQ-AT72",
+      "通過 (F3, F5)",
+      "通過 (F4, F5, F7)",
+      "通過, 含內部聲音 (F8)",
+      "未測試"
+    ],
+    [
+      "12L (API 32)",
+      "-",
+      "未測試",
+      "未測試",
+      "未測試",
+      "未測試"
+    ],
+    [
+      "13 (API 33)",
+      "Sony XQ-DQ72, Redmi 22120RN86C",
+      "通過 (F1, F3)",
+      "通過 (F6, F8)",
+      "通過, 含內部聲音 (F8)",
+      "通過 (F9)"
+    ],
+    [
+      "14 (API 34)",
+      "-",
+      "未測試",
+      "未測試",
+      "未測試",
+      "未測試"
+    ],
+    [
+      "15 (API 35)",
+      "Xiaomi Pad 23046RP50C, OnePlus OPD2413, Android 模擬器",
+      "通過 (F1, F2, F3, F5)",
+      "通過 (F4, F5, F6)",
+      "通過, 含內部聲音 (F8)",
+      "未測試"
+    ]
+  ],
+  "p_compat_android_note": "處理: 25 項腳本操作或 20 個工具箱嚮導; 插件畫面: 媒體庫, 工具箱, 工作, 設定與時間線剪輯器; 示例腳本: 上文的 4 個示例.",
+  "text_compat_format_title": "按格式",
+  "compat_format_header": [
+    "格式",
+    "作為輸入",
+    "作為輸出",
+    "說明"
+  ],
+  "compat_format_rows": [
+    [
+      "MP4: H.264 影片 + AAC 音訊",
+      "通過 (F2, F3)",
+      "通過 (F2, F3)",
+      "影片的預設輸出格式"
+    ],
+    [
+      "MP4: H.265 / HEVC 影片",
+      "未測試",
+      "通過 (F1, F2, F3)",
+      "裝置有 H.265 編碼器時才能選擇, 實測的 6 部手機與平板都有"
+    ],
+    [
+      "M4A (AAC)",
+      "通過 (F2, F3)",
+      "通過 (F2, F3, F8)",
+      "音訊的預設輸出格式, 也是 Studio 錄音的預設格式"
+    ],
+    [
+      "WAV (16 位元 PCM)",
+      "通過 (F2)",
+      "通過 (F2, F3)",
+      "無損, 檔案較大"
+    ],
+    [
+      "FLAC",
+      "未測試",
+      "通過 (F2, F3)",
+      "無損壓縮"
+    ],
+    [
+      "OGG (Opus)",
+      "未測試",
+      "通過 (F2, F3)",
+      "需要 Android 10 或以上 (系統從 Android 10 起才能寫出 OGG), 實測為 Android 12 - 15"
+    ],
+    [
+      "GIF 動畫",
+      "未測試",
+      "通過 (F2, F3)",
+      "內置編碼器, 每秒 1 - 50 格"
+    ],
+    [
+      "PNG, JPG 圖片",
+      "通過 (F2, F3)",
+      "通過 (F2, F3)",
+      "輸入為疊加用的圖片, 輸出為影格與縮圖"
+    ],
+    [
+      "SRT 字幕",
+      "通過 (F2, F3, F6)",
+      "通過 (F2)",
+      "可匯入時間線剪輯器, 也可燒錄進畫面"
+    ],
+    [
+      "ASS 字幕 (基礎子集)",
+      "通過 (F2)",
+      "通過 (F2, F3)",
+      "不支援的標籤會被忽略並給出警告; 完整的 ASS 渲染計劃於 1.1.0"
+    ],
+    [
+      "MP3, AMR 等其他音訊",
+      "未測試",
+      "1.0.0 不提供",
+      "能否讀取取決於裝置的系統解碼器; MP3 輸出計劃隨 1.1.0 的 FFmpeg 大型程式庫提供"
+    ],
+    [
+      "WebM, MKV",
+      "未測試",
+      "1.0.0 不提供",
+      "計劃隨 1.1.0 的 FFmpeg 大型程式庫提供"
+    ]
   ],
   "faq": [
     {
       "q": "不安裝 AutoJs6 能用嗎?",
-      "a": "可以. 工具畫面, 時間線剪輯器與 Studio 錄音都能單獨使用, 只有在腳本中處理媒體時才需要 AutoJs6."
+      "a": "可以. 媒體庫, 工具箱, 時間線剪輯器與 Studio 錄音都能單獨使用, 只有在腳本中處理媒體時才需要 AutoJs6."
     },
     {
       "q": "為甚麼插件要申請所有檔案存取權限?",
-      "a": "腳本傳入的是 `/sdcard/DCIM/...` 這樣的一般檔案路徑, 插件與 3-Maple Image 一樣直接讀寫這些路徑. 未授權時處理會回報 `STORAGE_PERMISSION_DENIED`, 插件畫面會說明如何授權."
+      "a": "腳本傳入的是 `/sdcard/DCIM/...` 這樣的一般檔案路徑, 插件與 3-Maple Image 一樣直接讀寫這些路徑. 未授權時處理會回報 `STORAGE_PERMISSION_DENIED`, 插件畫面會說明如何授權. `video.frame` 雖然傳回 `Image` 物件, 也要經 `Movies/3-Slate Studio/` 中的臨時圖片交給 AutoJs6, 因此同樣需要該權限."
     },
     {
       "q": "螢幕錄影需要安裝插件嗎?",
-      "a": "不需要. `video.record` 與 `audio.record` 內置於 AutoJs6 (內部版本 {{ required_host_version_code }} 或更新版本); 插件提供處理方法與自己的 Studio 錄音."
+      "a": "不需要. `video.record` 與 `audio.record` 內置於 AutoJs6 ({{ required_host_version_name }} 或更新版本); 插件提供處理方法與自己的 Studio 錄音."
+    },
+    {
+      "q": "我的 AutoJs6 版本較舊, 可以使用嗎?",
+      "a": "在腳本中使用本插件需要 AutoJs6 {{ required_host_version_name }} (內部版本號 {{ required_host_version_code }}) 或更新版本, 較舊的 AutoJs6 還沒有 `video` 與 `audio` 模組. 插件本身仍可作為獨立的剪輯應用程式使用."
+    },
+    {
+      "q": "時間線匯出回報 `CODEC_ERROR` 並提示減少軌道, 怎麼辦?",
+      "a": "帶重疊轉場 (交叉溶解, 推移, 擦除, 縮放, 模糊) 的影片軌在轉場期間要同時解碼兩段素材, 而裝置的編解碼器數量有限. 實測的三部 Sony 手機能匯出 6 條帶轉場的影片軌加 16 條音訊軌, 8 + 16 會以 `CODEC_ERROR` 結束; 請減少影片軌或重疊轉場."
     }
+  ],
+  "p_permissions_intro": "插件申請的權限與用途",
+  "permission_points": [
+    "所有檔案存取 (`MANAGE_EXTERNAL_STORAGE`, Android 10 或以下為儲存空間讀寫權限): 讀寫腳本與畫面指定的檔案路徑, 並把未指定路徑的輸出寫入 `Movies`, `Music` 與 `Pictures` 下的 `3-Slate Studio` 資料夾.",
+    "讀取媒體 (`READ_MEDIA_VIDEO`, `READ_MEDIA_AUDIO`, Android 13 或以上): 在主頁的媒體庫中列出裝置上的影片與音訊.",
+    "錄音 (`RECORD_AUDIO`): 只用於 Studio 錄音; 腳本中的 `audio.record` 與 `video.record` 由 AutoJs6 錄製, 使用 AutoJs6 自己的錄音權限.",
+    "螢幕擷取 (系統的投放確認, 不是清單中的權限): Studio 錄音擷取裝置內部聲音 (內部或混合) 時需要, 開始錄音時由系統詢問.",
+    "通知 (`POST_NOTIFICATIONS`, Android 13 或以上): 顯示處理進度與錄音通知 (附暫停與停止按鈕); 不授予時不顯示這些通知.",
+    "前景服務與喚醒鎖 (`FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`, `FOREGROUND_SERVICE_MICROPHONE`, `FOREGROUND_SERVICE_MEDIA_PROJECTION`, `WAKE_LOCK`): 讓長時間的處理在背景繼續, 熄屏時錄音繼續.",
+    "網絡 (`INTERNET`, `ACCESS_NETWORK_STATE`): 1.0.0 只用於檢查更新 (讀取官方插件索引), 開啟主頁時最多每 12 小時檢查一次, 可在設定頁關閉.",
+    "AutoJs6 插件權限 (`org.autojs.permission.PLUGIN`): 與 AutoJs6 通訊."
   ],
   "p_security_intro": "插件在設計上盡量收窄權限範圍:",
   "security_points": [
     "受保護的入口: 能力服務與啟動入口都受 AutoJs6 插件權限 (`org.autojs.permission.PLUGIN`) 保護, 其他應用程式無法直接呼叫.",
-    "儲存空間: 所有檔案存取權限只用於腳本與 Studio 畫面指定的路徑; 未指定路徑的輸出只寫入 `Movies` 與 `Music` 下的插件資料夾.",
+    "儲存空間: 所有檔案存取權限只用於腳本與 Studio 畫面指定的路徑; 未指定路徑的輸出只寫入 `Movies`, `Music` 與 `Pictures` 下的 `3-Slate Studio` 資料夾.",
     "錄音: 只有 Studio 錄音進行中才擷取咪高峰與裝置內部聲音, 並顯示前景通知; 擷取裝置內部聲音還需要系統的螢幕擷取確認.",
-    "網絡: 1.0.0 只用於檢查更新; 自 1.1.0 起, FFmpeg 大型程式庫在你要求時下載, 載入前驗證 SHA-256."
+    "網絡: 1.0.0 只用於檢查更新; 計劃中的 FFmpeg 大型程式庫 (1.1.0) 只在你要求時下載, 載入前驗證 SHA-256."
   ],
   "h3_ffmpeg_library": "FFmpeg 大型程式庫",
-  "p_ffmpeg_library": "自 1.1.0 起, 插件可以按需下載以 LGPL-2.1-or-later 建置的 FFmpeg 大型程式庫. 程式庫不打包進 APK: 只在你要求時按裝置 ABI 下載並動態載入, 隨附自己的授權聲明與對應原始碼的取得位置. 不下載程式庫時, 1.0.0 的全部功能照常可用.",
+  "p_ffmpeg_library": "FFmpeg 大型程式庫計劃於 1.1.0 提供, 以 LGPL-2.1-or-later 建置. 程式庫不打包進 APK: 只在你要求時按裝置 ABI 下載並動態載入, 隨附自己的授權聲明與對應原始碼的取得位置. 不下載程式庫時, 1.0.0 的全部功能照常可用. 程式庫支援的格式與腳本介面以 1.1.0 發佈時的說明為準.",
   "p_ffmpeg_patents": "FFmpeg 支援的部分編解碼器 (例如 H.265 / HEVC 與 AAC) 在某些國家或地區可能受專利保護. 程式庫僅為方便使用而提供, 不附帶任何專利授權; 使用前請確認適用於你的規定.",
   "p_license": "項目代碼使用 [Mozilla Public License 2.0]({{ license_url }}). 第三方元件與數據的授權見第三方聲明.",
   "text_link_third_party": "第三方聲明 (THIRD_PARTY_NOTICES.md)",

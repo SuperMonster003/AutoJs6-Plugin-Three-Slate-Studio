@@ -87,8 +87,14 @@ CHANGELOG_CATEGORIES = ["hint", "feature", "fix", "improvement", "dependency"]
 CHANGELOG_LABEL_KEYS = [f"changelog_label_{category}" for category in CHANGELOG_CATEGORIES]
 CHANGELOG_DATA_KEY = "$data"
 
-README_LIST_KEYS = ["features", "usage_steps", "api_points", "security_points"]
+README_LIST_KEYS = ["features", "usage_steps", "api_points", "samples", "permission_points", "security_points"]
 README_FAQ_KEY = "faq"
+# Compatibility tables (roadmap P5.3): a header row and rows of the same width, every cell a string.
+# zh-CN: 兼容性表格 (路线图 P5.3): 一行表头与同宽的若干行, 每格都是字符串.
+README_TABLES = {
+    "placeholder_compat_android_table": ("compat_android_header", "compat_android_rows"),
+    "placeholder_compat_format_table": ("compat_format_header", "compat_format_rows"),
+}
 
 EXPECTED_ARTIFACT_COUNT = 36
 README_LATEST_RELEASES = 3
@@ -202,6 +208,16 @@ def validate_readme_language(code: str, content: dict[str, Any]) -> None:
         require(isinstance(content[key], list) and content[key], f"README {code!r} field {key!r} must be a non-empty list")
         for item in content[key]:
             require(isinstance(item, str), f"README {code!r} field {key!r} must contain strings only")
+    for header_key, rows_key in README_TABLES.values():
+        header, rows = content.get(header_key), content.get(rows_key)
+        require(isinstance(header, list) and header and all(isinstance(cell, str) for cell in header),
+                f"README {code!r} field {header_key!r} must be a non-empty list of strings")
+        require(isinstance(rows, list) and rows, f"README {code!r} field {rows_key!r} must be a non-empty list")
+        for index, row in enumerate(rows):
+            require(
+                isinstance(row, list) and len(row) == len(header) and all(isinstance(cell, str) and "|" not in cell for cell in row),
+                f"README {code!r} {rows_key}[{index}] must have {len(header)} string cells without '|'",
+            )
     require(README_FAQ_KEY in content, f"README language {code!r} is missing the {README_FAQ_KEY!r} list")
     for index, item in enumerate(content[README_FAQ_KEY]):
         require(
@@ -378,6 +394,12 @@ def numbered_list(items: list[str]) -> str:
     return "\n".join(f"{index}. {item}" for index, item in enumerate(items, start=1))
 
 
+def markdown_table(header: list[str], rows: list[list[str]]) -> str:
+    lines = ["| " + " | ".join(header) + " |", "| " + " | ".join("---" for _ in header) + " |"]
+    lines.extend("| " + " | ".join(row) + " |" for row in rows)
+    return "\n".join(lines)
+
+
 def faq_list(items: list[dict[str, str]]) -> str:
     return "\n\n".join(f"#### {item['q']}\n\n{item['a']}" for item in items)
 
@@ -466,7 +488,11 @@ def build_readme_values(
     content["placeholder_features"] = bullet_list(content["features"])
     content["placeholder_usage_steps"] = numbered_list(content["usage_steps"])
     content["placeholder_api_points"] = bullet_list(content["api_points"])
+    content["placeholder_samples"] = bullet_list(content["samples"])
+    content["placeholder_permission_points"] = bullet_list(content["permission_points"])
     content["placeholder_security_points"] = bullet_list(content["security_points"])
+    for placeholder, (header_key, rows_key) in README_TABLES.items():
+        content[placeholder] = markdown_table(content[header_key], content[rows_key])
     content["placeholder_faq"] = faq_list(content[README_FAQ_KEY])
     content["placeholder_latest_release_history"] = format_changelog_items(
         changelogs[code],

@@ -49,6 +49,18 @@
 
 ******
 
+### {{ h3_screenshots }}
+
+******
+
+{{ p_screenshots }}
+
+| {{ text_screenshot_library }} | {{ text_screenshot_toolbox }} | {{ text_screenshot_timeline }} | {{ text_screenshot_recorder }} |
+| :---: | :---: | :---: | :---: |
+| <img src="{{ repo_url }}/blob/master/docs/images/screenshots/library.png?raw=true" alt="library" width="200" /> | <img src="{{ repo_url }}/blob/master/docs/images/screenshots/toolbox.png?raw=true" alt="toolbox" width="200" /> | <img src="{{ repo_url }}/blob/master/docs/images/screenshots/timeline.png?raw=true" alt="timeline" width="200" /> | <img src="{{ repo_url }}/blob/master/docs/images/screenshots/recorder.png?raw=true" alt="recorder" width="200" /> |
+
+******
+
 ### {{ h3_usage }}
 
 ******
@@ -67,22 +79,62 @@
 
 ```javascript
 let a = video.trim("/sdcard/Movies/a.mp4", { start: 0, end: 5000 });
-let b = video.overlay("/sdcard/Movies/b.mp4", [{ type: "text", text: "AutoJs6", x: "50%", y: "8%", fontSize: 48 }], null);
+let b = video.overlay("/sdcard/Movies/b.mp4", [{ type: "text", text: "AutoJs6", x: "50%", y: "8%", fontSize: 48 }]);
 let joined = video.concat([a.path, b.path], { onProgress: (p) => console.log(p.stage, p.percent) });
+toastLog(video.toGif(joined.path, { fps: 10, width: 480 }).path);
 
-let gif = video.toGif(joined.path, { fps: 10, width: 480 });
-toastLog(gif.path);
+audio.mix([{ src: "/sdcard/Music/voice.m4a" }, { src: "/sdcard/Music/bgm.m4a", volume: 0.3 }]);
 
-audio.mix([{ src: "/sdcard/Music/voice.m4a" }, { src: "/sdcard/Music/bgm.m4a", volume: 0.3 }], null);
-
-let recording = video.record(null, { audio: "none", frameRate: 30 });
+images.requestScreenCapture();
+let recording = video.record({ audio: "none", frameRate: 30 });
 sleep(10000);
 toastLog(recording.stop().path);
+
+video.compose({
+    video: [{ clips: [
+        { src: "/sdcard/Movies/a.mp4", end: 8000 },
+        { src: "/sdcard/Movies/b.mp4", start: 2000, end: 10000, transition: { type: "dissolve", duration: 500 } },
+    ] }],
+    audio: [{ clips: [{ src: "/sdcard/Music/bgm.m4a", end: 15500, volume: 0.4, fadeIn: 1000, fadeOut: 2000 }] }],
+    overlays: [{ type: "text", text: "AutoJs6", from: 1000, to: 4000, x: "50%", y: "10%", fontSize: 48 }],
+});
 
 video.transcodeAsync("/sdcard/Movies/big.mp4", { codec: "h265", height: 720 }).then((r) => toast(r.path));
 ```
 
 {{ placeholder_api_points }}
+
+******
+
+### {{ h3_samples }}
+
+******
+
+{{ p_samples }}:
+
+{{ placeholder_samples }}
+
+{{ p_samples_note }}
+
+******
+
+### {{ h3_compatibility }}
+
+******
+
+{{ p_compatibility_host }}
+
+{{ p_compatibility_evidence }}
+
+**{{ text_compat_android_title }}**
+
+{{ placeholder_compat_android_table }}
+
+{{ p_compat_android_note }}
+
+**{{ text_compat_format_title }}**
+
+{{ placeholder_compat_format_table }}
 
 ******
 
@@ -97,6 +149,10 @@ video.transcodeAsync("/sdcard/Movies/big.mp4", { codec: "h265", height: 720 }).t
 ### {{ h3_security }}
 
 ******
+
+{{ p_permissions_intro }}:
+
+{{ placeholder_permission_points }}
 
 {{ p_security_intro }}
 

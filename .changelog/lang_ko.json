@@ -6,22 +6,36 @@
   "changelog_label_dependency": "의존성",
   "$data": {
     "v1.0.0": {
-      "released_date": "2026/11/05",
+      "released_date": "2026/11/08",
       "hint": [
-        "개발 미리보기: AutoJs6 플러그인 센터가 플러그인을 인식할 수 있지만, 처리 기능, Studio 화면, video / audio 스크립트 모듈의 처리 메서드는 아직 제공되지 않습니다",
-        "AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) 이상이 필요합니다 (정확한 최소 버전은 호스트 쪽 변경이 반영된 뒤 채워 넣습니다)"
+        "스크립트에서 video / audio의 처리 메서드를 쓰려면 AutoJs6 {{ required_host_version_name }} (내부 빌드 {{ required_host_version_code }}) 이상이 필요합니다. 플러그인 화면, 타임라인 편집기, Studio 녹음기는 AutoJs6에 의존하지 않습니다",
+        "스크립트 API는 AutoJs6 문서의 [video](https://docs.autojs6.com/#/video)와 [audio](https://docs.autojs6.com/#/audio) 장을 참고하세요"
       ],
       "feature": [
-        "플러그인 골격: Wake 활성화 프로토콜, 플러그인 센터 식별 서비스, 미디어 처리 기능 서비스 (계약 버전 2)",
-        "홈 화면에서 모든 파일 접근 권한을 허용할 수 있습니다",
+        "동영상 처리: 자르기, 이어 붙이기, 속도 변경 (0.25 - 8배), 크기 조정, 회전, 잘라내기, 뒤집기, 텍스트나 이미지 워터마크, 오디오 트랙 추출과 제거, 트랜스코딩 (H.264, 기기가 지원하면 H.265)",
+        "프레임, 썸네일, GIF: PNG / JPG 파일 또는 Image 객체로 얻기, 내장 GIF 인코더 (팔레트, 디더링, 반복)",
+        "오디오 처리: 자르기, 이어 붙이기, 믹스 (클리핑될 때 자동으로 줄임), 볼륨과 페이드, 속도 변경, M4A / WAV / FLAC / OGG로 변환 (OGG는 Android 10 이상)",
+        "video.compose 멀티트랙 합성: 동영상 트랙 최대 8개와 오디오 트랙 최대 16개, 7가지 전환 효과, 텍스트 / 이미지 오버레이와 자막",
+        "자막: SRT 읽기와 쓰기 및 ASS 기본 하위 집합, video.burnSubtitles로 화면에 입히기, 자막 파일을 읽고 쓰는 video.subtitles.parse / write",
+        "AutoJs6 스크립트 모듈 video / audio (AutoJs6 {{ required_host_version_name }}, Rhino, Node.js, Bun): 모든 처리 메서드에 xxxAsync 형태와 진행 콜백이 있으며, 스크립트를 멈추면 그 작업은 취소됩니다",
+        "Studio 화면: 미디어 라이브러리, 도구 상자, 작업 대기열, 설정. 외관은 AutoJs6를 따르거나 언어, 야간 모드, 테마 색을 따로 고를 수 있으며, 설정에서 모든 파일 접근과 배터리 제한 없음을 안내합니다",
+        "도구 상자 마법사: 처리 기능마다 마법사 하나, 기본값과 범위를 보여 주는 양식, 출력, 미디어 정보, 같은 동작의 스크립트를 보여 주는 결과 페이지",
+        "타임라인 편집기: 멀티트랙 편집, 전환 효과, 오버레이와 자막 편집, 실시간 미리보기, 실행 취소 / 다시 실행, .slate.json 프로젝트 저장, 작업 대기열로 내보내기",
+        "코드 생성: 마법사, 타임라인, 녹음기가 같은 동작의 완전한 스크립트를 보여 주며, 복사하거나 AutoJs6에서 새 스크립트로 열 수 있습니다",
+        "Studio 녹음기: 마이크, 기기 내부 소리 (Android 10 이상), 또는 둘 다를 M4A / WAV로 녹음, 일시 중지 / 다시 시작, 화면이 꺼진 상태의 녹음, 알림에서 제어",
+        "긴 작업은 진행 알림이 있는 포그라운드 서비스에서 실행됩니다. 설정에서 하드웨어 인코더 선호와 동시에 실행할 작업 수 (1 - 2)를 고를 수 있습니다",
+        "경로를 지정하지 않은 출력은 Movies, Music, Pictures 아래의 3-Slate Studio 폴더에 저장되고 미디어 라이브러리에 등록됩니다",
+        "업데이트 확인: 홈 화면을 열 때 최대 12시간에 한 번 공식 플러그인 색인을 읽으며, 특정 버전을 무시할 수 있습니다",
         "모든 ABI에 공통인 APK 하나: 유일한 네이티브 라이브러리는 Jetpack Compose의 것이며 16 KB 메모리 페이지에 맞춰 정렬되어 있습니다",
-        "10개 언어의 README, 플러그인 센터 설명, 변경 기록을 JSON 소스에서 생성"
+        "10개 언어의 화면, README, 플러그인 센터 설명, 변경 기록"
       ],
       "dependency": [
+        "Jetpack Media3 1.10.1 추가 (Transformer, Effect, Muxer, ExoPlayer, UI, 처리와 미리보기용)",
         "Jetpack Compose BOM 2026.09.00 추가 (플러그인 화면)",
+        "AndroidX Activity Compose 1.13.0 추가",
         "Navigation Compose 2.10.2 추가",
-        "Jetpack Media3 1.10.1 추가 (처리와 미리보기용 Transformer, Effect, Muxer, ExoPlayer, UI)",
-        "AndroidX Core KTX 1.18.0 추가"
+        "AndroidX Core KTX 1.18.0 추가",
+        "Material Color Utilities (MaterialKolor) 4.1.1 추가 (플러그인 화면의 테마 색)"
       ]
     }
   }

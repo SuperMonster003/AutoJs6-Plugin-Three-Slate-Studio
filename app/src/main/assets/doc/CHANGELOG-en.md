@@ -6,15 +6,29 @@
 
 # v1.0.0
 
-###### 2026/11/05
+###### 2026/11/08
 
-* `Hint` Development preview: the AutoJs6 Plugin Center can discover the plugin; the processing features, the Studio screens and the processing methods of the video and audio script modules are not delivered yet
-* `Hint` Requires AutoJs6 6.8.1 (6641) or later (the exact minimum build will be filled in once the host changes land)
-* `Feature` Plugin skeleton: Wake activation protocol, Plugin Center identity service and media studio capability service (contract version 2)
-* `Feature` Home screen with the all files access grant
+* `Hint` Processing media with video / audio in scripts needs AutoJs6 6.8.1 (internal build 6641) or later; the plugin screens, the timeline editor and the Studio recorder do not depend on AutoJs6
+* `Hint` See the [video](https://docs.autojs6.com/#/video) and [audio](https://docs.autojs6.com/#/audio) chapters of the AutoJs6 documentation for the script API
+* `Feature` Video processing: trim, join, speed (0.25x - 8x), scale, rotate, crop and flip, text or image watermarks, audio track extraction or removal, and transcoding (H.264, or H.265 where the device supports it)
+* `Feature` Frames, thumbnails and GIF: PNG / JPG files or Image objects, and a built-in GIF encoder (palette, dithering, looping)
+* `Feature` Audio processing: trim, join, mix (scaled down automatically when it would clip), volume and fades, speed, and conversion to M4A / WAV / FLAC / OGG (OGG needs Android 10+)
+* `Feature` Multi-track composition with video.compose: up to 8 video tracks and 16 audio tracks, 7 transitions, text / image overlays and subtitles
+* `Feature` Subtitles: SRT reading and writing and a basic subset of ASS, burned into the picture with video.burnSubtitles, and video.subtitles.parse / write for subtitle files
+* `Feature` AutoJs6 script modules video / audio (AutoJs6 6.8.1, Rhino, Node.js and Bun): every processing method has an xxxAsync form and a progress callback, and stopping the script cancels its tasks
+* `Feature` Studio screens: media library, toolbox, task queue and settings; the appearance follows AutoJs6 or uses its own language, night mode and theme color, and the settings guide you to all files access and unrestricted battery use
+* `Feature` Toolbox wizards: one wizard per processing feature, with forms that show defaults and ranges, and a result page with the output, the media information and the equivalent script
+* `Feature` Timeline editor: multi-track editing, transitions, overlay and subtitle editing, live preview, undo / redo, projects saved as .slate.json, and export into the task queue
+* `Feature` Code generation: the wizards, the timeline and the recorder show the equivalent complete script, ready to copy or to open in AutoJs6 as a new script
+* `Feature` Studio recorder: microphone, device audio (Android 10+) or both, M4A / WAV, pause / resume, recording with the screen off and controls in the notification
+* `Feature` Long tasks run in a foreground service with a progress notification; the settings choose the hardware encoder preference and how many tasks run at once (1 - 2)
+* `Feature` Outputs without a path go to the 3-Slate Studio folders under Movies, Music and Pictures and are registered in the media library
+* `Feature` Update check: reads the official plugin index at most once every 12 hours when the home screen opens, and a release can be ignored
 * `Feature` A single APK for every ABI: the only native library comes from Jetpack Compose and is aligned to 16 KB memory pages
-* `Feature` README, Plugin Center instructions and changelogs in 10 languages, generated from JSON sources
+* `Feature` Screens, README, Plugin Center instructions and changelog in 10 languages
+* `Dependency` Attach Jetpack Media3 1.10.1 (Transformer, Effect, Muxer, ExoPlayer and UI, for processing and previews)
 * `Dependency` Attach Jetpack Compose BOM 2026.09.00 (the plugin screens)
+* `Dependency` Attach AndroidX Activity Compose 1.13.0
 * `Dependency` Attach Navigation Compose 2.10.2
-* `Dependency` Attach Jetpack Media3 1.10.1 (Transformer, Effect, Muxer, ExoPlayer and UI for processing and previews)
 * `Dependency` Attach AndroidX Core KTX 1.18.0
+* `Dependency` Attach Material Color Utilities (MaterialKolor) 4.1.1 (theme color of the plugin screens)

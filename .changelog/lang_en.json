@@ -6,22 +6,36 @@
   "changelog_label_dependency": "Dependency",
   "$data": {
     "v1.0.0": {
-      "released_date": "2026/11/05",
+      "released_date": "2026/11/08",
       "hint": [
-        "Development preview: the AutoJs6 Plugin Center can discover the plugin; the processing features, the Studio screens and the processing methods of the video and audio script modules are not delivered yet",
-        "Requires AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) or later (the exact minimum build will be filled in once the host changes land)"
+        "Processing media with video / audio in scripts needs AutoJs6 {{ required_host_version_name }} (internal build {{ required_host_version_code }}) or later; the plugin screens, the timeline editor and the Studio recorder do not depend on AutoJs6",
+        "See the [video](https://docs.autojs6.com/#/video) and [audio](https://docs.autojs6.com/#/audio) chapters of the AutoJs6 documentation for the script API"
       ],
       "feature": [
-        "Plugin skeleton: Wake activation protocol, Plugin Center identity service and media studio capability service (contract version 2)",
-        "Home screen with the all files access grant",
+        "Video processing: trim, join, speed (0.25x - 8x), scale, rotate, crop and flip, text or image watermarks, audio track extraction or removal, and transcoding (H.264, or H.265 where the device supports it)",
+        "Frames, thumbnails and GIF: PNG / JPG files or Image objects, and a built-in GIF encoder (palette, dithering, looping)",
+        "Audio processing: trim, join, mix (scaled down automatically when it would clip), volume and fades, speed, and conversion to M4A / WAV / FLAC / OGG (OGG needs Android 10+)",
+        "Multi-track composition with video.compose: up to 8 video tracks and 16 audio tracks, 7 transitions, text / image overlays and subtitles",
+        "Subtitles: SRT reading and writing and a basic subset of ASS, burned into the picture with video.burnSubtitles, and video.subtitles.parse / write for subtitle files",
+        "AutoJs6 script modules video / audio (AutoJs6 {{ required_host_version_name }}, Rhino, Node.js and Bun): every processing method has an xxxAsync form and a progress callback, and stopping the script cancels its tasks",
+        "Studio screens: media library, toolbox, task queue and settings; the appearance follows AutoJs6 or uses its own language, night mode and theme color, and the settings guide you to all files access and unrestricted battery use",
+        "Toolbox wizards: one wizard per processing feature, with forms that show defaults and ranges, and a result page with the output, the media information and the equivalent script",
+        "Timeline editor: multi-track editing, transitions, overlay and subtitle editing, live preview, undo / redo, projects saved as .slate.json, and export into the task queue",
+        "Code generation: the wizards, the timeline and the recorder show the equivalent complete script, ready to copy or to open in AutoJs6 as a new script",
+        "Studio recorder: microphone, device audio (Android 10+) or both, M4A / WAV, pause / resume, recording with the screen off and controls in the notification",
+        "Long tasks run in a foreground service with a progress notification; the settings choose the hardware encoder preference and how many tasks run at once (1 - 2)",
+        "Outputs without a path go to the 3-Slate Studio folders under Movies, Music and Pictures and are registered in the media library",
+        "Update check: reads the official plugin index at most once every 12 hours when the home screen opens, and a release can be ignored",
         "A single APK for every ABI: the only native library comes from Jetpack Compose and is aligned to 16 KB memory pages",
-        "README, Plugin Center instructions and changelogs in 10 languages, generated from JSON sources"
+        "Screens, README, Plugin Center instructions and changelog in 10 languages"
       ],
       "dependency": [
+        "Attach Jetpack Media3 1.10.1 (Transformer, Effect, Muxer, ExoPlayer and UI, for processing and previews)",
         "Attach Jetpack Compose BOM 2026.09.00 (the plugin screens)",
+        "Attach AndroidX Activity Compose 1.13.0",
         "Attach Navigation Compose 2.10.2",
-        "Attach Jetpack Media3 1.10.1 (Transformer, Effect, Muxer, ExoPlayer and UI for processing and previews)",
-        "Attach AndroidX Core KTX 1.18.0"
+        "Attach AndroidX Core KTX 1.18.0",
+        "Attach Material Color Utilities (MaterialKolor) 4.1.1 (theme color of the plugin screens)"
       ]
     }
   }
