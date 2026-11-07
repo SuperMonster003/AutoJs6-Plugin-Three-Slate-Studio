@@ -80,6 +80,13 @@ FAMILIES: tuple[Family, ...] = (
     Family("JSpecify annotations", "https://github.com/jspecify/jspecify", "Apache-2.0", group_is("org.jspecify")),
     Family("Checker Framework qualifiers", "https://github.com/typetools/checker-framework", "MIT",
            group_is("org.checkerframework")),
+    # The theme accent of the Studio screens (roadmap P4.1, standalone settings specification section 6): MaterialKolor's
+    # Kotlin port is MIT, its sources keep the Apache-2.0 headers of Google's material-color-utilities.
+    # zh-CN: Studio 界面的主题色 (路线图 P4.1, 独立设置规范第 6 节): MaterialKolor 的 Kotlin 移植为 MIT, 源码保留 Google
+    # material-color-utilities 的 Apache-2.0 文件头.
+    Family("Material Color Utilities, Kotlin port by MaterialKolor", "https://github.com/jordond/materialkolor",
+           "MIT (port), Apache-2.0 (code from Google's material-color-utilities)", group_is("com.materialkolor")),
+    Family("Poko annotations", "https://github.com/drewhamilton/Poko", "Apache-2.0", group_is("dev.drewhamilton.poko")),
 )
 
 # NOTICE files carried by locked artifacts, keyed by `group:artifact` (Apache-2.0 section 4 (d)). The Android build
@@ -88,9 +95,34 @@ FAMILIES: tuple[Family, ...] = (
 # META-INF 下的 NOTICE, 因此在此转载. 1.0.0 的依赖线上没有.
 NOTICE_TEXTS: dict[str, str] = {}
 
-# License texts that must accompany the binary (`META-INF/LICENSE.txt` of checker-qual 3.43.0).
-# zh-CN: 必须随二进制分发的许可证全文 (checker-qual 3.43.0 的 `META-INF/LICENSE.txt`).
+# License texts that must accompany the binary (`META-INF/LICENSE.txt` of checker-qual 3.43.0, the MIT `LICENSE` of
+# MaterialKolor 4.1.1; the Apache-2.0 text of the rest is linked from each row).
+# zh-CN: 必须随二进制分发的许可证全文 (checker-qual 3.43.0 的 `META-INF/LICENSE.txt`, MaterialKolor 4.1.1 的 MIT `LICENSE`;
+# 其余 Apache-2.0 的全文由各行链接).
 LICENSE_TEXTS: dict[str, str] = {
+    "com.materialkolor:material-color-utilities-android": """MaterialKolor (`LICENSE` of tag 4.1.1)
+
+MIT License
+
+Copyright (c) 2025 Jordon de Hoog
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.""",
     "org.checkerframework:checker-qual": """Checker Framework qualifiers
 Copyright 2004-present by the Checker Framework developers
 

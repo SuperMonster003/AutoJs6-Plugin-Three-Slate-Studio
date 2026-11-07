@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Files the Studio screens open or share (roadmap P4.1, P4.2): outputs and library files in the shared storage. The
+    plugin process holds all files access, the receiving app only gets a temporary grant for the one URI.
+-->
+<paths>
+    <external-path
+        name="shared"
+        path="." />
+</paths>

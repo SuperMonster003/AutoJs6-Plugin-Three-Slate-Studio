@@ -227,7 +227,14 @@ dependencies {
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.ui)
 
+    // Material Color Utilities (MaterialKolor, MIT): the HCT tone rule of the theme accent of the Studio screens
+    // (standalone settings specification section 6, roadmap P4.1), the same artifact as 3-Prism Camera.
+    // zh-CN: Material Color Utilities (MaterialKolor, MIT): Studio 界面主题色的 HCT 色调规则 (独立设置规范第 6 节, 路线图 P4.1),
+    // 与 3-Prism Camera 相同.
+    implementation(libs.material.color.utilities)
+
     testImplementation(libs.junit)
+    testImplementation(libs.org.json)
     androidTestImplementation(libs.test.ext.junit)
     androidTestImplementation(libs.test.runner)
     androidTestImplementation(libs.test.rules)

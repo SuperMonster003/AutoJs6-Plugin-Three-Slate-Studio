@@ -18,7 +18,7 @@ Provenance and SHA-256 digests are recorded in `locks/host-api-aars.lock` and `l
 
 ## Maven libraries
 
-The release runtime classpath packages 88 Maven artifacts (`locks/runtime-dependencies.lock`), grouped by project below.
+The release runtime classpath packages 90 Maven artifacts (`locks/runtime-dependencies.lock`), grouped by project below.
 Platform BOMs only align versions and ship nothing.
 
 ### AndroidX Media3
@@ -200,6 +200,22 @@ Source: https://github.com/typetools/checker-framework. License: MIT.
 | --- | --- |
 | `org.checkerframework:checker-qual` | 3.43.0 |
 
+### Material Color Utilities, Kotlin port by MaterialKolor
+
+Source: https://github.com/jordond/materialkolor. License: MIT (port), Apache-2.0 (code from Google's material-color-utilities).
+
+| Artifact | Version |
+| --- | --- |
+| `com.materialkolor:material-color-utilities-android` | 4.1.1 |
+
+### Poko annotations
+
+Source: https://github.com/drewhamilton/Poko. License: Apache-2.0.
+
+| Artifact | Version |
+| --- | --- |
+| `dev.drewhamilton.poko:poko-annotations-jvm` | 0.21.1 |
+
 ## Native libraries
 
 The plugin has no native code of its own and Media3 brings none. Jetpack Compose UI graphics depends on
@@ -217,6 +233,34 @@ location of its corresponding source (see the "FFmpeg library" section of `.read
 
 The full text of the Apache License 2.0 is available at https://www.apache.org/licenses/LICENSE-2.0.
 None of the locked artifacts carries a `NOTICE` file.
+
+`com.materialkolor:material-color-utilities-android` is licensed under the following terms:
+
+```text
+MaterialKolor (`LICENSE` of tag 4.1.1)
+
+MIT License
+
+Copyright (c) 2025 Jordon de Hoog
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
 
 `org.checkerframework:checker-qual` is licensed under the following terms:
 

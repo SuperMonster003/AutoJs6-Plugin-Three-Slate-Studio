@@ -54,9 +54,10 @@ class ManifestContractTest {
     }
 
     @Test
-    fun `package queries name the host only`() {
+    fun `package queries name the host and MediaInfo only`() {
         val queries = manifest.child("queries")
-        assertEquals(listOf("org.autojs.autojs6"), queries.children("package").map { it.android("name") })
+        // MediaInfo: the detail page opens its viewer by Intent when it has one (roadmap D18, appendix D Q52).
+        assertEquals(listOf("org.autojs.autojs6", "io.github.supermonster003.autojs6.plugin.mediainfo"), queries.children("package").map { it.android("name") })
         assertTrue(queries.children("intent").isEmpty())
     }
 
@@ -99,11 +100,17 @@ class ManifestContractTest {
     }
 
     @Test
-    fun `the activities are the wake, home and storage guide screens`() {
+    fun `the activities are the wake, home, settings, release history and storage guide screens`() {
         assertEquals(
-            listOf(".WakeActivity", ".ui.home.HomeActivity", ".ui.storage.StorageAccessActivity"),
+            listOf(".WakeActivity", ".ui.home.HomeActivity", ".ui.settings.SettingsActivity", ".ui.release.ReleaseHistoryActivity", ".ui.storage.StorageAccessActivity"),
             application.children("activity").map { it.android("name") },
         )
+        // The settings and release history pages are opened by the plugin only (roadmap P4.1).
+        for (name in listOf(".ui.settings.SettingsActivity", ".ui.release.ReleaseHistoryActivity")) {
+            val screen = activity(name)
+            assertEquals("false", screen.android("exported"))
+            assertTrue(screen.children("intent-filter").isEmpty())
+        }
         val home = activity(".ui.home.HomeActivity")
         assertEquals("false", home.android("exported"))
         assertTrue("the launcher reaches the home screen through the aliases only", home.children("intent-filter").isEmpty())
@@ -179,7 +186,12 @@ class ManifestContractTest {
         val exported = components.filter { it.androidOrNull("exported") == "true" }
         assertEquals(emptyList<String>(), exported.filter { it.androidOrNull("permission") != PLUGIN_PERMISSION }.map { it.android("name") })
         assertTrue("no receivers in the skeleton", application.children("receiver").isEmpty())
-        assertTrue("no providers in the skeleton", application.children("provider").isEmpty())
+        // The only provider shares outputs with a temporary grant (roadmap P4.1, P4.2); it is not exported.
+        val provider = application.children("provider").single()
+        assertEquals("androidx.core.content.FileProvider", provider.android("name"))
+        assertEquals("\${applicationId}.files", provider.android("authorities"))
+        assertEquals("false", provider.android("exported"))
+        assertEquals("true", provider.android("grantUriPermissions"))
         // Launcher aliases are the only components exported without a permission: the launcher must start them.
         application.children("activity-alias").forEach { assertNull(it.androidOrNull("permission")) }
     }

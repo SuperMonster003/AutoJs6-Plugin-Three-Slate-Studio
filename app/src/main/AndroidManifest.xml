@@ -37,9 +37,13 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- The host (the script entry of roadmap D19 and its bindings). -->
+    <!--
+        The host (the script entry of roadmap D19 and its bindings) and MediaInfo, whose viewer the detail page opens by
+        Intent when it has one (roadmap D18, appendix D Q52).
+    -->
     <queries>
         <package android:name="org.autojs.autojs6" />
+        <package android:name="io.github.supermonster003.autojs6.plugin.mediainfo" />
     </queries>
 
     <application
@@ -85,10 +89,24 @@
             </intent-filter>
         </activity>
 
+        <!--
+            The Studio home (roadmap P4.1): rotation and resizing keep the wizard drafts (Compose relayouts), the
+            appearance changes recreate it between drafts.
+        -->
         <activity
             android:name=".ui.home.HomeActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:exported="false"
-            android:launchMode="singleTask" />
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.settings.SettingsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.release.ReleaseHistoryActivity"
+            android:exported="false" />
 
         <!-- Opened on STORAGE_PERMISSION_DENIED (roadmap P2.1, D9). -->
         <activity
@@ -183,6 +201,17 @@
                 <category android:name="media-studio" />
             </intent-filter>
         </service>
+
+        <!-- Opening and sharing outputs from the Studio screens (roadmap P4.1, P4.2). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/shared_files" />
+        </provider>
 
         <!-- Tasks running longer than 10 s (roadmap P2.1). -->
         <service
