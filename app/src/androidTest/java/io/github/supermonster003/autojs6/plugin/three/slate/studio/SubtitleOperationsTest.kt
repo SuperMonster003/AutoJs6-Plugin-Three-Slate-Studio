@@ -3,7 +3,9 @@ package io.github.supermonster003.autojs6.plugin.three.slate.studio
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Bundle
+import android.os.ParcelFileDescriptor
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.SubtitleCueFiles
 import org.autojs.plugin.mediastudio.api.MediaStudioContract
 import org.autojs.plugin.mediastudio.api.MediaStudioErrorCodes
 import org.autojs.plugin.mediastudio.api.MediaStudioOps
@@ -11,9 +13,11 @@ import org.autojs.plugin.mediastudio.api.MediaStudioRequestKeys
 import org.autojs.plugin.mediastudio.api.MediaStudioResultKeys
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.json.JSONArray
 import org.junit.runner.RunWith
 import java.io.File
 import kotlin.math.abs
@@ -33,6 +37,32 @@ class SubtitleOperationsTest : MediaStudioTestBase() {
     private fun file(name: String, bytes: ByteArray): File = File(directory, name).also { it.writeBytes(bytes) }
 
     private fun bom(text: String) = byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte()) + text.toByteArray()
+
+    /**
+     * The cues of a `subtitlesParse` result read from its `cuesFile` descriptor (contract version 2), which is closed.
+     * zh-CN: 从 `subtitlesParse` 结果的 `cuesFile` 描述符读出的 cue (契约版本 2), 读后关闭描述符.
+     */
+    private fun cuesOf(result: Bundle): List<Triple<Long, Long, String>> {
+        assertFalse("contract version 2 sends no inline cues", result.containsKey(MediaStudioResultKeys.CUES))
+        @Suppress("DEPRECATION")
+        val descriptor = result.get(MediaStudioResultKeys.CUES_FILE) as? ParcelFileDescriptor
+        assertNotNull("subtitlesParse answers cuesFile", descriptor)
+        val text = ParcelFileDescriptor.AutoCloseInputStream(descriptor!!).use { it.readBytes().toString(Charsets.UTF_8) }
+        val array = JSONArray(text)
+        return (0 until array.length()).map { index ->
+            val cue = array.getJSONObject(index)
+            Triple(cue.getLong(MediaStudioResultKeys.CUE_START), cue.getLong(MediaStudioResultKeys.CUE_END), cue.getString(MediaStudioResultKeys.CUE_TEXT))
+        }
+    }
+
+    private fun parseRequest(path: String) = Bundle().apply {
+        putString(MediaStudioRequestKeys.OP, MediaStudioOps.SUBTITLES_PARSE)
+        putStringArray(MediaStudioRequestKeys.INPUTS, arrayOf(path))
+        putString(MediaStudioRequestKeys.HOST_TOKEN, HOST_TOKEN)
+        putBoolean(MediaStudioRequestKeys.REGISTER_MEDIA, false)
+    }
+
+    private fun leftCueFiles(): List<String> = File(context.cacheDir, SubtitleCueFiles.DIRECTORY).list()?.toList().orEmpty()
 
     @Test
     fun burnedSrtCuesFollowTheirTimesAndStack() = withMediaStudio { plugin ->
@@ -150,18 +180,13 @@ class SubtitleOperationsTest : MediaStudioTestBase() {
         })
         assertEquals("application/x-subrip", written.getString(MediaStudioResultKeys.MIME))
         assertTrue(srt.readText().startsWith("1\r\n00:00:00,000 --> 00:00:01,500\r\nOne\r\n\r\n2\r\n"))
-        fun parse(path: String) = Bundle().apply {
-            putString(MediaStudioRequestKeys.OP, MediaStudioOps.SUBTITLES_PARSE)
-            putStringArray(MediaStudioRequestKeys.INPUTS, arrayOf(path))
-            putString(MediaStudioRequestKeys.HOST_TOKEN, HOST_TOKEN)
-            putBoolean(MediaStudioRequestKeys.REGISTER_MEDIA, false)
-        }
-        val parsed = run(plugin, parse(srt.path))
-        @Suppress("DEPRECATION")
-        val read = parsed.getParcelableArrayList<Bundle>(MediaStudioResultKeys.CUES).orEmpty()
-        assertEquals(listOf(0L to 1_500L, 1_000L to 2_000L), read.map { it.getLong("start") to it.getLong("end") })
-        assertEquals(listOf("One", "Two\nlines"), read.map { it.getString("text") })
+        val parsed = run(plugin, parseRequest(srt.path))
+        val read = cuesOf(parsed)
+        assertEquals(listOf(0L to 1_500L, 1_000L to 2_000L), read.map { it.first to it.second })
+        assertEquals(listOf("One", "Two\nlines"), read.map { it.third })
+        assertEquals("application/x-subrip", parsed.getString(MediaStudioResultKeys.MIME))
         assertTrue("parse lists no task output", listTasks(plugin).none { it.getString("output") == "" })
+        assertEquals("the plugin deleted its cue file at once", emptyList<String>(), leftCueFiles())
 
         val error = assertThrows(RuntimeException::class.java) {
             plugin.submit(
@@ -180,9 +205,38 @@ class SubtitleOperationsTest : MediaStudioTestBase() {
         )
         val broken = file("broken.srt", "not subtitles".toByteArray())
         val callback = RecordingCallback()
-        plugin.submit(parse(broken.path), callback)
+        plugin.submit(parseRequest(broken.path), callback)
         assertEquals(MediaStudioErrorCodes.UNSUPPORTED_FORMAT, callback.awaitError().getString(MediaStudioContract.KEY_ERROR_CODE))
     }
+
+    /**
+     * Contract version 2 (appendix D Q36 (b)): 6000 cues, about 600 KiB of JSON, far above the 256 KiB a contract event
+     * may carry (version 1 answered LIMIT_EXCEEDED), arrive complete and in order; no cue file stays in the cache.
+     * zh-CN: 契约版本 2 (附录 D Q36 (b)): 6000 条 cue, 约 600 KiB 的 JSON, 远超契约事件可携带的 256 KiB (版本 1 会返回 LIMIT_EXCEEDED),
+     * 完整且按顺序送达; 缓存中不留 cue 文件.
+     */
+    @Test
+    fun parseAnswersEveryCueOfALargeFile() = withMediaStudio { plugin ->
+        val count = 6_000
+        val srt = StringBuilder()
+        for (i in 0 until count) {
+            val start = i * 1_000L
+            srt.append(i + 1).append("\r\n")
+                .append(time(start)).append(" --> ").append(time(start + 900)).append("\r\n")
+                .append("<i>Line ").append(i).append("</i> of a long film, \"quoted\" and 中文\r\nsecond line ").append(i).append("\r\n\r\n")
+        }
+        val source = file("large.srt", srt.toString().toByteArray())
+        val read = cuesOf(run(plugin, parseRequest(source.path)))
+        assertEquals(count, read.size)
+        read.forEachIndexed { i, (start, end, text) ->
+            assertEquals(i * 1_000L, start)
+            assertEquals(i * 1_000L + 900, end)
+            assertEquals("Line $i of a long film, \"quoted\" and 中文\nsecond line $i", text)
+        }
+        assertEquals(emptyList<String>(), leftCueFiles())
+    }
+
+    private fun time(millis: Long) = "%02d:%02d:%02d,%03d".format(millis / 3_600_000, millis / 60_000 % 60, millis / 1_000 % 60, millis % 1_000)
 
     private fun isBlue(color: Int) = Color.blue(color) > 160 && Color.red(color) < 90 && Color.green(color) < 90
 

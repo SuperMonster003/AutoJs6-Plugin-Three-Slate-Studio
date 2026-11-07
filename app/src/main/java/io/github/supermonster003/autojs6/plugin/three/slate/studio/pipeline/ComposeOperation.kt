@@ -5,6 +5,7 @@ package io.github.supermonster003.autojs6.plugin.three.slate.studio.pipeline
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.media.MediaCodec
 import android.net.Uri
 import androidx.annotation.OptIn
 import androidx.annotation.VisibleForTesting
@@ -27,10 +28,12 @@ import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
 import androidx.media3.transformer.EditedMediaItemSequence
 import androidx.media3.transformer.Effects
+import androidx.media3.transformer.ExportException
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.AudioContainer
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.AudioEncoding
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.AudioTargets
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.BitRates
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.CodecResources
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.Colors
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.Fit
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.Flip
@@ -145,7 +148,8 @@ internal class ComposeOperation(
                 export.run(composition, output, settings, from, to, MediaStudioContract.STAGE_ENCODING)
                 return
             } catch (e: MediaStudioException) {
-                if (e.code == MediaStudioErrorCodes.TASK_CANCELLED || task.isCancelled || !isFrameProcessingFailure(e)) throw e
+                if (e.code == MediaStudioErrorCodes.TASK_CANCELLED || task.isCancelled) throw e
+                if (!isFrameProcessingFailure(e)) throw exhausted(e, spec) ?: e
                 var next: TimelineLayout? = null
                 // First the shader transitions, then every transition; a step that changes nothing is skipped.
                 // zh-CN: 先替换着色器转场, 再替换全部转场; 不改变任何内容的步骤跳过.
@@ -165,6 +169,22 @@ internal class ComposeOperation(
                 resources.clear()
             }
         }
+    }
+
+    /**
+     * An actionable CODEC_ERROR when the export failed because no further encoder or decoder could start (appendix D
+     * Q37 (a)), or null for any other failure.
+     * zh-CN: 导出因无法再启动编码器或解码器而失败时返回可操作的 CODEC_ERROR (附录 D Q37 (a)); 其他失败返回 null.
+     */
+    private fun exhausted(e: MediaStudioException, spec: OperationSpec.Compose): MediaStudioException? {
+        val export = e.cause as? ExportException ?: return null
+        val chain = generateSequence<Throwable>(export) { it.cause }.take(MAX_CAUSES).toList()
+        val codecErrors = chain.filterIsInstance<MediaCodec.CodecException>().map { it.errorCode }
+        val texts = chain.mapNotNull { it.message }
+        val budget = CodecResources.budgetOf(spec.timeline)
+        if (!CodecResources.isExhausted(export.errorCodeName, codecErrors, texts, budget)) return null
+        val detail = CodecResources.message(export.errorCodeName, CodecResources.resourceSign(codecErrors, texts), budget)
+        return MediaStudioException(MediaStudioErrorCodes.CODEC_ERROR, detail, export)
     }
 
     private fun TimelineLayout.transitionTypes(): List<TransitionType> =
@@ -368,6 +388,9 @@ internal class ComposeOperation(
         const val IMAGE_SIDE = 16
 
         const val NOTE_DETAIL_CHARS = 160
+
+        /** Causes searched for a codec resource sign. zh-CN: 查找编解码器资源迹象时检查的原因层数. */
+        const val MAX_CAUSES = 8
 
         /**
          * Makes every [TransitionEffect] fail to compile, to test the GPU fallback in instrumented tests.

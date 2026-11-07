@@ -47,7 +47,8 @@ class PluginRuntimeInfoTest {
         // Roadmap D23: P1.5 confirmed 6641 as the local build with the contract; P5.4 writes the final one.
         assertEquals(6641L, fields.requiredHostVersion)
         assertEquals(ThreeSlateStudioContract.REQUIRED_HOST_VERSION, fields.requiredHostVersion)
-        assertEquals(1, fields.contractVersion)
+        // Appendix D Q36 (b): contract version 2 replaced the unpublished version 1. zh-CN: 附录 D Q36 (b): 契约版本 2 取代了未发布的版本 1.
+        assertEquals(2, fields.contractVersion)
         assertEquals("P2.1 / P2.2 implement probe and the basic operations", ThreeSlateStudioContract.IMPLEMENTED_OPS, fields.ops)
         assertTrue(fields.ops.containsAll(listOf(MediaStudioOps.PROBE, MediaStudioOps.TRIM, MediaStudioOps.TRANSCODE, MediaStudioOps.AUDIO_PROBE)))
         assertTrue("compose comes with P3.1", MediaStudioOps.COMPOSE in fields.ops)
@@ -65,7 +66,7 @@ class PluginRuntimeInfoTest {
         assertEquals("org.autojs.plugin.MEDIA_STUDIO", ThreeSlateStudioContract.SERVICE_ACTION)
         assertEquals(MediaStudioPluginActions.MEDIA_STUDIO, ThreeSlateStudioContract.SERVICE_ACTION)
         assertEquals("media-studio", ThreeSlateStudioContract.SERVICE_CATEGORY)
-        assertEquals(1, ThreeSlateStudioContract.CONTRACT_VERSION)
+        assertEquals(2, ThreeSlateStudioContract.CONTRACT_VERSION)
         assertEquals(MediaStudioContract.CONTRACT_VERSION, ThreeSlateStudioContract.CONTRACT_VERSION)
         assertTrue(MediaStudioOps.ALL.containsAll(ThreeSlateStudioContract.IMPLEMENTED_OPS))
         assertEquals("NOT_IMPLEMENTED", ThreeSlateStudioContract.NOT_IMPLEMENTED)

@@ -13,19 +13,22 @@ process and needs the AIDL stubs and constants at run time.
 | File | Host module | Content | SHA-256 |
 | --- | --- | --- | --- |
 | `common-plugin-api.aar` | `plugin-api/common-plugin-api` | `PluginInfo`, `IPluginInfoProvider`, `PluginActions`, `PluginCapabilityKeys`, `AutoJs6HostSettingsContract`, `PluginSettingsTransferProvider` | `9849b15091dcb255cd1c47140790081eebc074aec2e3e9b28c18f12bf9ef4a6a` |
-| `media-studio-api.aar` | `plugin-api/media-studio-api` | `IMediaStudioPlugin`, `IMediaStudioCallback`, `MediaStudioContract`, `MediaStudioPluginIds`, `MediaStudioPluginActions`, `MediaStudioCapabilityKeys`, `MediaStudioErrorCodes`, `MediaStudioRequestKeys`, `MediaStudioResultKeys`, `MediaStudioProgressKeys`, `MediaStudioLimits`, `MediaStudioOps` | `66c31dee7227d9cb7cbd7ce3cd519d69a56d8db52df0404e04ebd9528a1a50f5` |
+| `media-studio-api.aar` | `plugin-api/media-studio-api` | `IMediaStudioPlugin`, `IMediaStudioCallback`, `MediaStudioContract`, `MediaStudioPluginIds`, `MediaStudioPluginActions`, `MediaStudioCapabilityKeys`, `MediaStudioErrorCodes`, `MediaStudioRequestKeys`, `MediaStudioResultKeys`, `MediaStudioProgressKeys`, `MediaStudioLimits`, `MediaStudioOps` | `e408474a4ec85f06a27a362c00dc18b025182dd3f08c5dbccf285639379dc258` |
 
 Provenance (2026-11-05, roadmap P0.1):
 
 - `common-plugin-api.aar` (63,915 B) is the 1.1.1 release build of host commit `1676e7489d` (unsigned), the
   copy 3-Stove Agent stages, byte for byte. It is the line of the new repository rules; 1.1.0 lacks the settings
   transfer purposes `import` / `undo`.
-- `media-studio-api.aar` (26,749 B) is the 1.0.0 release build of host commit `ddc91edf4f`, the commit that
-  introduces `plugin-api/media-studio-api` (roadmap P1.1, contract version 1). The host card of P1.1 assembled it
-  with `:plugin-api:media-studio-api:assemble` and handed it over with its SHA-256; an independent release build of
-  the same module sources, made for this repository before the commit landed, is byte-identical. The AAR does not
-  embed `common-plugin-api` (`PluginInfo` lives there), so both are staged. The Maven coordinate
-  `io.github.supermonster003:autojs6-media-studio-api:1.0.0` is reserved but not published yet.
+- `media-studio-api.aar` (26,881 B, re-staged 2026-11-07) is the 1.0.0 release build of the module with contract
+  version 2 (roadmap appendix D Q36 (b): `subtitlesParse` answers its cues through the file descriptor
+  `MediaStudioResultKeys.CUES_FILE`, new keys `CUE_START` / `CUE_END` / `CUE_TEXT`, `MediaStudioLimits.MAX_CUES_FILE_BYTES`).
+  The batch 6 card 3-slate-q36-q38 assembled it with `:plugin-api:media-studio-api:assembleRelease` in an isolated
+  clone of host `1f877537e6` plus its contract change; the module sources equal its host commit (roadmap appendix C
+  names it). It replaces the contract version 1 build of host commit `ddc91edf4f` (roadmap P1.1, 26,749 B, SHA-256
+  `66c31dee...a50f5`), which was never published. The AAR does not embed `common-plugin-api` (`PluginInfo` lives
+  there), so both are staged. The Maven coordinate `io.github.supermonster003:autojs6-media-studio-api:1.0.0` is
+  reserved but not published yet; its first release carries contract version 2.
 
 Do not commit locally assembled debug AARs or rename debug outputs to bypass this policy.
 

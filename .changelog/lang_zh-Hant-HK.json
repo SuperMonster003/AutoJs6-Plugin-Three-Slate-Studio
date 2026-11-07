@@ -12,7 +12,7 @@
         "需要 AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) 或更高版本 (準確的最低版本號待宿主端改動落地後回填)"
       ],
       "feature": [
-        "插件骨架: Wake 啟動協議, 插件中心身份服務與媒體處理能力服務 (契約版本 1)",
+        "插件骨架: Wake 啟動協議, 插件中心身份服務與媒體處理能力服務 (契約版本 2)",
         "首頁提供所有檔案存取權限的授權入口",
         "所有 ABI 共用一個 APK: 唯一的原生庫來自 Jetpack Compose, 已按 16 KB 記憶體分頁對齊",
         "10 種語言的 README, 插件中心說明與更新日誌, 由 JSON 來源檔統一生成"

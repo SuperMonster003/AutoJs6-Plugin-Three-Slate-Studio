@@ -9,7 +9,9 @@ Android 11 the storage permissions are granted instead), pushes ``scripts/device
 host's RunIntentActivity and prints one line per operation (PASS / FAIL, milliseconds, value), the video encoders and
 the 1080p transcode speed. Needs the AutoJs6 host with the media studio modules (build 6641 or later) and the plugin
 installed; nothing on the phone has to be tapped. Afterwards the pushed files and the outputs are deleted (``--keep``
-keeps them).
+keeps them). ``--cues 2000,6000`` also parses SRT files of that many generated cues and checks every cue (appendix D
+Q36 (b)), then lists the cue files left in the plugin cache (``cache/subtitles-parse``) and the files that appeared in
+the host cache during the run (both through ``run-as``, so debug builds only); none should remain.
 
 zh-CN: 3-Slate Studio 真机回归驱动 (路线图 P2.6). 在 PC 上用 ffmpeg 生成素材 (1920x1080 30 fps 60 秒带 440 Hz 音调的片段 (附录 F
 基线的长度),
@@ -17,9 +19,10 @@ zh-CN: 3-Slate Studio 真机回归驱动 (路线图 P2.6). 在 PC 上用 ffmpeg 
 ``video.frame`` 的临时图片在公共 Movies 目录; 结束后还原原模式; Android 11 之前改为授予存储权限), 推送
 ``scripts/device-regression.js`` 及其配置, 经宿主 RunIntentActivity 运行, 每个操作输出一行 (PASS / FAIL, 毫秒, 数值), 以及视频
 编码器与 1080p 转码倍速. 需要含媒体工坊模块的 AutoJs6 宿主 (构建 6641 或更新) 并已安装插件; 手机上无需点按. 结束后删除推送的
-文件与输出 (``--keep`` 保留).
+文件与输出 (``--keep`` 保留). ``--cues 2000,6000`` 另解析含相应条数生成 cue 的 SRT 并逐条核对 (附录 D Q36 (b)), 然后列出插件缓存
+(``cache/subtitles-parse``) 中残留的 cue 文件与运行期间宿主缓存中新出现的文件 (都经 ``run-as``, 仅限 debug 包), 两者都应为空.
 
-Usage: py -3.12 .python/device_regression.py --serial QV770340J7 [--extreme] [--json result.json]
+Usage: py -3.12 .python/device_regression.py --serial QV770340J7 [--extreme] [--cues 2000,6000] [--json result.json]
 """
 
 from __future__ import annotations
@@ -85,6 +88,34 @@ def sources(binary: str, directory: Path) -> dict[str, Path]:
     return files
 
 
+def stamp(millis: int) -> str:
+    return f"{millis // 3_600_000:02d}:{millis // 60_000 % 60:02d}:{millis // 1_000 % 60:02d},{millis % 1_000:03d}"
+
+
+def cue_file(directory: Path, count: int) -> Path:
+    """An SRT of ``count`` cues: cue i from i s to i s + 900 ms, two lines with markup, quotes and CJK text (the rule
+    ``sameCues`` of the script checks).
+    zh-CN: 含 ``count`` 条 cue 的 SRT: 第 i 条从 i 秒到 i 秒 + 900 毫秒, 两行, 含标记, 引号与中日韩文字 (脚本 ``sameCues`` 按此核对)."""
+    path = directory / f"cues-{count}.srt"
+    crlf = chr(13) + chr(10)
+    path.write_bytes("".join(
+        f"{i + 1}{crlf}{stamp(i * 1_000)} --> {stamp(i * 1_000 + 900)}{crlf}"
+        f'<i>Line {i}</i> of a long film, "quoted" and 中文{crlf}second line {i}{crlf}{crlf}'
+        for i in range(count)
+    ).encode("utf-8"))
+    return path
+
+
+def cache_files(serial: str, package: str, folder: str = "cache") -> set[str] | None:
+    """The files under ``folder`` of a debuggable package, or None when ``run-as`` is refused.
+    zh-CN: 可调试包 ``folder`` 下的文件, ``run-as`` 被拒绝时为 None."""
+    listed = subprocess.run(["adb", "-s", serial, "shell", "run-as", package, "find", folder, "-type", "f"], capture_output=True, text=True,
+                            encoding="utf-8", errors="replace", timeout=60, env=dict(os.environ, MSYS_NO_PATHCONV="1"))
+    if "not debuggable" in listed.stderr or "unknown package" in listed.stderr or "run-as:" in listed.stdout:
+        return None
+    return {line.strip() for line in listed.stdout.splitlines() if line.strip().startswith(folder)}
+
+
 def clean(serial: str) -> None:
     adb(serial, "shell", f"rm -rf '{WORK}' '{REMOTE}' '{STAGING}'", check=False)
     # Deleted folders keep their MediaStore rows (and before Android 11 deleted files too).
@@ -106,7 +137,7 @@ def launcher(serial: str) -> str:
     return own[0] if own else f"{HOST}/org.autojs.autojs.ui.splash.SplashActivity"
 
 
-def run(serial: str, files: dict[str, Path], extreme: bool, timeout: int) -> dict | None:
+def run(serial: str, files: dict[str, Path], extreme: bool, timeout: int, cues: dict[int, Path] | None = None) -> dict | None:
     clean(serial)
     adb(serial, "shell", f"mkdir -p '{WORK}' '{REMOTE}'", check=False)
     # A folder shell creates there may be shell-owned with mode 2770 (Redmi 22120RN86C), so open it for the plugin.
@@ -118,7 +149,7 @@ def run(serial: str, files: dict[str, Path], extreme: bool, timeout: int) -> dic
     # zh-CN: 有的设备直接推进插件目录会在 adb 设置属主时失败 (XQ-DQ72, Android 13: "remote fchown() failed"), 因此先放
     # /data/local/tmp, 再由 shell 复制.
     adb(serial, "shell", f"rm -rf '{STAGING}'; mkdir -p '{STAGING}'", check=False)
-    for key, path in files.items():
+    for key, path in [*files.items(), *((f"cues-{count}", path) for count, path in (cues or {}).items())]:
         remote[key] = f"{WORK}/{path.name}"
         adb(serial, "push", str(path), f"{STAGING}/{path.name}")
         adb(serial, "shell", f"cp '{STAGING}/{path.name}' '{remote[key]}'")
@@ -127,7 +158,9 @@ def run(serial: str, files: dict[str, Path], extreme: bool, timeout: int) -> dic
     # Outputs go to the public folder: files the plugin writes into its own folder belong to it, and the shell of some
     # devices cannot delete them (Xiaomi 23046RP50C, Android 15; run-as cannot reach /storage either).
     # zh-CN: 输出放公共目录: 插件写进自己目录的文件属于插件, 有的设备 shell 删不掉 (Xiaomi 23046RP50C, Android 15; run-as 也进不了 /storage).
-    config = dict(remote, work=f"{REMOTE}/out-{int(time.time())}", out=f"{REMOTE}/result.json", extreme=extreme)
+    config = dict({key: value for key, value in remote.items() if not key.startswith("cues-")},
+                  work=f"{REMOTE}/out-{int(time.time())}", out=f"{REMOTE}/result.json", extreme=extreme,
+                  cues=[{"src": remote[f"cues-{count}"], "count": count} for count in (cues or {})])
     with tempfile.TemporaryDirectory() as temporary:
         local = Path(temporary) / "device-regression.json"
         local.write_text(json.dumps(config), encoding="utf-8")
@@ -161,6 +194,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--ffmpeg", default=shutil.which("ffmpeg") or DEFAULT_FFMPEG)
     parser.add_argument("--extreme", action="store_true",
                         help="also run 8 video + 16 audio tracks (appendix D Q34 (c)); on failure, fewer tracks until one passes")
+    parser.add_argument("--cues", default="", help="comma-separated cue counts of generated SRT files to parse (appendix D Q36), e.g. 2000,6000")
     parser.add_argument("--timeout", type=int, default=1200)
     parser.add_argument("--json", type=Path, help="save the result JSON here")
     parser.add_argument("--cache", type=Path, default=Path(tempfile.gettempdir()) / "slate-regression-sources")
@@ -171,9 +205,17 @@ def main(argv: list[str] | None = None) -> int:
     sys.stdout.reconfigure(encoding="utf-8")
     args.cache.mkdir(parents=True, exist_ok=True)
     files = sources(args.ffmpeg, args.cache)
+    cues = {int(count): cue_file(args.cache, int(count)) for count in args.cues.split(",") if count.strip()}
+    host_before = cache_files(args.serial, HOST) if cues else None
+    left: dict[str, list[str] | None] = {}
     mode = adb(args.serial, "shell", "appops", "get", PLUGIN, "MANAGE_EXTERNAL_STORAGE", check=False).partition(":")[2].split(";")[0].strip() or "default"
     try:
-        result = run(args.serial, files, args.extreme, args.timeout)
+        result = run(args.serial, files, args.extreme, args.timeout, cues)
+        if cues:
+            plugin_files = cache_files(args.serial, PLUGIN, "cache/subtitles-parse")
+            host_after = cache_files(args.serial, HOST)
+            left["plugin cache/subtitles-parse"] = sorted(plugin_files) if plugin_files is not None else None
+            left["host cache (new files)"] = sorted(host_after - host_before) if host_after is not None and host_before is not None else None
     finally:
         adb(args.serial, "shell", "appops", "set", PLUGIN, "MANAGE_EXTERNAL_STORAGE", mode if mode in ("allow", "ignore", "deny", "default") else "default", check=False)
         if not args.keep:
@@ -198,6 +240,11 @@ def main(argv: list[str] | None = None) -> int:
     for key in ("speedH264", "speedH265"):
         if result.get(key):
             print(f"{key} {result[key]:.2f}x ({result['sourceDurationMillis']} ms source)")
+    for place, names in left.items():
+        if names is None:
+            print(f"LEFT {place}: unknown (run-as refused, not a debug build)")
+        else:
+            print(f"{'PASS' if not names else 'FAIL'} left {place}: {len(names)}{' ' + ', '.join(names[:5]) if names else ''}")
     failed = [entry for entry in result["results"] if not entry["ok"]]
     print(f"{len(result['results']) - len(failed)} / {len(result['results'])} PASS")
     return 1 if failed else 0

@@ -2,9 +2,10 @@ package io.github.supermonster003.autojs6.plugin.three.slate.studio.pipeline
 
 import android.content.Context
 import android.os.Bundle
-import android.os.Parcel
+import android.os.ParcelFileDescriptor
 import android.util.Log
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.AudioContainer
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.CueText
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.MediaInfo
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.MediaProbe
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.MediaStoreRegistrar
@@ -13,6 +14,7 @@ import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.MediaWar
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.OperationSpec
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.OutputKind
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.PlannedTask
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.SubtitleCueFiles
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.SubtitleFiles
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.SubtitleFormat
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.SubtitleMarkups
@@ -21,7 +23,6 @@ import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.TaskRunn
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.service.StorageAccess
 import org.autojs.plugin.mediastudio.api.MediaStudioContract
 import org.autojs.plugin.mediastudio.api.MediaStudioErrorCodes
-import org.autojs.plugin.mediastudio.api.MediaStudioLimits
 import org.autojs.plugin.mediastudio.api.MediaStudioResultKeys
 import java.io.File
 import java.io.IOException
@@ -52,6 +53,10 @@ internal class OperationJob(private val appContext: Context, private val planned
     private var createdDirectory = false
 
     private val writtenFrames = CopyOnWriteArrayList<File>()
+
+    /** The descriptor of a `subtitlesParse` result until it is sent or discarded. zh-CN: `subtitlesParse` 结果的描述符, 发出或丢弃前保存在此. */
+    @Volatile
+    private var cuesFile: ParcelFileDescriptor? = null
 
     override fun run(context: TaskRunner.JobContext): Bundle = try {
         execute(context)
@@ -127,6 +132,9 @@ internal class OperationJob(private val appContext: Context, private val planned
 
     override fun discard() {
         part?.let { if (it.exists()) it.delete() }
+        // A parse finished after its task was cancelled: nobody sends the descriptor. zh-CN: 解析在任务取消后才完成: 描述符无人发送.
+        cuesFile?.let { runCatching { it.close() } }
+        cuesFile = null
         if (planned.kind == OutputKind.DIRECTORY) {
             // Only the frames of this task; a folder that already held files keeps them. zh-CN: 只删本任务的帧; 原有文件保留.
             writtenFrames.forEach { it.delete() }
@@ -200,42 +208,34 @@ internal class OperationJob(private val appContext: Context, private val planned
     }
 
     /**
-     * `subtitlesParse` (roadmap P3.3): `cues` (one Bundle per cue, `start` / `end` in milliseconds and the plain `text`,
-     * markup removed), `path`, `mime`, `warnings`. The result must fit the 256 KiB event limit of the contract; a larger
-     * one is LIMIT_EXCEEDED (appendix D Q36).
-     * zh-CN: `subtitlesParse` (路线图 P3.3): `cues` (每条 cue 一个 Bundle, `start` / `end` 为毫秒, `text` 为去掉标记的纯文本), `path`,
-     * `mime`, `warnings`. 结果须在契约的 256 KiB 事件上限之内, 超出时为 LIMIT_EXCEEDED (附录 D Q36).
+     * `subtitlesParse` (roadmap P3.3, contract version 2): `cuesFile` (a read-only descriptor of the JSON array of the
+     * cues, `start` / `end` in milliseconds and the plain `text`, markup removed; [SubtitleCueFiles]), `path`, `mime`,
+     * `sizeBytes`, `warnings`. The cues no longer travel inline, so neither the 256 KiB event limit nor a number of cues
+     * bounds the result (appendix D Q36 (b)).
+     * zh-CN: `subtitlesParse` (路线图 P3.3, 契约版本 2): `cuesFile` (cue JSON 数组的只读描述符, `start` / `end` 为毫秒, `text` 为去掉
+     * 标记的纯文本; [SubtitleCueFiles]), `path`, `mime`, `sizeBytes`, `warnings`. cue 不再内联, 因此结果既不受 256 KiB 事件上限限制,
+     * 也没有条数上限 (附录 D Q36 (b)).
      */
     private fun subtitlesParse(context: TaskRunner.JobContext): Bundle {
         val path = planned.inputs.single()
         val warnings = SubtitleWarnings()
         val track = SubtitleFiles.read(path, warnings)
         context.throwIfCancelled()
-        context.progress(EXPORT_END, MediaStudioContract.STAGE_DECODING)
-        val cues = ArrayList<Bundle>(track.cues.size)
-        track.cues.forEach { cue ->
-            cues += Bundle().apply {
-                putLong(CUE_START, cue.startMillis)
-                putLong(CUE_END, cue.endMillis)
-                putString(CUE_TEXT, SubtitleMarkups.parse(cue.text, cue.markup, track.wrapStyle, warnings).plain)
-            }
+        context.progress(PARSE_END, MediaStudioContract.STAGE_DECODING)
+        val cues = track.cues.map { cue ->
+            CueText(cue.startMillis, cue.endMillis, SubtitleMarkups.parse(cue.text, cue.markup, track.wrapStyle, warnings).plain)
         }
-        val result = Bundle().apply {
+        context.throwIfCancelled()
+        val descriptor = SubtitleCueFiles.open(appContext.cacheDir, context.taskId, path, cues)
+        cuesFile = descriptor
+        context.progress(EXPORT_END, MediaStudioContract.STAGE_WRITING)
+        return Bundle().apply {
             putString(MediaStudioResultKeys.PATH, path)
             putString(MediaStudioResultKeys.MIME, track.format.mime)
             putLong(MediaStudioResultKeys.SIZE_BYTES, File(path).length())
-            putParcelableArrayList(MediaStudioResultKeys.CUES, cues)
+            putParcelable(MediaStudioResultKeys.CUES_FILE, descriptor)
             putStringArray(MediaStudioResultKeys.WARNINGS, warnings.list().toTypedArray())
         }
-        val size = parcelSize(result)
-        if (size > MediaStudioLimits.MAX_EVENT_BYTES) {
-            throw MediaStudioException(
-                MediaStudioErrorCodes.LIMIT_EXCEEDED,
-                "the ${track.cues.size} cues of $path take $size bytes, more than the ${MediaStudioLimits.MAX_EVENT_BYTES} bytes a result may carry; " +
-                    "split the file, or pass it to burnSubtitles or a timeline directly",
-            )
-        }
-        return result
     }
 
     /**
@@ -270,17 +270,6 @@ internal class OperationJob(private val appContext: Context, private val planned
         }
     }
 
-    /** The serialized size of [bundle] (what crosses Binder). zh-CN: [bundle] 序列化后的大小 (跨 Binder 的字节数). */
-    private fun parcelSize(bundle: Bundle): Int {
-        val parcel = Parcel.obtain()
-        return try {
-            bundle.writeToParcel(parcel, 0)
-            parcel.dataSize()
-        } finally {
-            parcel.recycle()
-        }
-    }
-
     private fun partFile(taskId: Int): File {
         val parent = outputFile.absoluteFile.parentFile ?: throw MediaStudioException.io("${outputFile.path} has no parent folder")
         val extension = outputFile.extension.takeIf { it.isNotEmpty() }?.let { ".$it" } ?: ""
@@ -306,10 +295,8 @@ internal class OperationJob(private val appContext: Context, private val planned
 
     private companion object {
         const val TAG = "SlateStudioJob"
-        const val CUE_START = "start"
-        const val CUE_END = "end"
-        const val CUE_TEXT = "text"
         const val PROBE_END = 5.0
+        const val PARSE_END = 60.0
         const val EXPORT_END = 95.0
         const val REGISTER_START = 97.0
     }

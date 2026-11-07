@@ -12,7 +12,7 @@
         "Requiere AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) o posterior (la compilación mínima exacta se indicará cuando lleguen los cambios del host)"
       ],
       "feature": [
-        "Esqueleto del complemento: protocolo de activación Wake, servicio de identidad del centro de complementos y servicio de capacidad de procesamiento multimedia (versión de contrato 1)",
+        "Esqueleto del complemento: protocolo de activación Wake, servicio de identidad del centro de complementos y servicio de capacidad de procesamiento multimedia (versión de contrato 2)",
         "Pantalla de inicio con la concesión del acceso a todos los archivos",
         "Un único APK para todas las ABI: la única biblioteca nativa procede de Jetpack Compose y está alineada a páginas de memoria de 16 KB",
         "README, instrucciones del centro de complementos y registros de cambios en 10 idiomas, generados a partir de fuentes JSON"

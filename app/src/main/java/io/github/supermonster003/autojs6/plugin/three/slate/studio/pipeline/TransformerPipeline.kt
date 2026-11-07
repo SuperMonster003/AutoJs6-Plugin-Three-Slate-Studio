@@ -26,7 +26,6 @@ import androidx.media3.effect.Presentation
 import androidx.media3.effect.ScaleAndRotateTransformation
 import androidx.media3.transformer.AudioEncoderSettings
 import androidx.media3.transformer.Composition
-import androidx.media3.transformer.DefaultEncoderFactory
 import androidx.media3.transformer.EditedMediaItem
 import androidx.media3.transformer.EditedMediaItemSequence
 import androidx.media3.transformer.Effects
@@ -120,7 +119,7 @@ internal class TransformerExport(private val context: Context, private val task:
                 originalTransformationRequest: TransformationRequest,
                 fallbackTransformationRequest: TransformationRequest,
             ) {
-                notes += fallbackNote(originalTransformationRequest, fallbackTransformationRequest)
+                fallbackNote(originalTransformationRequest, fallbackTransformationRequest)?.let { notes += it }
             }
         }
         handler.post {
@@ -171,12 +170,16 @@ internal class TransformerExport(private val context: Context, private val task:
     }
 
     private fun build(settings: Settings, looper: Looper, listener: Transformer.Listener): Transformer {
-        val encoders = DefaultEncoderFactory.Builder(context.applicationContext).setEnableFallback(true)
-        settings.videoBitRate?.let { encoders.setRequestedVideoEncoderSettings(VideoEncoderSettings.Builder().setBitrate(it).build()) }
-        settings.audioBitRate?.let { encoders.setRequestedAudioEncoderSettings(AudioEncoderSettings.Builder().setBitrate(it).build()) }
+        // The requested size first, the media3 fallback only when the encoder refuses it (appendix D Q38 (a)).
+        // zh-CN: 先用请求尺寸, 编码器拒绝时才用 media3 的回退 (附录 D Q38 (a)).
+        val encoders = RequestedSizeEncoderFactory(
+            context.applicationContext,
+            settings.videoBitRate?.let { VideoEncoderSettings.Builder().setBitrate(it).build() } ?: VideoEncoderSettings.DEFAULT,
+            settings.audioBitRate?.let { AudioEncoderSettings.Builder().setBitrate(it).build() } ?: AudioEncoderSettings.DEFAULT,
+        ) { note -> notes += note }
         val builder = Transformer.Builder(context.applicationContext)
             .setLooper(looper)
-            .setEncoderFactory(encoders.build())
+            .setEncoderFactory(encoders)
             .experimentalSetTrimOptimizationEnabled(settings.trimOptimization)
             .addListener(listener)
         settings.videoMime?.let { builder.setVideoMimeType(it) }
@@ -212,13 +215,18 @@ internal class TransformerExport(private val context: Context, private val task:
             return MediaStudioException(code, detail, error)
         }
 
-        private fun fallbackNote(original: TransformationRequest, fallback: TransformationRequest): String {
+        /**
+         * The note of a media3 fallback: MIME type changes only; a size change is reported with both dimensions by
+         * [RequestedSizeEncoderFactory] (appendix D Q38 (a)), so a fallback of the size alone adds nothing here.
+         * zh-CN: media3 回退的说明: 只列 MIME 类型的变化; 尺寸变化由 [RequestedSizeEncoderFactory] 连同宽高一起报告 (附录 D Q38 (a)),
+         * 因此只改尺寸的回退在这里不加说明.
+         */
+        private fun fallbackNote(original: TransformationRequest, fallback: TransformationRequest): String? {
             val changes = buildList {
                 if (original.videoMimeType != fallback.videoMimeType) add("video ${original.videoMimeType} -> ${fallback.videoMimeType}")
                 if (original.audioMimeType != fallback.audioMimeType) add("audio ${original.audioMimeType} -> ${fallback.audioMimeType}")
-                if (original.outputHeight != fallback.outputHeight) add("height ${original.outputHeight} -> ${fallback.outputHeight}")
             }
-            if (changes.isEmpty()) return "the encoder applied a fallback on this device"
+            if (changes.isEmpty()) return null
             return changes.joinToString(prefix = "the encoder fell back on this device: ")
         }
 

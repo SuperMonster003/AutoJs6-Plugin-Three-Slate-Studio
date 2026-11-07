@@ -12,7 +12,7 @@
         "需要 AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) 或更高版本 (准确的最低版本号待宿主侧改动落地后回填)"
       ],
       "feature": [
-        "插件骨架: Wake 激活协议, 插件中心身份服务与媒体加工能力服务 (契约版本 1)",
+        "插件骨架: Wake 激活协议, 插件中心身份服务与媒体加工能力服务 (契约版本 2)",
         "首页提供所有文件访问权限的授权入口",
         "所有 ABI 共用一个 APK: 唯一的原生库来自 Jetpack Compose, 已按 16 KB 内存页对齐",
         "10 种语言的 README, 插件中心说明与更新日志, 由 JSON 源文件统一生成"

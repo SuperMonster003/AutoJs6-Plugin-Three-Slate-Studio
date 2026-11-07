@@ -12,7 +12,7 @@
         "Requires AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) or later (the exact minimum build will be filled in once the host changes land)"
       ],
       "feature": [
-        "Plugin skeleton: Wake activation protocol, Plugin Center identity service and media studio capability service (contract version 1)",
+        "Plugin skeleton: Wake activation protocol, Plugin Center identity service and media studio capability service (contract version 2)",
         "Home screen with the all files access grant",
         "A single APK for every ABI: the only native library comes from Jetpack Compose and is aligned to 16 KB memory pages",
         "README, Plugin Center instructions and changelogs in 10 languages, generated from JSON sources"

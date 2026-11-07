@@ -11,14 +11,19 @@
  * `video.frame` are in public folders, so the plugin needs all files access, which the driver grants through appops for
  * the run. `extreme: true` also runs a timeline of 8 video tracks (with dissolves) and 16 audio tracks (appendix D Q34 (c));
  * when it fails, fewer tracks are tried (6, 4, 2 video tracks with 16 audio tracks, then 2 + 8) and the largest passing
- * timeline is reported as `extremeMax`.
+ * timeline is reported as `extremeMax`. `cues: [{"src": "<srt>", "count": n}]` (driver option `--cues`) also parses SRT
+ * files of n generated cues and compares every cue with the generation rule (appendix D Q36 (b), contract version 2: the
+ * cues arrive through a file, without the 256 KiB event limit). Outputs that keep the source size, and the 360x640 of
+ * `transform` / 640x360 of `compose`, are checked for the exact size (appendix D Q38 (a): no 16-aligned size with bars).
  *
  * zh-CN: 3-Slate Studio 真机回归 (路线图 P2.6): 经 AutoJs6 宿主 (Rhino) 把 `video` / `audio` 模块的 P2 / P3 操作各跑一遍, 每个操作
  * 输出一行: PASS / FAIL, 毫秒耗时与简短数值 (尺寸, 时长, 错误码). 另列出设备的视频编码器, 并测量 1080p 转码倍速 (H.264, 有 H.265
  * 时也测). 配置见上 (由 `.python/device_regression.py` 写入); 输入媒体位于插件自己的外部文件目录. 检查都用返回值. 输出与 `video.frame`
  * 的临时图片在公共目录, 插件需要全部文件访问权限, 由驱动脚本在运行期间经 appops 授予.
  * `extreme: true` 时另跑 8 条视频轨 (含溶解转场) + 16 条音频轨的时间线 (附录 D Q34 (c)); 失败时依次减少轨道 (6, 4, 2 条视频轨配 16 条
- * 音频轨, 再 2 + 8), 通过的最大时间线记为 `extremeMax`.
+ * 音频轨, 再 2 + 8), 通过的最大时间线记为 `extremeMax`. `cues` (驱动选项 `--cues`) 另解析含 n 条生成 cue 的 SRT, 逐条与生成规则比对
+ * (附录 D Q36 (b), 契约版本 2: cue 经文件送达, 不受 256 KiB 事件上限限制). 保持源尺寸的输出, 以及 `transform` 的 360x640 与 `compose`
+ * 的 640x360, 都按精确尺寸检查 (附录 D Q38 (a): 不得变成带黑边的 16 对齐尺寸).
  */
 
 var config = JSON.parse(files.read(files.join(files.cwd(), 'device-regression.json')));
@@ -57,7 +62,8 @@ function step(name, body, check) {
     } catch (e) {
         entry.ms = Date.now() - started;
         entry.ok = false;
-        entry.error = (e && e.code ? e.code + ': ' : '') + String(e && e.message || e).slice(0, 300);
+        // Long enough for the codec budget message of appendix D Q37. zh-CN: 足以容纳附录 D Q37 的编解码器预算提示.
+        entry.error = (e && e.code ? e.code + ': ' : '') + String(e && e.message || e).slice(0, 600);
     }
     results.push(entry);
     console.log('[slate-regression] ' + (entry.ok ? 'PASS' : 'FAIL') + ' ' + name + ' ' + entry.ms + ' ms ' + (entry.ok ? entry.value : entry.error));
@@ -86,6 +92,28 @@ function encoders() {
 
 function sameSize(value, width, height) {
     return value.width === width && value.height === height ? null : 'size ' + value.width + 'x' + value.height;
+}
+
+/** The 640x360 of the second clip (appendix D Q38). zh-CN: 第二个片段的 640x360 (附录 D Q38). */
+function clipSize(value) {
+    return sameSize(value, 640, 360);
+}
+
+/**
+ * Compares parsed cues with the rule of `.python/device_regression.py` (cue i from i s to i s + 900 ms; the markup is
+ * removed and CRLF becomes LF).
+ * zh-CN: 把解析出的 cue 与 `.python/device_regression.py` 的生成规则比对 (第 i 条从 i 秒到 i 秒 + 900 毫秒; 去掉标记, CRLF 变为 LF).
+ */
+function sameCues(cues, count) {
+    if (!cues || cues.length !== count) return 'cues ' + (cues && cues.length) + ' of ' + count;
+    for (var i = 0; i < count; i++) {
+        var cue = cues[i];
+        var text = 'Line ' + i + ' of a long film, "quoted" and 中文\nsecond line ' + i;
+        if (Number(cue.start) !== i * 1000 || Number(cue.end) !== i * 1000 + 900 || String(cue.text) !== text) {
+            return 'cue ' + i + ' is ' + cue.start + ' - ' + cue.end + ' ' + JSON.stringify(String(cue.text));
+        }
+    }
+    return null;
 }
 
 var device = {
@@ -123,19 +151,20 @@ var benchHevc = hasHevc
     : null;
 
 step('video.trim', function () { return video.trim(config.video, {start: 1000, end: 4000}, out('trim.mp4')); },
-    function (v) { return Math.abs(v.durationMillis - 3000) <= 400 ? null : 'duration ' + v.durationMillis; });
+    function (v) { return Math.abs(v.durationMillis - 3000) <= 400 ? sameSize(v, source.width, source.height) : 'duration ' + v.durationMillis; });
 step('video.concat', function () { return video.concat([config.video2, config.video2], out('concat.mp4')); },
-    function (v) { return v.durationMillis > 0 ? null : 'empty'; });
-step('video.speed', function () { return video.speed(config.video2, {factor: 2}, out('speed.mp4')); }, null);
-step('video.transform', function () { return video.transform(config.video2, {rotate: 90, width: 360}, out('transform.mp4')); }, null);
-step('video.removeAudio', function () { return video.removeAudio(config.video2, out('remove-audio.mp4')); }, null);
+    function (v) { return v.durationMillis > 0 ? clipSize(v) : 'empty'; });
+step('video.speed', function () { return video.speed(config.video2, {factor: 2}, out('speed.mp4')); }, clipSize);
+step('video.transform', function () { return video.transform(config.video2, {rotate: 90, width: 360}, out('transform.mp4')); },
+    function (v) { return sameSize(v, 360, 640); });
+step('video.removeAudio', function () { return video.removeAudio(config.video2, out('remove-audio.mp4')); }, clipSize);
 step('video.extractAudio', function () { return video.extractAudio(config.video2, out('extract.m4a')); }, null);
 step('video.overlay', function () {
     return video.overlay(config.video2, [
         {type: 'text', text: '3-Slate', fontSize: 48, stroke: 'black', x: '50%', y: '20%'},
         {type: 'image', src: config.logo, x: '90%', y: '90%', scale: 0.5, alpha: 0.8},
     ], out('overlay.mp4'));
-}, null);
+}, clipSize);
 step('video.frames', function () { return video.frames(config.video2, {count: 5, format: 'jpg'}, out('frames')); },
     function (v) { return v && v.length === 5 ? null : 'frames ' + (v && v.length); });
 step('video.frame', function () {
@@ -162,10 +191,14 @@ step('video.compose', function () {
         overlays: [{type: 'text', text: 'compose', from: 0, to: 2000}],
         subtitles: {src: config.srt},
     }, out('compose.mp4'));
-}, function (v) { return v.width === 640 ? null : 'size ' + v.width; });
-step('video.burnSubtitles', function () { return video.burnSubtitles(config.video2, config.srt, {fontSize: 40}, out('burn.mp4')); }, null);
+}, clipSize);
+step('video.burnSubtitles', function () { return video.burnSubtitles(config.video2, config.srt, {fontSize: 40}, out('burn.mp4')); }, clipSize);
 step('video.subtitles.parse', function () { return video.subtitles.parse(config.srt); },
     function (v) { return v.length > 0 ? null : 'no cues'; });
+(config.cues || []).forEach(function (entry) {
+    step('video.subtitles.parse.' + entry.count, function () { return video.subtitles.parse(entry.src); },
+        function (v) { return sameCues(v, entry.count); });
+});
 step('video.subtitles.write', function () {
     return video.subtitles.write(out('written.ass'), [{start: 0, end: 1000, text: 'one'}, {start: 1000, end: 2000, text: 'two'}]);
 }, function (v) { return v.sizeBytes > 0 ? null : 'no file'; });

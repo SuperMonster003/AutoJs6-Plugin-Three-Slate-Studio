@@ -8,6 +8,7 @@ import android.os.Environment
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.ParcelFileDescriptor
 import android.os.RemoteException
 import android.os.SystemClock
 import android.util.Log
@@ -17,6 +18,7 @@ import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.CodecSup
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.MediaProbe
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.MediaStudioException
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.RequestPlanner
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.SubtitleCueFiles
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.SubmitEnvelope
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.TaskRunner
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.core.toBundle
@@ -62,6 +64,9 @@ internal class MediaStudioEngine private constructor(private val context: Contex
 
     init {
         runner.addObserver { main.post(foregroundCheck) }
+        // No task runs yet: cue files a dead process left behind can go (contract version 2, Q36 (b)).
+        // zh-CN: 尚无任务运行: 可以删除已死亡进程留下的 cue 文件 (契约版本 2, Q36 (b)).
+        executor.execute { SubtitleCueFiles.clearStale(context.cacheDir) }
     }
 
     /**
@@ -232,6 +237,9 @@ internal class MediaStudioEngine private constructor(private val context: Contex
             try {
                 callback.onComplete(taskId, result.withContractVersion())
             } finally {
+                // The oneway call has handed the descriptor to the kernel; this copy is ours to close (contract version 2).
+                // zh-CN: oneway 调用已把描述符交给内核; 本进程的副本由我们关闭 (契约版本 2).
+                closeDescriptors(result)
                 onFinished()
             }
         }
@@ -277,6 +285,12 @@ internal class MediaStudioEngine private constructor(private val context: Contex
             putString(MediaStudioContract.KEY_ERROR_CODE, code)
             putString(MediaStudioContract.KEY_ERROR_MESSAGE, detail.take(MediaStudioLimits.MAX_ERROR_MESSAGE_CHARS))
         }.withContractVersion()
+
+        /** Closes the descriptors of [result] (`cuesFile`). zh-CN: 关闭 [result] 中的描述符 (`cuesFile`). */
+        fun closeDescriptors(result: Bundle) {
+            @Suppress("DEPRECATION")
+            (result.get(MediaStudioResultKeys.CUES_FILE) as? ParcelFileDescriptor)?.let { runCatching { it.close() } }
+        }
 
         fun Bundle.withContractVersion(): Bundle = apply {
             putInt(MediaStudioContract.KEY_CONTRACT_VERSION, ThreeSlateStudioContract.CONTRACT_VERSION)

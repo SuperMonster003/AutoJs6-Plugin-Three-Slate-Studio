@@ -1,9 +1,11 @@
 # Host API release AARs (roadmap 4.5, P0.1), staged on 2026-11-05. See libs/README.md for the provenance.
 # common-plugin-api: 1.1.1 release from host commit 1676e7489d (unsigned), byte-identical to the copy 3-Stove Agent stages.
-# media-studio-api: 1.0.0 release from host commit ddc91edf4f (roadmap P1.1, contract version 1), assembled with
-#   :plugin-api:media-studio-api:assemble by the host card of roadmap P1.1; the module sources equal that commit.
+# media-studio-api: 1.0.0 release with contract version 2 (appendix D Q36 (b), 2026-11-07), assembled with
+#   :plugin-api:media-studio-api:assembleRelease from host 1f877537e6 plus the contract version 2 change of the host card
+#   3-slate-q36-q38; the module sources equal its host commit (libs/README.md). It replaced the contract version 1 build
+#   of host commit ddc91edf4f (roadmap P1.1), which was never published.
 format=1
 common-plugin-api.file=common-plugin-api.aar
 common-plugin-api.sha256=9849b15091dcb255cd1c47140790081eebc074aec2e3e9b28c18f12bf9ef4a6a
 media-studio-api.file=media-studio-api.aar
-media-studio-api.sha256=66c31dee7227d9cb7cbd7ce3cd519d69a56d8db52df0404e04ebd9528a1a50f5
+media-studio-api.sha256=e408474a4ec85f06a27a362c00dc18b025182dd3f08c5dbccf285639379dc258

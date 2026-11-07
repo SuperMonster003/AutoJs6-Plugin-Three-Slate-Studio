@@ -30,7 +30,7 @@ object ThreeSlateStudioContract {
      */
     const val REQUIRED_HOST_VERSION = 6641L
 
-    /** Media studio contract version (roadmap D28). zh-CN: 媒体工坊契约版本 (路线图 D28). */
+    /** Media studio contract version (roadmap D28; 2 since appendix D Q36 (b)). zh-CN: 媒体工坊契约版本 (路线图 D28; 附录 D Q36 (b) 起为 2). */
     const val CONTRACT_VERSION = MediaStudioContract.CONTRACT_VERSION
 
     /**
