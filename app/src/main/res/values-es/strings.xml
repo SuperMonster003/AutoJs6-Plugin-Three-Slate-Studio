@@ -339,6 +339,7 @@
     <string name="wizard_issue_too_many">Como máximo %1$d</string>
     <string name="wizard_item_title">%1$d. %2$s</string>
     <string name="wizard_length_hint">Píxeles, o un porcentaje como %1$s</string>
+    <string name="wizard_min_hint">Al menos %1$s</string>
     <string name="wizard_move_down">Bajar</string>
     <string name="wizard_move_up">Subir</string>
     <string name="wizard_no_path">No se puede obtener la ruta de este archivo; elígelo desde el almacenamiento compartido</string>

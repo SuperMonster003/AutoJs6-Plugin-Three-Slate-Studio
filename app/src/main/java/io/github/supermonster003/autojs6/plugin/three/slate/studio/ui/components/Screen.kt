@@ -73,6 +73,7 @@ internal fun Color.disabledIf(disabled: Boolean): Color = if (disabled) copy(alp
 internal fun SlateScreen(
     title: String,
     modifier: Modifier = Modifier,
+    singleLineTitle: Boolean = false,
     onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
     snackbarHostState: SnackbarHostState? = null,
@@ -89,7 +90,8 @@ internal fun SlateScreen(
         topBar = {
             TopAppBar(
                 // The direction follows the text, so the Latin title "3-Slate Studio" keeps its order in RTL layouts.
-                title = { Text(title, style = MaterialTheme.typography.titleLarge.copy(textDirection = TextDirection.Content), maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                title = { Text(title, style = MaterialTheme.typography.titleLarge.copy(textDirection = TextDirection.Content), maxLines = if (singleLineTitle) 1 else 2,
+                    overflow = if (singleLineTitle) TextOverflow.MiddleEllipsis else TextOverflow.Ellipsis) },
                 navigationIcon = {
                     if (onBack != null) {
                         IconButton(onClick = onBack, modifier = Modifier.testTag("slate.topBar.back")) {

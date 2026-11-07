@@ -204,7 +204,7 @@ io.github.supermonster003.autojs6.plugin.three.slate.studio
 | P1 | 宿主 6.8.1 (本地构建号, D23) | 契约 `media-studio-api`, 录屏 / 录音内核泛化, 脚本模块 `video` / `audio`, `CREATE_SCRIPT` 入口, 注册与协议文档 | P1.1-P1.7 已完成 (2026-11-06), 宿主与 Node / Bun 仓库本地提交未推送 |
 | P2 | 1.0.0 | 插件加工核心: 执行器与任务模型, 视频基础加工, 叠加, 抽帧与 GIF, 音频加工, 设备矩阵 | 已完成 (2026-11-07; P2.1 - P2.5 于 2026-11-06, P2.6 设备矩阵 6 台于 2026-11-07; Q36 - Q38 返工于 2026-11-07) |
 | P3 | 1.0.0 | 多轨合成: 时间线 JSON 与 `video.compose`, 转场, 字幕 | 已完成 (2026-11-07; P3.1 - P3.2 于 2026-11-06, P3.3 字幕于 2026-11-07 维护者目视通过; Q36 - Q38 返工于 2026-11-07) |
-| P4 | 1.0.0 | Studio 界面: 应用骨架, 工具箱向导, 时间线剪辑器, 代码生成与宿主入口, Studio 录音 | 未开始 |
+| P4 | 1.0.0 | Studio 界面: 应用骨架, 工具箱向导, 时间线剪辑器, 代码生成与宿主入口, Studio 录音 | 进行中 (P4.1 - P4.2 于 2026-11-07; OnePlus ColorOS 装机待补, frames 脚本一侧待宿主 Q53; 剩 P4.3 - P4.5) |
 | P5 | 1.0.0 | 文档, 声明, 四仓库同步, 样例, 兼容矩阵, 发布与索引登记 | 未开始 |
 | P6 | 1.1.0 | FFmpeg + libass 大库: 自建或选型, Shared-Assets 类别, 下载 / 校验 / 加载, 命令透传, 新格式, 完整 ASS, 发布 | 未开始 |
 | P7 | 1.2.0 | 录屏增强: 插件自持投影, 悬浮控制条与 Studio 录屏入口, Shizuku 免确认, 发布 | 未开始 |
@@ -383,17 +383,17 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 
 ## P4: Studio 界面
 
-状态: 未开始. 设备: API 24 AVD (最低版本布局), API 35 AVD, Sony XQ-AT72 API 31, Xiaomi Pad API 35 (大屏), OnePlus API 35 (ColorOS); P4.5 另需 Sony XQ-DQ72 API 33 与 G8441 API 28.
+状态: 进行中 (P4.1 / P4.2 于 2026-11-07 完成, 见各条结果). 设备: API 24 AVD (最低版本布局), API 35 AVD, Sony XQ-AT72 API 31, Xiaomi Pad API 35 (大屏), OnePlus API 35 (ColorOS); P4.5 另需 Sony XQ-DQ72 API 33 与 G8441 API 28.
 
 ### P4.1 应用骨架, 首页, 任务队列, 设置, 发行历史 (D37)
 
-- [ ] (插件) Compose 应用骨架 (导航, 主题, 阿拉伯语 RTL 与 FSI / PDI), 首页 (D37 目录的媒体列表, 缩略图, 详情页含 "用 MediaInfo 查看" 入口), 任务队列页 (进度, 取消, 失败原因), 设置页 (D37 各项 + 启动器图标模式 + "所有文件访问" 引导 + "电池无限制" 引导 (附录 D Q13: 系统限制插件后台时, 能力表 `mediaStudioWarnings` 已报警告, 设置页给出跳转)), 发行历史与更新检查 (照 Maple Image).
-- 验收: API 24 / 35 AVD 与两台真机界面可用; 亮暗主题与阿拉伯语各截一次图.
+- [x] (插件) Compose 应用骨架 (导航, 主题, 阿拉伯语 RTL 与 FSI / PDI), 首页 (D37 目录的媒体列表, 缩略图, 详情页含 "用 MediaInfo 查看" 入口), 任务队列页 (进度, 取消, 失败原因), 设置页 (D37 各项 + 启动器图标模式 + "所有文件访问" 引导 + "电池无限制" 引导 (附录 D Q13: 系统限制插件后台时, 能力表 `mediaStudioWarnings` 已报警告, 设置页给出跳转)), 发行历史与更新检查 (照 Maple Image). 证据 (E1 + E2, 2026-11-07): 提交 `a1c7479` (实现, VERSION_BUILD 15) 与其后的 `fix(ui)` 提交 (设备检查中的界面修正与本节回填, VERSION_BUILD 16); 界面套件照 3-Prism Camera 的 Compose 套件 (`StandaloneActivity`, 外观跟随 AutoJs6 并可自选语言 / 夜间模式 / 主题色, MaterialKolor 4.1.1 调色, 发行历史页与官方插件索引更新检查; 3-Maple Image 只有发行历史对话框, 没有更新检查); 首页 600 dp 以下为底部导航栏, 600 dp 起为侧边导航栏; 新增文案 282 条 x 11 个 values 目录; JVM 214 例 0 失败 (新增 `OptionSchemasTest`, `WizardFormTest`, `AppearanceTest`, `AppUpdateIndexTest`, 更新 `ManifestContractTest`); `lintDebug` 只余他卡既有的 `core/Subtitles.kt:427` 字节序标记错误 (`fa78933` 引入, 不属本卡). D37 的 "硬件编码器偏好" 与 "任务并发数" 按附录 D Q50 (a) 暂不提供; 脚本任务的失败原因见 Q51; "用 MediaInfo 查看" 入口按 Q52 (a) 在 MediaInfo 提供查看器后才出现.
+- 验收: API 24 / 35 AVD 与两台真机界面可用; 亮暗主题与阿拉伯语各截一次图. 结果 (2026-11-07): 通过. `.python/device_ui_check.py` (从启动器打开首页, 按测试标签只点按插件自己的页面: 媒体库, 详情, 工具箱, 修剪向导, 任务, 设置; 每页检查进程与崩溃): AVD_API_24 6 / 6, AVD_API_35_16K 亮 / 暗 / 阿拉伯语 18 / 18, XQ-AT72 (API 31) 6 / 6, 小米平板 23046RP50C (API 35 大屏, 侧边导航栏) 暗色与阿拉伯语 12 / 12 加亮色 4 页 (亮色任务页已打开, 脚本因空状态缺标签误判, 已补标签; 其后屏幕自动锁定未复跑), 均无崩溃; 截图在共享笔记 `3-slate-p4-visual/`. 检查中修正: 阿拉伯语里分辨率 / 码率 / 帧率被双向算法重排 (改用 LRI / PDI 隔离), 详情页路径开头的斜杠跑到行尾 (FSI / PDI), 修改时间用了进程默认区域 (改用插件语言), 详情页标题按字符折行 (单行中间省略), 时间与像素字段的范围提示显示 9007199254740992 (上限不小于 `Int.MAX_VALUE` 时改为 "至少 N", 新文案 `wizard_min_hint`). 未执行: OnePlus API 35 (ColorOS) 整个检查期间被 3-Chime chime-p5 占用且停在锁屏, 首次安装要维护者在 ColorOS 上确认; G8441 停在安全锁屏 (非本条要求).
 
 ### P4.2 工具箱向导 (D35)
 
-- [ ] (插件) 每个加工 API 一个向导页 (P2.2-P2.5 全部操作), 共用文件选择器 (SAF + 首页目录), 参数表单由 `OptionSchemas` 驱动, 结果页 (输出路径, 媒体信息, 打开 / 分享, 生成的代码预览).
-- 验收: 每个向导走通一次并与脚本调用结果一致; 表单字段与 d.ts 选项逐项对应 (单元测试比对 schema).
+- [x] (插件) 每个加工 API 一个向导页 (P2.2-P2.5 全部操作), 共用文件选择器 (SAF + 首页目录), 参数表单由 `OptionSchemas` 驱动, 结果页 (输出路径, 媒体信息, 打开 / 分享, 生成的代码预览). 证据 (E1 + E2, 2026-11-07): 提交同 P4.1; 20 个向导 (P2.2 - P2.5 的 18 个操作, `burnSubtitles`, 字幕格式转换 = `subtitlesParse` + `subtitlesWrite`; 时间线留 P4.3), 表单的字段类型, 默认值, 范围, 枚举, 互斥组与条件字段都来自 `codegen/OptionSchemas`, 提交前用插件校验器 `OperationOptions.parse` 预检, 与脚本同一执行器与队列 (origin `studio`); 码率策略 (自动 / 高画质 / 小文件) 按输入估算后写进请求与等价代码; 结果页显示输出, 媒体信息, 打开 / 分享与等价脚本调用 (`codegen/ScriptCalls`, 完整代码生成与宿主入口为 P4.4). `OptionSchemasTest` 以边界值逐字段喂给校验器, schema 渲染出的选项声明入库为 `docs/development/media-studio-options.d.ts` 并由测试核对 (P5.2 用它写 Rhino 的 `video` / `audio` 声明; Node d.ts 与插件选项的差异记在共享笔记 `3-slate-p4-notes.md`, 留 P5.2); `WizardFormTest` 7 例 (最少输入能被校验器接受且代码与 `ScriptCalls` 一致, 文本转换, 逐字段错误, 条件字段, 每路输入的音轨, 默认编码预填, 每个键与选项都有文案).
+- 验收: 每个向导走通一次并与脚本调用结果一致; 表单字段与 d.ts 选项逐项对应 (单元测试比对 schema). 结果 (2026-11-07): 19 / 20 一致, frames 的脚本一侧被宿主预检拒绝 (附录 D Q53). `.python/device_wizard_check.py` + 仪器测试 `WizardDeviceTest` + `scripts/device-wizard-compare.js`: 每个向导按页面的提交方式 (`WizardForm` -> `StudioTasks.submit`) 跑一次, 另有修剪向导经页面完整走通 (工具箱 -> 向导 -> 从媒体库选择 -> 填写 -> 提交 -> 结果页), 再把报告中的等价调用改写输出路径后经宿主运行, 两份输出用同一组探测比对. AVD_API_24 与 AVD_API_35_16K: 仪器测试 2 / 2 (20 个向导全部完成, 无宿主, 未比对脚本); XQ-AT72 (API 31, 隔离克隆宿主 6641, 宿主 HEAD `8cbea453d5` 含契约 v2 `ca938a9d89`, 测后装回原宿主 md5 fe59a68e): 仪器测试 2 / 2, 19 个向导与脚本输出的尺寸, 时长, 编码一致 (trim 640x360 1509 ms, concat 320x180 6037 ms, transform 320x180, transcode 480x270, toGif 160x90, audioConvert pcm 5015 ms, subtitlesConvert 文本逐字相同等); frames 向导输出 3 帧 640x360, 等价脚本 `video.frames(..., { times: [500, 1500, 2500] }, ...)` 被宿主报 `options.times must be an array of numbers` (宿主问题, Q53 修复后用同一脚本复测).
 
 ### P4.3 时间线剪辑器 (D10, D34)
 
@@ -701,6 +701,7 @@ oneway interface IMediaStudioCallback {
 | Q50 | D37 设置项中的 "硬件编码器偏好" 与 "任务并发数" (执行器的并发上限是契约常量 `MediaStudioLimits.MAX_CONCURRENT_ENCODES` = 2, 编码器由 media3 `DefaultEncoderFactory` 与 Q38 的 `RequestedSizeEncoderFactory` 选择; 两项都要改 core / pipeline, 批次 6 时另一张卡正在改编码器工厂, 本卡不改 core) | (a) 1.0.0 不提供这两项, 设置页只列默认输出目录, 默认编码, 码率策略, 媒体库目录 (推荐, 已先行; 改选返工: 无) / (b) 1.0.0 补上两项: 编码器偏好 (自动 / 优先硬件 / 优先软件) 经 media3 `EncoderSelector`, 并发数 1 - 2 经 `TaskRunner` (插件 core + pipeline + 设置页 + 11 种语言文案, 约半天; 并发越高越易遇到 Q37 的编解码器资源不足) / (c) 只补编码器偏好 (约 2 小时) | P4.1 | 已按推荐先行待确认 (2026-11-07, 3-slate-p4-1-2): 设置页按 (a) 实现, `SettingsActivity` 的类注释写明 |
 | Q51 | 任务队列页的 "失败原因" 只有 Studio 自己提交的任务有: 脚本提交的任务失败原因经回调交给宿主, 插件 `TaskRunner` 的任务快照只有状态, 不保存错误码与消息 | (a) 1.0.0 保持: 脚本任务在队列里只显示 "失败" 状态, 原因在脚本侧 (推荐, 已先行; 改选返工: 无) / (b) `TaskRunner` 快照保存最近的错误码与消息 (只给 Studio 进程内读取, 不进契约), 队列页对脚本任务也显示 (插件 core 约 1 小时 + 单测) | P4.1 | 已按推荐先行待确认 (2026-11-07, 3-slate-p4-1-2): `TasksScreen` 对 Studio 任务显示错误码与消息, 对脚本任务只显示状态 |
 | Q52 | 详情页的 "用 MediaInfo 查看" 入口: MediaInfo 2.1.4 (`io.github.supermonster003.autojs6.plugin.mediainfo`) 只有唤醒 Activity 与契约服务, 没有接受 `ACTION_VIEW` 的查看界面, 入口无处可跳 | (a) 入口按 `resolveActivity` 判断, MediaInfo 将来提供查看器 (接受 `ACTION_VIEW` + 媒体 URI) 时自动出现, 目前不显示; Manifest `queries` 已声明该包 (推荐, 已先行; 改选返工: 无) / (b) 给 MediaInfo 插件加一个查看器 Activity (另一个仓库, 约半天, 需单独立项与发布) / (c) 去掉该入口 (改 P4.1 条目与 D18 措辞) | P4.1 | 已按推荐先行待确认 (2026-11-07, 3-slate-p4-1-2): `DetailScreen` 按 (a) 实现 |
+| Q53 | 脚本 `video.frames` 的 `times` 数组被宿主预检拒绝: 宿主 `MediaStudioValues` 把全为整数的数组规整为 `LongArray` (含小数时为 `DoubleArray`), `MediaStudioOptionRules.numbers()` 只接受 `List`, 报 `INVALID_OPTIONS: options.times must be an array of numbers`, 任务到不了插件 (Rhino / Node / Bun 共用这条路径; P4.2 向导真机比对 `device_wizard_check.py` 中发现, 向导在插件进程内提交, 不受影响) | (a) 宿主卡片修 `numbers()` (连同其他读数字数组的规则) 接受 `LongArray` / `DoubleArray`, 补单测, 再用 `.python/device_wizard_check.py` 复测 frames 一致 (推荐; 宿主 1 个文件约 30 分钟, 不改契约与插件) / (b) 改 `MediaStudioValues`, 数字数组保持 `List`, 写 Bundle 时再转数组 (所有数组选项的写入路径都受影响, 约 1 小时) | P1.3 | 需拍板 (2026-11-07, 3-slate-p4-1-2 发现; 本卡不改宿主, 无法先行) |
 
 ## 附录 E. 证据等级
 

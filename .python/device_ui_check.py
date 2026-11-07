@@ -61,16 +61,43 @@ def tags(serial: str) -> dict[str, tuple[str, int, int]]:
     return found
 
 
-def tap(serial: str, tag: str, attempts: int = 5) -> bool:
-    """Taps the plugin's own element ``tag``; never anything of another package. zh-CN: 只点按插件自己的元素."""
+def tap(serial: str, tag: str, expect: str, attempts: int = 5) -> bool:
+    """Taps the plugin's own element ``tag`` until a tag starting with ``expect`` shows the page opened; never taps
+    anything of another package.
+    zh-CN: 点按插件自己的元素 ``tag``, 直到出现以 ``expect`` 开头的标签 (页面已打开); 不点按其他包的任何内容."""
     for _ in range(attempts):
         found = tags(serial).get(tag)
         if found and found[0] == PLUGIN:
             adb(serial, "shell", "input", "tap", str(found[1]), str(found[2]))
-            time.sleep(1.5)
-            return True
-        time.sleep(1)
+            for _ in range(4):
+                time.sleep(1.5)
+                if any(name.startswith(expect) and package == PLUGIN for name, (package, _, _) in tags(serial).items()):
+                    return True
+        else:
+            time.sleep(1)
     return False
+
+
+def back(serial: str, expect: str = "slate.home.navigation", attempts: int = 3) -> bool:
+    """Presses BACK until ``expect`` shows (a first BACK may only close the keyboard); stops as soon as it shows, so the
+    plugin is never left.
+    zh-CN: 按返回键直到出现 ``expect`` (第一次可能只收起键盘); 一出现就停, 不会退出插件."""
+    for _ in range(attempts):
+        found = tags(serial).get(expect)
+        if found and found[0] == PLUGIN:
+            return True
+        adb(serial, "shell", "input", "keyevent", "KEYCODE_BACK", check=False)
+        time.sleep(1.5)
+    found = tags(serial).get(expect)
+    return bool(found and found[0] == PLUGIN)
+
+
+def locked(serial: str) -> bool:
+    """Whether the keyguard is showing; only the maintainer unlocks a phone. zh-CN: 是否显示锁屏; 手机只由维护者解锁."""
+    adb(serial, "shell", "input", "keyevent", "KEYCODE_WAKEUP", check=False)
+    time.sleep(1)
+    window = adb(serial, "shell", "dumpsys", "window", check=False)
+    return "isKeyguardShowing=true" in window or "mDreamingLockscreen=true" in window or "mShowingLockscreen=true" in window
 
 
 def running(serial: str) -> bool:
@@ -98,10 +125,20 @@ def appearance(serial: str, language: str, dark_mode: str) -> None:
     adb(serial, "shell", f"echo \"{xml}\" | run-as {PLUGIN} sh -c 'cat > {PREFS}'", check=False)
 
 
-def launch(serial: str) -> None:
+def launch(serial: str, timeout: float = 40) -> bool:
+    """Starts the home from the launcher and waits until its navigation is drawn (a cold start on a software-rendered
+    emulator takes several seconds).
+    zh-CN: 从启动器打开首页并等到导航栏绘制完成 (软件渲染的模拟器冷启动要好几秒)."""
     adb(serial, "shell", "input", "keyevent", "KEYCODE_WAKEUP", check=False)
     adb(serial, "shell", "monkey", "-p", PLUGIN, "-c", "android.intent.category.LAUNCHER", "1", check=False)
-    time.sleep(3)
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        found = tags(serial).get("slate.home.navigation")
+        if found and found[0] == PLUGIN:
+            time.sleep(1.5)
+            return True
+        time.sleep(1.5)
+    return False
 
 
 def shot(serial: str, folder: Path | None, name: str) -> str:
@@ -135,6 +172,9 @@ def main(argv: list[str] | None = None) -> int:
 
     serial = args.serial
     model = adb(serial, "shell", "getprop", "ro.product.model", check=False).strip()
+    if locked(serial):
+        print(f"BLOCKED {model} ({serial}): the screen is locked; ask the maintainer to unlock it, nothing was installed")
+        return 2
     api = sdk(serial)
     name = args.name or re.sub(r"[^A-Za-z0-9_-]+", "-", model) or serial
     pages = [page for page in args.pages.split(",") if page]
@@ -155,36 +195,36 @@ def main(argv: list[str] | None = None) -> int:
                 adb(serial, "shell", f"mkdir -p '{STAGING}' '{LIBRARY}'", check=False)
                 adb(serial, "push", str(local), f"{STAGING}/{local.name}")
                 adb(serial, "shell", f"cp '{STAGING}/{local.name}' '{SAMPLE}'; rm -rf '{STAGING}'", check=False)
-                adb(serial, "shell", "am", "broadcast", "-a", "android.intent.action.MEDIA_SCANNER_SCAN_FILE", "-d", f"file://{SAMPLE}", check=False)
+                # Android 10 and later scan through the media provider's scan_file call, older versions through the broadcast.
+                # zh-CN: Android 10 起经媒体提供器的 scan_file 调用扫描, 更早的版本经广播.
+                adb(serial, "shell", f"content call --uri content://media --method scan_file --arg '{SAMPLE}'", check=False)
+                adb(serial, "shell", "am", "broadcast", "-a", "android.intent.action.MEDIA_SCANNER_SCAN_FILE", "-d", f"'file://{SAMPLE}'", check=False)
                 time.sleep(2)
             for key in [item for item in args.appearances.split(",") if item]:
                 language, dark_mode = APPEARANCES[key]
                 appearance(serial, language, dark_mode)
-                launch(serial)
-                ok = running(serial) and foreground(serial)
+                ok = launch(serial) and running(serial) and foreground(serial)
                 results.append((ok, f"{key} home {shot(serial, args.shots, f'{name}-{key}-library')}".rstrip()))
                 if not ok:
                     continue
                 if "detail" in pages:
-                    opened = tap(serial, "slate.library.item")
+                    opened = tap(serial, "slate.library.item", "slate.detail")
                     results.append((opened and running(serial), f"{key} detail {shot(serial, args.shots, f'{name}-{key}-detail') if opened else 'no library item'}"))
                     if opened:
-                        adb(serial, "shell", "input", "keyevent", "KEYCODE_BACK", check=False)
-                        time.sleep(1.5)
+                        back(serial)
                 if "toolbox" in pages or "wizard" in pages:
-                    opened = tap(serial, "slate.home.tab.toolbox")
+                    opened = tap(serial, "slate.home.tab.toolbox", "slate.toolbox")
                     results.append((opened and running(serial), f"{key} toolbox {shot(serial, args.shots, f'{name}-{key}-toolbox') if opened else 'tab not found'}"))
                     if opened and "wizard" in pages:
-                        wizard = tap(serial, "slate.toolbox.trim")
+                        wizard = tap(serial, "slate.toolbox.trim", "slate.wizard")
                         results.append((wizard and running(serial), f"{key} wizard {shot(serial, args.shots, f'{name}-{key}-wizard') if wizard else 'trim not found'}"))
                         if wizard:
-                            adb(serial, "shell", "input", "keyevent", "KEYCODE_BACK", check=False)
-                            time.sleep(1.5)
+                            back(serial)
                 if "tasks" in pages:
-                    opened = tap(serial, "slate.home.tab.tasks")
-                    results.append((opened and running(serial), f"{key} tasks {shot(serial, args.shots, f'{name}-{key}-tasks') if opened else 'tab not found'}"))
+                    opened = tap(serial, "slate.home.tab.tasks", "slate.tasks")
+                    results.append((opened and running(serial), f"{key} tasks {shot(serial, args.shots, f'{name}-{key}-tasks') if opened else 'tab not found, screen ' + shot(serial, args.shots, f'{name}-{key}-tasks-missing')}"))
                 if "settings" in pages:
-                    opened = tap(serial, "slate.home.settings")
+                    opened = tap(serial, "slate.home.settings", "slate.settings")
                     results.append((opened and running(serial), f"{key} settings {shot(serial, args.shots, f'{name}-{key}-settings') if opened else 'action not found'}"))
                 adb(serial, "shell", "am", "force-stop", PLUGIN, check=False)
         finally:

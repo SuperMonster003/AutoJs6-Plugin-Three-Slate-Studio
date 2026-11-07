@@ -151,10 +151,10 @@ private fun FieldEditor(
         is FieldType.Integer -> {
             val choices = field.uiChoices
             if (choices != null) ChoiceEditor(form, field, path, label, choices.map { it.toString() }, issue, tag)
-            else TextEditor(form, field, path, label, issue, tag, KeyboardType.Number, rangeHint(type.min.toString(), type.max.toString()))
+            else TextEditor(form, field, path, label, issue, tag, KeyboardType.Number, rangeHint(type.min.toString(), type.max.toString(), type.max.toDouble()))
         }
         is FieldType.Decimal -> TextEditor(form, field, path, label, issue, tag, KeyboardType.Decimal,
-            rangeHint(WizardForm.number(type.min), WizardForm.number(type.max)))
+            rangeHint(WizardForm.number(type.min), WizardForm.number(type.max), type.max))
         is FieldType.FlagOrInteger, is FieldType.FlagOrDecimal -> FlagOrNumberEditor(form, field, path, label, issue, tag)
         FieldType.Color -> {
             val color = form.values[path]?.let { Colors.parse(it) }
@@ -242,8 +242,8 @@ private fun FlagOrNumberEditor(form: WizardForm, field: OptionField, path: Strin
         if (mode == NUMBER) {
             val type = field.type
             val hint = when (type) {
-                is FieldType.FlagOrInteger -> rangeHint(type.min.toString(), type.max.toString())
-                is FieldType.FlagOrDecimal -> rangeHint(WizardForm.number(type.min), WizardForm.number(type.max))
+                is FieldType.FlagOrInteger -> rangeHint(type.min.toString(), type.max.toString(), type.max.toDouble())
+                is FieldType.FlagOrDecimal -> rangeHint(WizardForm.number(type.min), WizardForm.number(type.max), type.max)
                 else -> null
             }
             OutlinedTextField(
@@ -375,8 +375,12 @@ private fun fieldLabel(parent: String?, field: OptionField): String {
 @Composable
 private fun unitLabel(label: String, unit: OptionUnit): String = if (unit == OptionUnit.NONE) label else "$label ($UNIT_START${unit.symbol}$UNIT_END)"
 
+/** A maximum from [UNBOUNDED] up is a technical limit (time and pixel fields), so only the minimum is shown. zh-CN: 不小于 [UNBOUNDED] 的上限只是技术上限 (时间与像素字段), 只显示下限. */
 @Composable
-private fun rangeHint(min: String, max: String): String = stringResource(R.string.wizard_range_hint, min, max)
+private fun rangeHint(min: String, max: String, maxValue: Double): String =
+    if (maxValue >= UNBOUNDED) stringResource(R.string.wizard_min_hint, min) else stringResource(R.string.wizard_range_hint, min, max)
+
+private const val UNBOUNDED = Int.MAX_VALUE.toDouble()
 
 @Composable
 internal fun choiceLabel(key: String, value: String, unit: OptionUnit): String {

@@ -117,12 +117,17 @@ def push_sources(serial: str, files: dict[str, Path]) -> None:
     for path in files.values():
         adb(serial, "push", str(path), f"{STAGING}/{path.name}")
         adb(serial, "shell", f"cp '{STAGING}/{path.name}' '{WORK}/{path.name}'")
+    # The screens test picks a clip from the library dialog, which lists the scanned media of the library folders.
+    # zh-CN: 页面测试从媒体库对话框选片段, 对话框列出媒体库目录中已扫描的媒体.
+    adb(serial, "shell", f"mkdir -p '{LIBRARY_FIXTURE.rsplit('/', 1)[0]}'; cp '{STAGING}/video.mp4' '{LIBRARY_FIXTURE}'", check=False)
+    adb(serial, "shell", f"content call --uri content://media --method scan_file --arg '{LIBRARY_FIXTURE}'", check=False)
+    adb(serial, "shell", "am", "broadcast", "-a", "android.intent.action.MEDIA_SCANNER_SCAN_FILE", "-d", f"'file://{LIBRARY_FIXTURE}'", check=False)
     adb(serial, "shell", f"rm -rf '{STAGING}'; chmod 666 '{WORK}'/*", check=False)
 
 
 def instrument(serial: str, timeout: int) -> tuple[bool, list[str]]:
     output = adb(serial, "shell", "am", "instrument", "-w", "-r", "-e", "class", TEST_CLASS, "-e", "wizardIn", WORK,
-                 "-e", "wizardOut", f"{REMOTE}/wizard", f"{TEST_PACKAGE}/androidx.test.runner.AndroidJUnitRunner", check=False, timeout=timeout)
+                 "-e", "wizardOut", f"{REMOTE}/wizard", "-e", "wizardLibrary", f"'{LIBRARY_FIXTURE}'", f"{TEST_PACKAGE}/androidx.test.runner.AndroidJUnitRunner", check=False, timeout=timeout)
     lines, test, failed = [], None, set()
     for line in output.splitlines():
         if line.startswith("INSTRUMENTATION_STATUS: test="):
@@ -223,6 +228,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--cache", type=Path, default=Path(tempfile.gettempdir()) / "slate-wizard-check-sources")
     args = parser.parse_args(argv)
 
+    from device_ui_check import locked
+    if locked(args.serial):
+        print(f"BLOCKED {args.serial}: the screen is locked (the screens test needs it); ask the maintainer to unlock it, nothing was installed")
+        return 2
     files = sources(args.ffmpeg, args.cache)
     status: list[str] = []
     with tempfile.TemporaryDirectory() as temporary:
@@ -234,6 +243,14 @@ def main(argv: list[str] | None = None) -> int:
         try:
             if args.host_apk:
                 adb(args.serial, "install", "-r", "-d", str(args.host_apk))
+                # The host under test must be this APK: an install that did not take would run the calls on the old host.
+                # zh-CN: 被测宿主必须是这个 APK: 安装未生效时调用会在旧宿主上运行.
+                expected = hashlib.md5(args.host_apk.read_bytes()).hexdigest()
+                path = installed(args.serial, HOST)
+                actual = device_md5(args.serial, path) if path else ""
+                status.append(f"host under test {'is' if actual == expected else 'is NOT'} the given APK (md5 {expected[:8]}{'' if actual == expected else ', device ' + actual[:8]})")
+                if actual != expected:
+                    raise RuntimeError("the host APK was not installed")
             adb(args.serial, "install", "-r", "-d", "-t", str(args.plugin_apk))
             adb(args.serial, "install", "-r", "-t", str(args.test_apk))
             clean(args.serial)

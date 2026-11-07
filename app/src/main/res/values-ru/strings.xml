@@ -339,6 +339,7 @@
     <string name="wizard_issue_too_many">Не более %1$d</string>
     <string name="wizard_item_title">%1$d. %2$s</string>
     <string name="wizard_length_hint">Пиксели или процент, например %1$s</string>
+    <string name="wizard_min_hint">Не менее %1$s</string>
     <string name="wizard_move_down">Переместить вниз</string>
     <string name="wizard_move_up">Переместить вверх</string>
     <string name="wizard_no_path">Не удалось получить путь к файлу; выберите его в общем хранилище</string>

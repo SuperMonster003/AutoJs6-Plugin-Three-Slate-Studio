@@ -190,9 +190,9 @@ private fun infoRows(context: Context, result: Bundle?): List<Pair<Int, String>>
         if (!result.containsKey(MediaStudioResultKeys.VIDEO_CODEC) && !result.containsKey(MediaStudioResultKeys.AUDIO_CODEC)) {
             result.getString(MediaStudioResultKeys.CODEC)?.let { add(R.string.option_codec to it) }
         }
-        result.getDouble(MediaStudioResultKeys.FRAME_RATE, 0.0).takeIf { it > 0 }?.let { add(R.string.option_frame_rate to String.format(Locale.ROOT, "%.2f fps", it)) }
+        result.getDouble(MediaStudioResultKeys.FRAME_RATE, 0.0).takeIf { it > 0 }?.let { add(R.string.option_frame_rate to Formats.frameRate(it)) }
         result.getLong(MediaStudioResultKeys.BIT_RATE, 0).takeIf { it > 0 }?.let { add(R.string.option_bit_rate to Formats.bitRate(it)) }
-        result.getInt(MediaStudioResultKeys.SAMPLE_RATE, 0).takeIf { it > 0 }?.let { add(R.string.option_sample_rate to "$it Hz") }
+        result.getInt(MediaStudioResultKeys.SAMPLE_RATE, 0).takeIf { it > 0 }?.let { add(R.string.option_sample_rate to Formats.sampleRate(it)) }
         result.getInt(MediaStudioResultKeys.CHANNELS, 0).takeIf { it > 0 }?.let { add(R.string.option_channels to it.toString()) }
         result.getString(MediaStudioResultKeys.MIME)?.let { add(R.string.detail_format to it) }
         result.getLong(MediaStudioResultKeys.SIZE_BYTES, -1).takeIf { it >= 0 }?.let { add(R.string.detail_size to Formats.size(context, it)) }

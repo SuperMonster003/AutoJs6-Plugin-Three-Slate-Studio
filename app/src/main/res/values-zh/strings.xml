@@ -339,6 +339,7 @@
     <string name="wizard_issue_too_many">最多 %1$d 个</string>
     <string name="wizard_item_title">%1$d. %2$s</string>
     <string name="wizard_length_hint">像素数, 或百分比 (如 %1$s)</string>
+    <string name="wizard_min_hint">至少 %1$s</string>
     <string name="wizard_move_down">下移</string>
     <string name="wizard_move_up">上移</string>
     <string name="wizard_no_path">无法取得该文件的路径, 请从共享存储中选择</string>

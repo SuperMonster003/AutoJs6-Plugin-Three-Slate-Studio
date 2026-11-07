@@ -1,8 +1,6 @@
 package io.github.supermonster003.autojs6.plugin.three.slate.studio.ui
 
 import android.media.MediaMetadataRetriever
-import android.media.MediaScannerConnection
-import android.os.Environment
 import android.os.SystemClock
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -33,8 +31,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 
 /**
@@ -176,52 +172,48 @@ class WizardDeviceTest {
     @Test
     fun trimWizardRunsThroughTheScreens() {
         val files = folders()
-        // The library dialog lists the media of the library folders, so put the fixture into one and scan it.
-        // zh-CN: 媒体库对话框列出媒体库目录中的媒体, 因此把夹具放进其中一个目录并扫描.
-        @Suppress("DEPRECATION")
-        val library = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), "3-Slate Studio").apply { mkdirs() }
-        val source = File(library, "p4-wizard-check.mp4")
-        File(files.video).copyTo(source, overwrite = true)
-        val scanned = CountDownLatch(1)
-        MediaScannerConnection.scanFile(context, arrayOf(source.path), null) { _, _ -> scanned.countDown() }
-        assertTrue("media scan", scanned.await(30, TimeUnit.SECONDS))
+        // The library dialog lists the media of the library folders; the driver puts a clip into one and scans it.
+        // zh-CN: 媒体库对话框列出媒体库目录中的媒体; 驱动把一段片段放进其中一个目录并扫描.
+        val library = InstrumentationRegistry.getArguments().getString(ARG_LIBRARY)
+        assumeTrue("run by .python/device_wizard_check.py", library != null)
+        val source = File(library!!)
         val target = File(files.output, "screens-trim.mp4")
-        try {
-            ActivityScenario.launch(HomeActivity::class.java).use {
-                compose.onNodeWithTag("slate.home.tab.toolbox").performClick()
-                compose.onNodeWithTag("slate.toolbox.${MediaStudioOps.TRIM}").performScrollTo().performClick()
-                compose.onNodeWithTag("slate.wizard.library").performScrollTo().performClick()
-                val item = hasTestTag("slate.dialog.library.item") and hasText(source.name, substring = true)
-                compose.waitUntil(UI_TIMEOUT_MILLIS) { compose.onAllNodes(item).fetchSemanticsNodes().isNotEmpty() }
-                compose.onNode(item).performScrollTo().performClick()
-                compose.onNodeWithTag("slate.wizard.field.start").performScrollTo().performTextInput("500")
-                compose.onNodeWithTag("slate.wizard.alt.length.duration").performScrollTo().performClick()
-                compose.onNodeWithTag("slate.wizard.field.duration").performScrollTo().performTextInput("1500")
-                compose.onNodeWithTag("slate.wizard.output").performScrollTo().performTextInput(target.path)
-                compose.onNodeWithTag("slate.wizard.submit").performClick()
-                val row = await({ StudioTasks.rows.lastOrNull { it.origin == MediaStudioContract.ORIGIN_STUDIO && it.output == target.path } }, TASK_TIMEOUT_MILLIS)
-                assertEquals(row?.errorMessage, MediaStudioContract.TASK_COMPLETED, row?.state)
-                assertEquals("video.trim(\"${source.path}\", { start: 500, duration: 1500 }, \"${target.path}\");", row!!.request!!.code)
-                compose.waitUntil(UI_TIMEOUT_MILLIS) { compose.onAllNodes(hasTestTag("slate.result.output.0") and hasText(target.path, substring = true)).fetchSemanticsNodes().isNotEmpty() }
-            }
-            val duration = MediaMetadataRetriever().run {
-                try {
-                    setDataSource(target.path)
-                    extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)!!.toLong()
-                } finally {
-                    release()
-                }
-            }
-            assertTrue("duration $duration", abs(duration - 1500) <= DURATION_TOLERANCE_MILLIS)
-        } finally {
-            source.delete()
-            MediaScannerConnection.scanFile(context, arrayOf(source.path), null, null)
+        ActivityScenario.launch(HomeActivity::class.java).use {
+            compose.onNodeWithTag("slate.home.tab.toolbox").performClick()
+            compose.onNodeWithTag("slate.toolbox.${MediaStudioOps.TRIM}").performClick()
+            compose.onNodeWithTag("slate.wizard.library").performScrollTo().performClick()
+            val item = hasTestTag("slate.dialog.library.item") and hasText(source.name, substring = true)
+            compose.waitUntil(UI_TIMEOUT_MILLIS) { compose.onAllNodes(item).fetchSemanticsNodes().isNotEmpty() }
+            compose.onNode(item).performClick()
+            compose.onNodeWithTag("slate.wizard.field.start").performScrollTo().performTextInput("500")
+            compose.onNodeWithTag("slate.wizard.alt.length.duration").performScrollTo().performClick()
+            compose.onNodeWithTag("slate.wizard.field.duration").performScrollTo().performTextInput("1500")
+            compose.onNodeWithTag("slate.wizard.output").performScrollTo().performTextInput(target.path)
+            compose.onNodeWithTag("slate.wizard.submit").performClick()
+            val row = await({ StudioTasks.rows.lastOrNull { it.origin == MediaStudioContract.ORIGIN_STUDIO && it.output == target.path } }, TASK_TIMEOUT_MILLIS)
+            assertEquals(row?.errorMessage, MediaStudioContract.TASK_COMPLETED, row?.state)
+            // The library answers the storage path (/storage/emulated/0/...), the driver names it through /sdcard.
+            // zh-CN: 媒体库给出存储路径 (/storage/emulated/0/...), 驱动经 /sdcard 指定.
+            val input = row!!.request!!.inputs.single()
+            assertTrue(input, input.endsWith("/" + source.name))
+            assertEquals("video.trim(\"$input\", { start: 500, duration: 1500 }, \"${target.path}\");", row.request!!.code)
+            compose.waitUntil(UI_TIMEOUT_MILLIS) { compose.onAllNodes(hasTestTag("slate.result.output.0") and hasText(target.path, substring = true)).fetchSemanticsNodes().isNotEmpty() }
         }
+        val duration = MediaMetadataRetriever().run {
+            try {
+                setDataSource(target.path)
+                extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)!!.toLong()
+            } finally {
+                release()
+            }
+        }
+        assertTrue("duration $duration", abs(duration - 1500) <= DURATION_TOLERANCE_MILLIS)
     }
 
     private companion object {
         const val ARG_IN = "wizardIn"
         const val ARG_OUT = "wizardOut"
+        const val ARG_LIBRARY = "wizardLibrary"
         const val REPORT = "wizard-report.json"
         const val VIDEO = "video.mp4"
         const val VIDEO_2 = "video2.mp4"

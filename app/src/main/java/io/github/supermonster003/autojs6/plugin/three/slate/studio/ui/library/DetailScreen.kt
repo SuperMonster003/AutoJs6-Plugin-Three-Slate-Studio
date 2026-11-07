@@ -96,6 +96,7 @@ internal fun DetailScreen(path: String, onBack: () -> Unit, onProcess: (op: Stri
     val failed = stringResource(R.string.action_failed)
     SlateScreen(
         title = File(current).name,
+        singleLineTitle = true,
         onBack = onBack,
         snackbarHostState = snackbar,
         actions = {
@@ -186,20 +187,22 @@ internal fun DetailScreen(path: String, onBack: () -> Unit, onProcess: (op: Stri
 @Composable
 private fun InfoRows(context: Context, details: FileDetails) {
     val rows = buildList {
-        add(R.string.detail_path to details.file.path)
+        add(R.string.detail_path to Formats.isolate(details.file.path))
         add(R.string.detail_size to Formats.size(context, details.file.length()))
-        add(R.string.detail_modified to DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(details.file.lastModified())))
+        // The plugin's language, not the default locale of the process. zh-CN: 用插件的语言, 不是进程的默认区域设置.
+        val locale = context.resources.configuration.locales[0]
+        add(R.string.detail_modified to DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, locale).format(Date(details.file.lastModified())))
         val info = details.info
         if (info != null) {
             info.mime?.let { add(R.string.detail_format to it) }
             if (info.durationMillis > 0) add(R.string.option_duration to Formats.duration(info.durationMillis))
             if (info.width != null && info.height != null) add(R.string.detail_resolution to Formats.resolution(info.width, info.height))
-            if (info.rotation != 0) add(R.string.option_rotate to "${info.rotation} deg")
-            info.frameRate?.let { add(R.string.option_frame_rate to String.format(Locale.ROOT, "%.2f fps", it)) }
+            if (info.rotation != 0) add(R.string.option_rotate to Formats.degrees(info.rotation))
+            info.frameRate?.let { add(R.string.option_frame_rate to Formats.frameRate(it)) }
             info.videoCodec?.let { add(R.string.detail_video_codec to it) }
             info.bitRate?.let { add(R.string.option_bit_rate to Formats.bitRate(it)) }
             info.audioCodec?.let { add(R.string.detail_audio_codec to it) }
-            info.sampleRate?.let { add(R.string.option_sample_rate to "$it Hz") }
+            info.sampleRate?.let { add(R.string.option_sample_rate to Formats.sampleRate(it)) }
             info.channels?.let { add(R.string.option_channels to it.toString()) }
         } else if (details.imageWidth != null && details.imageHeight != null) {
             add(R.string.detail_resolution to Formats.resolution(details.imageWidth, details.imageHeight))

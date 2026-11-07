@@ -339,6 +339,7 @@
     <string name="wizard_issue_too_many">%1$d كحد أقصى</string>
     <string name="wizard_item_title">%1$d. %2$s</string>
     <string name="wizard_length_hint">عدد البكسلات أو نسبة مئوية مثل %1$s</string>
+    <string name="wizard_min_hint">لا يقل عن %1$s</string>
     <string name="wizard_move_down">نقل لأسفل</string>
     <string name="wizard_move_up">نقل لأعلى</string>
     <string name="wizard_no_path">تعذر الحصول على مسار هذا الملف; اختره من التخزين المشترك</string>

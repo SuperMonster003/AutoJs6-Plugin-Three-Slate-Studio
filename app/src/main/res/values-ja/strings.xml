@@ -339,6 +339,7 @@
     <string name="wizard_issue_too_many">最大 %1$d 個</string>
     <string name="wizard_item_title">%1$d. %2$s</string>
     <string name="wizard_length_hint">ピクセル数, または %1$s のような割合</string>
+    <string name="wizard_min_hint">%1$s 以上</string>
     <string name="wizard_move_down">下へ移動</string>
     <string name="wizard_move_up">上へ移動</string>
     <string name="wizard_no_path">このファイルのパスを取得できません. 共有ストレージから選択してください</string>

@@ -2,6 +2,7 @@ package io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.tasks
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -58,7 +59,9 @@ internal fun TasksScreen(onOpenResult: (String) -> Unit, onOpenDetail: (String) 
     }
     val rows = StudioTasks.rows
     if (rows.isEmpty()) {
-        EmptyState(title = stringResource(R.string.tasks_empty_title), body = stringResource(R.string.tasks_empty_body), icon = R.drawable.ic_list_24)
+        Box(Modifier.fillMaxSize().testTag("slate.tasks.empty")) {
+            EmptyState(title = stringResource(R.string.tasks_empty_title), body = stringResource(R.string.tasks_empty_body), icon = R.drawable.ic_list_24)
+        }
         return
     }
     LazyColumn(Modifier.fillMaxSize().testTag("slate.tasks")) {
