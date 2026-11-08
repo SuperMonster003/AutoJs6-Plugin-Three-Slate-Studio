@@ -2,6 +2,8 @@
 
 更新: 2026-10-22 (立项). 本文件是 `AutoJs6-Plugin-Three-Slate-Studio` (显示名 `3-Slate Studio`, 录屏 + 媒体加工方向, 插件选题分析 2026-10 的第 3 优先级候选) 的唯一进度与决策记录. 立项基线: 宿主 AutoJs6 `master` `63d1cb259` (2026-10-22, `VERSION_NAME` 6.8.0 未发布, `VERSION_BUILD` 4183, versionCode 5835), 宿主 Node 桥接录屏内核 `bd522f8a7` / `e8f8edb7a` (2026-10-17), 3-Macaw Speech `ROADMAP.md` 作为版式与流程模板. 2026-11-05: 维护者拍板 Q1 / Q4 / Q6 (均选推荐项) 并补充 Studio 录音需求 (Q8, D41, P4.5); 宿主基线改为公开历史重写后的 6.8.1 (附录 F).
 
+发布状态 (2026-11-08): 1.0.0 已发布并登记官方索引 (P5.4): `VERSION_NAME` 1.0.0, versionCode 33, 源码 `96c8bfe` (tag `v1.0.0`), APK `autojs6-plugin-three-slate-studio-v1.0.0-c2db405c.apk` 4,350,440 字节, CRC32 `c2db405c`, 最低宿主 6641 (6.8.1, 未公开). 下一阶段 P6 (1.1.0).
+
 使用方式:
 
 - 每个条目完成时在条目前打勾 (`[x]`), 在条目末尾写提交 hash (插件仓库) 或 "宿主本地提交 `<hash>`" (宿主仓库只落本地提交, 推送由维护者决定). 阶段总览的状态列同步更新.
@@ -184,7 +186,7 @@ io.github.supermonster003.autojs6.plugin.three.slate.studio
 | 宿主契约包 | `org.autojs.plugin.mediastudio.api` |
 | 宿主桥接包 | `org.autojs.autojs.core.plugin.mediastudio` |
 | 脚本 API | `video` 与 `audio` (`$video` / `$audio` 同对象) |
-| `{REQUIRES_HOST_VERSION}` | 基线 6640 (宿主 master `340a0b511e`, 6.8.1 未发布, 附录 F); P0.1 先写临时值 6641 (基线后的第一个本地构建号), P1.5 改为含契约的本地构建号, P5.4 回填为含全部宿主条目的本地构建号 (D23) |
+| `{REQUIRES_HOST_VERSION}` | 基线 6640 (宿主 master `340a0b511e`, 6.8.1 未发布, 附录 F); P0.1 先写临时值 6641 (基线后的第一个本地构建号), P1.5 改为含契约的本地构建号, P5.4 回填为含全部宿主条目的本地构建号 (D23); 1.0.0 定为 6641 (宿主 6.8.1 发布时 `VERSION_BUILD` 须不低于 6641) |
 | 向导目录 | `PluginInstallWizardCatalog` `TOOLS` 分类, `official("three.slate.studio")`, 回退标题 `Three Slate Studio` (附录 D Q4 已决) |
 | `plugin_description` (zh-Hans) | `视频与音频加工, 多轨时间线剪辑, 转场与字幕, 界面操作可生成脚本代码` (句尾无点号, 不含 "AutoJs6"; P0.1 定稿, 10 语言见 `values*/strings.xml`) |
 | GitHub 仓库描述 | `Video and audio processing, multi-track timeline editing and screen recording companion for AutoJs6 scripts` |
@@ -205,7 +207,7 @@ io.github.supermonster003.autojs6.plugin.three.slate.studio
 | P2 | 1.0.0 | 插件加工核心: 执行器与任务模型, 视频基础加工, 叠加, 抽帧与 GIF, 音频加工, 设备矩阵 | 已完成 (2026-11-07; P2.1 - P2.5 于 2026-11-06, P2.6 设备矩阵 6 台于 2026-11-07; Q36 - Q38 返工于 2026-11-07) |
 | P3 | 1.0.0 | 多轨合成: 时间线 JSON 与 `video.compose`, 转场, 字幕 | 已完成 (2026-11-07; P3.1 - P3.2 于 2026-11-06, P3.3 字幕于 2026-11-07 维护者目视通过; Q36 - Q38 返工于 2026-11-07) |
 | P4 | 1.0.0 | Studio 界面: 应用骨架, 工具箱向导, 时间线剪辑器, 代码生成与宿主入口, Studio 录音 | 已完成 (2026-11-07; P4.1 - P4.2 于 2026-11-07; frames 的脚本一侧经宿主 Q53 修复后复测 20 / 20; P4.4 于 2026-11-07 (含 Q50 (b), Q51 (b)); P4.3 于 2026-11-07 (Q3 (b) 自写预览); P4.5 于 2026-11-07 (Sony API 28 / 31 / 33 与 OnePlus ColorOS 真机通过)) |
-| P5 | 1.0.0 | 文档, 声明, 四仓库同步, 样例, 兼容矩阵, 发布与索引登记 | 进行中 (P5.1 与 P5.3 于 2026-11-08) |
+| P5 | 1.0.0 | 文档, 声明, 四仓库同步, 样例, 兼容矩阵, 发布与索引登记 | 已完成 (2026-11-08; P5.1 - P5.4 于 2026-11-08; 1.0.0 (versionCode 33) 已发布并登记官方索引) |
 | P6 | 1.1.0 | FFmpeg + libass 大库: 自建或选型, Shared-Assets 类别, 下载 / 校验 / 加载, 命令透传, 新格式, 完整 ASS, 发布 | 未开始 |
 | P7 | 1.2.0 | 录屏增强: 插件自持投影, 悬浮控制条与 Studio 录屏入口, Shizuku 免确认, 发布 | 未开始 |
 
@@ -417,7 +419,7 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 
 ## P5: 文档, 声明, 四仓库同步, 样例与发布
 
-状态: 进行中 (P5.1 与 P5.3 于 2026-11-08 完成, P5.2 部分完成, 见各条). 设备: 附录 F 全部可用设备各跑一次冒烟.
+状态: 已完成 (2026-11-08; P5.1 - P5.4 均于 2026-11-08 完成, 见各条). 设备: 附录 F 全部可用设备各跑一次冒烟.
 
 ### P5.1 文档 (AutoJs6-Documentation) (D40)
 
@@ -437,8 +439,8 @@ P0 (骨架)                                  P1 (宿主) 与 P0 并行: 不同�
 
 ### P5.4 1.0.0 发布 (D23)
 
-- [ ] (发布) 发布门禁 1-5 全部通过; `REQUIRES_HOST_VERSION` 回填; tag `v1.0.0`, Release 附 APK 与源码归档; (索引) 官方索引登记 (release-manifests 与 catalog-icons); (插件) 版本号推进到 1.1.0-dev.
-- 验收: 从官方索引安装的 1.0.0 在两台真机跑通 `samples/`.
+- [x] (发布) 发布门禁 1-5 全部通过; `REQUIRES_HOST_VERSION` 回填; tag `v1.0.0`, Release 附 APK 与源码归档; (索引) 官方索引登记 (release-manifests 与 catalog-icons); (插件) 发布后 `VERSION_BUILD` 推进到 34, `VERSION_NAME` 保持 1.0.0, 到第一笔 1.1.0 改动时再改并新增 10 种语言的 changelog 条目 (原写 "推进到 1.1.0-dev", 但 `generate_markdown.py --check` 要求 `VERSION_NAME` 等于最新 changelog 条目, 附录 D Q122 (a)). 证据 (2026-11-08, 3-slate-p5-4): 插件提交 `0cfd8ca` (release 加 `-dontoptimize`, 附录 D Q121; D40 改为 Q91 (a) 的措辞; Q120 / Q121 已决; `VERSION_BUILD` 32), `96c8bfe` (CI release 产物检查对 ZipInfo 排序的 TypeError, `VERSION_BUILD` 33, 即 1.0.0 的源码), 本条的 ROADMAP 提交 (`VERSION_BUILD` 34). 门禁 1 (E1 + E2): 插件 `test connectedDebugAndroidTest` 在 AVD_API_35_16K (只读) 上单测 254 例 0 失败, 仪器测试 65 例 0 失败 11 跳过 (都是驱动专用用例); 宿主 mediastudio / record 单测 (隔离克隆 `2b055f6cf9`, `VERSION_BUILD` 改 6641) 84 例 + `media-studio-api` 10 例 0 失败, 同一克隆产出 debug 6641 (arm64 md5 48dfb836). 门禁 2 (E3 + E4): 首轮发现 R8 优化后的 release 包在 API 24 - 30 上所有 Transformer 操作崩溃 (Q121), 改 `-dontoptimize` 后: G8441 (28) release 回归 25 / 25 + 样例 2 / 2, XQ-AT72 (31) release 25 / 25 + 2 / 2 + Studio 录音 3 / 3, XQ-DQ72 (33) debug 25 / 25 + 2 / 2 + 录音 4 / 4 (含熄屏), 小米平板 (35) debug 25 / 25 + 2 / 2 + 文档示例 26 / 26, OnePlus (35, ColorOS) release 25 / 25 + 2 / 2, AVD_API_27 release 与 debug 逐项一致 (14 / 24, 其余为模拟器 GL / FLAC 编码器限制), 全程 0 崩溃 (附录 F "P5.4 发布门禁 2"); 录音的对话框与 ColorOS 安装确认由维护者点. 门禁 3 (E1): `generate_markdown.py --check` MARKDOWN_OK 36, `generate_icon_studio.py --check`, `generate_third_party_notices.py --check` NOTICES_OK (host 2, maven 90), `check_repository.py`, `prepush_check.py` 6 / 6, 跟踪文件的全角标点扫描无命中 (Icon Studio 内核副本的开发工具报错文本除外, 与其他官方插件相同). 门禁 4 见下方验收. 门禁 5: changelog 10 种语言在 P5.3 一次写全, 日期 2026/11/08 即实际发布日, 本卡无需改动. `REQUIRES_HOST_VERSION` 定为 6641 (`app/build.gradle.kts`, `ThreeSlateStudioContract`, `.readme/common.json` 一致; 宿主 6.8.1 仍未公开, D23). 仓库与发布: `SuperMonster003/AutoJs6-Plugin-Three-Slate-Studio` 于 2026-11-08 建立 (Q120 (b)), `master` 推送后 Build integrity, Markdown, Icon Studio, Emulator tests (API 35) 4 个工作流全绿; tag `v1.0.0` -> `96c8bfe`, `release.yml` 签名构建成功; Release <https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Slate-Studio/releases/tag/v1.0.0> 附 `autojs6-plugin-three-slate-studio-v1.0.0-c2db405c.apk` 与 `SHA256SUMS` (源码归档为 GitHub 自动生成), 说明取 CHANGELOG-en 1.0.0 条目, 版式同 3-Chime / 3-Macaw. 索引: AutoJs6-Official-Plugins-Index `eb3d00b` (`official-repositories.json` 54 -> 55 及 README 计数, `release-manifests/<包名>/33.json`, `catalog-icons.json` 与日 / 夜两张 432x432 图标 (源提交 `96c8bfe`, recipe sha256 `e71f4ba2...`), 本地生成的 `plugins.official.generated.json` 只多本插件一项: `requiresHostVersion` 6641, `nativePageAlignment` 16384), 推送后 Plugin Index 与 Markdown CI 绿.
+- 验收: 从官方索引安装的 1.0.0 在两台真机跑通 `samples/`. 结果 (2026-11-08): 通过 (E3 + E4). 门禁 4: CI 签名包 4,350,440 字节, sha256 `748caeb400ca1192c6f88a83b79fc746d86624b1b492500fd0f19ae67d7655a4` (`SHA256SUMS` 校验通过), 文件名 CRC32 `c2db405c` 与内容一致, versionCode 33 / 1.0.0, v2 签名证书 sha256 `31a681fc...c213` (与其他官方插件相同), `zipalign -c -P 16` 通过, 4 个 ABI 的 `libandroidx.graphics.path.so` 均未压缩, 清单 `NATIVE_PAGE_ALIGNMENT` 16384, dex 中合并引入的 `LogSessionId` / `LoudnessCodecController` cast 为 0, 索引清单 `33.json` 与包一致. 真机: Redmi 22120RN86C (33) 与 OnePlus OPD2413 (35, ColorOS) 装门禁 1 的宿主 debug 6641, 由维护者在插件中心从官方索引安装 1.0.0 (33), `.python/device_samples_check.py` 4 / 4 两台都通过: 裁剪加水印再拼接与时间线合成 (同 P5.3 的检查项), 录音转 FLAC (5030 / 5060 ms, 48 kHz 单声道), 录屏 10 秒转 GIF (10100 ms, 101 帧; 屏幕捕获对话框由维护者点, 两台分别 89.5 / 84.1 s). OnePlus 的宿主原本没有麦克风权限, 录音样例直接返回 `PERMISSION_DENIED` 且不弹授权框 (宿主 `AudioRecorder` 的设计是要求先在系统设置中授予), 与样例注释 "首次运行时按提示授予录音权限" 不符, 登记附录 D Q123; 本次经 `pm grant` 临时授予后通过, 测后撤销并清除 user-set / user-fixed 标志. 测后两台装回原宿主 6640 (md5 `2603aa37` / `92f0eb09` 一致), 插件卸载 (测前未装), 推送的素材, 输出与 MediaStore 记录已删.
 
 ---
 
@@ -707,6 +709,8 @@ oneway interface IMediaStudioCallback {
 | Q91 | D40 与 P5.1 写 `video.md` / `audio.md` "10 种语言", 文档站 api 页只有简体中文 (所有模块页如此, 没有多语言页面体系), 10 种语言只在 changelog 与 README 的生成源 | (a) 页面用简体中文, 10 种语言落在 changelog JSON 与生成的 README / CHANGELOG, 与其他模块页一致 (推荐, 已先行; 改选返工: 无) / (b) 为两页另写 9 种语言版本 (文档站需新建多语言页面, 侧栏与生成器都要改, 超出本卡, 约数天) | P5.1 | 已决 (2026-11-08, 维护者选: (a) 保持; 3-slate-p5-1 已按 (a) 先行, 文档站提交 `465f7a9`) |
 | Q120 | 首次发布时 GitHub 上没有本仓库, `release.yml` 打 tag 要 4 个签名 secret (`ANDROID_SIGNING_KEY_BASE64` 等, 只有 ImGui 仓库配过; 其他官方插件没有 release 工作流, 本地签名发布) | (a) 维护者建空仓库并配 secret (推荐) / (b) 会话用 `gh repo create` 建公开仓库, 维护者只配 secret / (c) 只建仓, 改用本地签名, `release.yml` 缺 secret 时只出未签名包与清单草稿 (约 15 分钟) | P5.4 | 已决 (2026-11-08, 维护者选: (b)): 2026-11-08 3-slate-p5-4 建 `SuperMonster003/AutoJs6-Plugin-Three-Slate-Studio` (公开, 描述同 5.5 身份表, 关 wiki / projects, 与 3-Chime Alarm 一致), secret 由维护者配置; `release.yml` 不改 |
 | Q121 | 门禁 2 发现: R8 优化后的 release 包在 Android 7 - 11 (API 24 - 30) 上所有经 media3 Transformer 的视频操作 (转码, 剪辑, 拼接, 变速, 变换, 叠加, 时间线, 烧录字幕等 11 项) 都让插件进程崩溃 (`NoClassDefFoundError: android.media.metrics.LogSessionId`, G8441 回归 14 / 25, 样例 0 / 2); API 31 起不受影响; debug 包不经 R8, 此前的回归都是 debug 包. 根因: R8 8.13 横向类合并把持有 API 31 `LogSessionId` 字段的 `DefaultAssetLoaderFactory` 并进 `DefaultAnalyticsCollector$MediaPeriodQueueTracker`, 合并后的字段为 Object 并在读取处 check-cast, ART 先解析类再判空; dex 扫描另见 `AppInitializer` 与插件自身 lambda 被混进同类 cast | (a) `proguard-rules.pro` 加 `-dontoptimize`, 保留压缩与混淆, 关闭内联与类合并 (3-Block Compose 先例; APK 3,248,121 -> 4,350,440 字节, +34 %; 合并引入的新 API cast 全部消失) (推荐, 已先行) / (b) 只对 media3 关闭优化 (`-keep,allowshrinking,allowobfuscation class androidx.media3.** { *; }`, +213 KB), 但 R8 合成的 lambda 不受 keep 规则约束, 其他库照旧合并, release 界面路径无法用仪器测试验证 | P5.4 | 已决 (2026-11-08, 维护者选: (a)): 两种修法都在 G8441 实测 25 / 25 + 样例 2 / 2, 0 崩溃, 转码倍速不变 (h264 1.49x / 1.50x); 采用 (a) 后另在 XQ-AT72 (31), OnePlus (35) 跑 release 回归 25 / 25 与样例 2 / 2, AVD_API_27 上 release 与 debug 结果逐项一致 |
+| Q122 | 发布后的版本号: P5.4 写 "推进到 1.1.0-dev", 但本仓库 `generate_markdown.py --check` (CI Build integrity 也运行) 要求 `VERSION_NAME` 等于最新 changelog 条目 (`v1.0.0`), 改为 1.1.0-dev 后检查失败 | (a) 只推 `VERSION_BUILD` (33 -> 34), `VERSION_NAME` 保持 1.0.0, 第一笔 1.1.0 改动时再改并写 10 种语言条目, 与 3-Chime 1.0.1 / 3-Macaw 1.6.1 做法一致 (推荐) / (b) 改生成脚本接受 `x.y.z-dev` (约 20 行加测试) / (c) 新增空的 v1.1.0 条目, `VERSION_NAME` 1.1.0 (master 的 README / CHANGELOG 会显示无内容的 1.1.0) | P5.4 | 已决 (2026-11-08, 维护者选: (a)): 本卡 ROADMAP 提交把 `VERSION_BUILD` 改为 34, `VERSION_NAME` 1.0.0 不变; P6 第一笔改动负责改为 1.1.0 并新增 changelog 条目 |
+| Q123 | 录音样例的权限说明与宿主行为不符: `samples/录音转 FLAC [v6.8.1+].js` (与宿主内置样例逐字节相同) 写 "首次运行时按提示授予录音权限", README 写 "首次运行时需要授予录音权限"; 宿主 `AudioRecorder` 在没有麦克风权限时直接抛 `SecurityException` (脚本得到 `PERMISSION_DENIED`, 提示在系统设置中授予), 不弹授权框 (P5.4 在 OnePlus 上实测) | (a) 改样例注释与 README 10 种语言为 "运行前在系统设置中为 AutoJs6 授予麦克风权限 (缺少时返回 PERMISSION_DENIED)", 插件 `samples/` 与宿主样例同步改 (宿主本地提交), 约 12 个文件, 只改文字 (推荐) / (b) 宿主 `audio.record` 在有前台界面时申请权限, 无前台时照旧报错 (宿主代码与文档改动, 随 6.8.1) / (c) 保持现状 | P6 之前 | 待决 (未先行; 影响 P5.3 的样例与 README, 1.0.0 已发布的包不受影响, 改选只涉及文字) |
 
 ## 附录 E. 证据等级
 
@@ -785,8 +789,21 @@ P2.2 转码基准 (E3, 2026-11-06, 3-slate-p2-1-2): `py .python/benchmark_transc
 | F6 | 时间线剪辑器: 30 秒工程 (3 段素材, 转场, 音乐, 导入 8 条 SRT 字幕, 文字 / 图片叠加) 导出并与脚本 `video.compose` 比对, 撤销 / 重做, 工程往返; API 24 基本操作 | E2 + E3 | XQ-DQ72 (33), 小米平板 (35), AVD_API_24 (24) | P4.3 验收 |
 | F7 | 代码生成与 "在 AutoJs6 中打开" (内联与 content URI 两种发送) | E1 + E3 | XQ-AT72 (31) | P4.4 验收 |
 | F8 | Studio 录音: 麦克风 / 内录保存为 M4A 并探测, 熄屏录音, ColorOS 授权 (对话框由维护者点) | E2 + E3 + E4 | G8441 (28, 仅麦克风), XQ-AT72 (31), XQ-DQ72 (33), OnePlus OPD2413 (35), AVD_API_35_16K (35) | P4.5 验收 |
-| F9 | `samples/` 的 4 个示例经宿主原样运行, 输出拉回 PC 用 ffmpeg 核对 (`.python/device_samples_check.py`) | E3 + E4 | Redmi 22120RN86C (33) | P5.3 验收 |
-| F10 | 宿主最低构建 6641: 含契约 `media-studio-api` 与 `video` / `audio` 模块的宿主本地构建 (6.8.1 未发布, P5.4 回填公开构建号, D23) | E1 + E3 | XQ-AT72 (31), 小米平板 (35) | P1.3, P1.5 |
+| F9 | `samples/` 的 4 个示例经宿主原样运行, 输出拉回 PC 用 ffmpeg 核对 (`.python/device_samples_check.py`) | E3 + E4 | Redmi 22120RN86C (33), OnePlus OPD2413 (35; 从官方索引安装的 1.0.0 release 包) | P5.3 验收, P5.4 验收 |
+| F10 | 宿主最低构建 6641: 含契约 `media-studio-api` 与 `video` / `audio` 模块的宿主本地构建 (6.8.1 未发布; P5.4 定为 6641, 宿主 6.8.1 发布时 `VERSION_BUILD` 须不低于 6641, D23) | E1 + E3 | XQ-AT72 (31), 小米平板 (35) | P1.3, P1.5 |
+
+P5.4 发布门禁 2 (E3 + E4, 2026-11-08, 3-slate-p5-4): 同一套 `.python/device_regression.py` (25 项) 与 `device_samples_check.py` 的 edit / compose 两例; 宿主均为门禁 1 隔离克隆 (`2b055f6cf9`, `VERSION_BUILD` 6641) 的 debug 包. 测前未装插件的设备用 release 包 (`-dontoptimize`, 与发布的 `96c8bfe` 构建配置相同), 装着 debug 插件的设备不能降级到 release (系统只允许降级 debuggable 包), 用 debug 31. 测后宿主与插件均装回原包 (md5 一致).
+
+| 设备 | API | 插件包 | 回归 | 样例 | 1080p 60 秒 H.264 / H.265 倍速 | 其他 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Sony G8441 (`BH900ASK9E`) | 28 | release | 25 / 25 | 2 / 2 | 1.49 / 1.99 | 改前的优化包 14 / 25 + 0 / 2 (Q121); `-keep` media3 的方案 (b) 同样 25 / 25 |
+| Sony XQ-AT72 (`QV710AF65F`) | 31 | release | 25 / 25 | 2 / 2 | 7.15 / 7.32 | Studio 录音 3 / 3 (麦克风 5717 ms 单声道 48 kHz, 内录立体声, 前台服务) |
+| Sony XQ-DQ72 (`QV770340J7`) | 33 | debug 31 | 25 / 25 | 2 / 2 | 3.14 / 3.16 | Studio 录音 4 / 4 (含熄屏录音 36266 ms / 期望 35500) |
+| Xiaomi Pad 23046RP50C (`968e9f18`) | 35 | debug 31 | 25 / 25 | 2 / 2 | - | 文档示例 26 / 26 (P5.1 补跑截图会话的 2 例) |
+| OnePlus OPD2413 (`63751f63`) | 35 | release | 25 / 25 | 2 / 2 | 9.00 / 9.47 | ColorOS 安装确认由维护者点 |
+| AVD_API_27 (x86, GLES 2.0) | 27 | release 与 debug | 14 / 24 | - | - | release 与 debug 逐项一致; 其余项为模拟器的 GL 帧处理与 FLAC 编码器限制; 插件 0 崩溃 (AVD_API_25 缺系统镜像未启动) |
+
+1.0.0 发布快照 (2026-11-08): versionCode 33, 源码 `96c8bfe`, APK 4,350,440 字节 (`-dontoptimize` 前的优化包为 3,248,121 字节), CRC32 `c2db405c`, sha256 `748caeb4...55a4`, 最低宿主 6641, 依赖与 `THIRD_PARTY_NOTICES.md` 一致 (host 2, maven 90; media3 1.10.1). P5.4 验收 (从官方索引安装): Redmi 22120RN86C (33) 与 OnePlus OPD2413 (35) 的 `samples/` 均 4 / 4 (F9).
 
 ## 附录 G. 已评估暂缓
 
