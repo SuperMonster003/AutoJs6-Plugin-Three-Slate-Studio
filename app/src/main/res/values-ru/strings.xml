@@ -236,8 +236,12 @@
     <string name="record_storage_message">Записи сохраняются в папке Music общего хранилища. Разрешите доступ ко всем файлам и снова начните запись.</string>
     <string name="record_title">Запись звука</string>
     <string name="record_toolbox_summary">Запись микрофона, звука других приложений или обоих сразу в M4A или WAV</string>
-    <string name="release_history_title">История версий</string>
-    <string name="release_history_unavailable">Не удалось загрузить историю версий</string>
+    <string name="release_history">История выпусков</string>
+    <string name="release_history_collapse_all">Свернуть всё</string>
+    <string name="release_history_collapsed">Свёрнуто</string>
+    <string name="release_history_expand_all">Развернуть всё</string>
+    <string name="release_history_expanded">Развёрнуто</string>
+    <string name="release_history_unavailable">Не удалось загрузить историю выпусков</string>
     <string name="result_gone">Запись об этой задаче удалена</string>
     <string name="result_info">Сведения о медиафайле</string>
     <string name="result_more">Не показано файлов: %1$d</string>
@@ -317,7 +321,7 @@
     <string name="settings_output_folder_reset">Папки по умолчанию</string>
     <string name="settings_permission_granted">Предоставлено</string>
     <string name="settings_permissions">Разрешения и фоновая работа</string>
-    <string name="settings_release_history_summary">Открыть историю выпусков, встроенную в плагин</string>
+    <string name="settings_release_history_summary">Открыть встроенную историю выпусков приложения</string>
     <string name="settings_save_failed">Не удалось сохранить настройку</string>
     <string name="settings_storage_missing">Не предоставлено: скрипты и инструменты не могут читать и записывать пути общего хранилища; нажмите, чтобы предоставить</string>
     <string name="settings_storage_permission">Доступ ко всем файлам</string>

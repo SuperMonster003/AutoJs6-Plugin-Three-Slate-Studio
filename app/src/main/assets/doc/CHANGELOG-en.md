@@ -4,6 +4,12 @@
 
 ******
 
+# v1.0.1
+
+###### 2026/11/20
+
+* `Improvement` The release history page now expands and collapses by version: a collapsed version shows its date and the number of entries per category, an expanded one names each category once; all versions can be expanded or collapsed at once, and the newest one opens expanded; the page is titled "Release history" (formerly "Version history") with the plugin name as the subtitle, and its entries in the "About" section of the settings and in the update dialog are renamed to match
+
 # v1.0.0
 
 ###### 2026/11/08

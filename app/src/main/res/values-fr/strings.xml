@@ -236,7 +236,11 @@
     <string name="record_storage_message">Les enregistrements sont stockés dans le dossier Music du stockage partagé. Autorisez l\'accès à tous les fichiers, puis relancez l\'enregistrement.</string>
     <string name="record_title">Enregistrer le son</string>
     <string name="record_toolbox_summary">Enregistrer le micro, le son des autres applications ou les deux, en M4A ou WAV</string>
-    <string name="release_history_title">Historique des versions</string>
+    <string name="release_history">Historique des versions</string>
+    <string name="release_history_collapse_all">Tout réduire</string>
+    <string name="release_history_collapsed">Réduit</string>
+    <string name="release_history_expand_all">Tout développer</string>
+    <string name="release_history_expanded">Développé</string>
     <string name="release_history_unavailable">Impossible de charger l\'historique des versions</string>
     <string name="result_gone">Cet historique de tâche a été effacé</string>
     <string name="result_info">Informations sur le média</string>
@@ -317,7 +321,7 @@
     <string name="settings_output_folder_reset">Dossiers par défaut</string>
     <string name="settings_permission_granted">Accordée</string>
     <string name="settings_permissions">Autorisations et arrière-plan</string>
-    <string name="settings_release_history_summary">Lire l\'historique des versions inclus dans le plugin</string>
+    <string name="settings_release_history_summary">Consulter l\'historique des versions inclus dans l\'application</string>
     <string name="settings_save_failed">Impossible d\'enregistrer le paramètre</string>
     <string name="settings_storage_missing">Non accordé: les scripts et la boîte à outils ne peuvent pas lire ni écrire dans le stockage partagé; appuyez pour l\'accorder</string>
     <string name="settings_storage_permission">Accès à tous les fichiers</string>

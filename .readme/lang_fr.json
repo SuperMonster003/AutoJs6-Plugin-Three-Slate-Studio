@@ -277,5 +277,59 @@
   "p_ffmpeg_patents": "Certains codecs pris en charge par FFmpeg, comme H.265 / HEVC et AAC, peuvent être couverts par des brevets dans certains pays ou régions. La bibliothèque est proposée uniquement par commodité et n'inclut aucune licence de brevet; vérifiez les règles qui vous concernent avant de l'utiliser.",
   "p_license": "Le code du projet est distribué sous [Mozilla Public License 2.0]({{ license_url }}). Les composants et données tiers sont répertoriés dans les mentions tierces.",
   "text_link_third_party": "Mentions tierces (THIRD_PARTY_NOTICES.md)",
-  "p_instruction_docs": "L'avancement et la conception sont disponibles sur la [page du projet]({{ repo_url }})."
+  "instruction_p_what": "3-Slate Studio est une application de montage vidéo et audio qui fonctionne aussi seule, sans AutoJs6. Elle coupe, assemble, accélère et transcode les vidéos, ajoute des filigranes ou crée des GIF; elle coupe, mixe et convertit aussi l'audio, et monte plusieurs clips en une vidéo sur une timeline, avec transitions et sous-titres. Avec AutoJs6, les scripts effectuent les mêmes traitements via les modules `video` et `audio`.",
+  "instruction_h3_start": "Prise en main",
+  "instruction_start_steps": [
+    "Ouvrez 3-Slate Studio. Tant que l'accès n'est pas accordé, \"Médiathèque\" affiche \"Accorder l'accès\"; touchez-le et autorisez l'accès à tous les fichiers dans la page système qui s'ouvre.",
+    "Dans \"Boîte à outils\", choisissez un traitement, par exemple \"Couper une vidéo\", sélectionnez le média avec \"Parcourir les fichiers\" ou \"Depuis la médiathèque\", réglez les options et touchez \"Lancer\".",
+    "La progression s'affiche pendant le traitement; à la fin apparaissent les fichiers de sortie, les informations du média et le \"Script équivalent\". Toutes les tâches sont aussi listées dans \"Tâches\".",
+    "Avant de l'utiliser dans des scripts, vérifiez que ce plugin est activé dans le \"Centre des plugins\" d'AutoJs6."
+  ],
+  "instruction_h3_features": "Fonctionnalités principales",
+  "instruction_features": [
+    "**Boîte à outils**: chaque traitement a son assistant, par exemple \"Couper une vidéo\", \"Ajouter du texte et des images\", \"Convertir en GIF\" et \"Mixer des sons\"; les formulaires indiquent les valeurs par défaut et les plages autorisées.",
+    "**Montage sur timeline**: touchez \"Nouveau projet de montage\" dans \"Boîte à outils\" pour placer les clips sur les pistes vidéo, audio, superpositions et sous-titres, ajouter des transitions, prévisualiser en temps réel, annuler ou rétablir; \"Exporter\" place le résultat dans la file des tâches.",
+    "**Sous-titres**: dans la timeline, \"Importer des sous-titres\" lit des fichiers SRT ou ASS, qui sont incrustés dans l'image à l'export; \"Boîte à outils\" propose aussi \"Incruster des sous-titres\" et \"Convertir des sous-titres\".",
+    "**Enregistrement audio**: touchez le bouton \"Enregistrer le son\" dans la barre supérieure de l'accueil ou \"Enregistrer le son\" dans \"Boîte à outils\" pour enregistrer en M4A ou WAV depuis \"Micro\", \"Son interne\" ou \"Mixte\"; l'enregistrement peut être mis en pause et continue écran éteint.",
+    "**Script équivalent**: les résultats des assistants, des exports de timeline et des enregistrements sont accompagnés d'un \"Script équivalent\", que vous pouvez \"Copier\" ou \"Ouvrir dans AutoJs6\" comme nouveau script non enregistré.",
+    "**Médiathèque et tâches**: \"Médiathèque\" liste les médias des dossiers de sortie et du dossier d'enregistrement d'AutoJs6, avec aperçu, partage, renommage et \"Traiter avec la boîte à outils\"; \"Tâches\" affiche la progression et la cause d'échec de chaque tâche, et permet de l'annuler.",
+    "**Paramètres**: \"Paramètres\" dans la barre supérieure règle l'apparence, le \"Dossier de sortie\", le \"Codec vidéo par défaut\", les \"Tâches simultanées\", etc.; le \"Dossier de sortie\" ne concerne que les assistants de la boîte à outils, les scripts gardent leurs propres sorties par défaut."
+  ],
+  "instruction_h3_script": "Utilisation dans les scripts",
+  "instruction_p_script": "Dans les scripts AutoJs6, le module global `video` traite les vidéos. L'exemple ci-dessous extrait 5 secondes de `./video.mp4` à partir de la 2e seconde, affiche la progression et convertit l'extrait en GIF:",
+  "instruction_p_script_audio": "Le module `audio` traite le son. L'exemple ci-dessous mixe une voix avec une musique de fond moins forte, puis convertit le résultat en FLAC:",
+  "instruction_script_notes": [
+    "Chaque méthode de traitement a aussi une forme `Async` qui renvoie une Promise, par exemple `video.trimAsync`; les formes synchrones ne peuvent pas être appelées sur le thread UI. Arrêter un script annule ses tâches non terminées.",
+    "Les chemins relatifs sont résolus par rapport au répertoire de travail du script. Sans chemin de sortie, les résultats sont enregistrés selon leur type dans le dossier 3-Slate Studio de `Movies`, `Music` ou `Pictures`.",
+    "L'enregistrement de l'écran avec `video.record` et l'enregistrement audio avec `audio.record` sont assurés par AutoJs6 et ne nécessitent pas ce plugin; les compositions multipistes utilisent `video.compose`, qui partage le format de projet du montage sur timeline.",
+    "Toutes les méthodes et options sont décrites dans les sections [video](https://docs.autojs6.com/#/video) et [audio](https://docs.autojs6.com/#/audio) de la documentation AutoJs6."
+  ],
+  "instruction_h3_requirements": "Prérequis",
+  "instruction_requirements": [
+    "Android {{ min_android_version }} ou version ultérieure. Les écrans du plugin, le montage sur timeline et l'enregistrement audio n'ont pas besoin d'AutoJs6.",
+    "Le traitement dans les scripts nécessite AutoJs6 {{ required_host_version_name }} ou version ultérieure, avec ce plugin activé dans le \"Centre des plugins\".",
+    "L'accès à tous les fichiers sert à lire et écrire les fichiers indiqués par les scripts et les écrans, ainsi que les dossiers de sortie par défaut.",
+    "L'autorisation du micro sert à l'enregistrement dans les écrans du plugin (le son interne en a aussi besoin); \"Son interne\" et \"Mixte\" nécessitent Android 10 ou version ultérieure, et le système vous demande d'abord d'autoriser la diffusion de l'écran.",
+    "L'autorisation des notifications sert à afficher la progression des longues tâches et les commandes d'enregistrement dans le volet des notifications."
+  ],
+  "instruction_h3_faq": "Questions fréquentes",
+  "instruction_faq": [
+    {
+      "q": "Raisons pour lesquelles l'accès à tous les fichiers est nécessaire",
+      "a": "Le plugin lit et écrit directement les fichiers aux chemins indiqués par les scripts ou les écrans, et les dossiers de sortie par défaut se trouvent dans le stockage partagé. Sans cet accès, le traitement renvoie `STORAGE_PERMISSION_DENIED` et ouvre la page d'autorisation."
+    },
+    {
+      "q": "Cas où l'export d'une timeline renvoie `CODEC_ERROR`",
+      "a": "Un appareil ne peut utiliser qu'un nombre limité de codecs à la fois, et les transitions superposées décodent deux vidéos en même temps. Réduisez le nombre de pistes vidéo ou de transitions superposées, ou réglez \"Tâches simultanées\" sur 1 dans \"Paramètres\"."
+    },
+    {
+      "q": "Cas où les longues tâches sont retardées ou l'enregistrement s'arrête écran éteint",
+      "a": "L'optimisation de la batterie ou les restrictions en arrière-plan peuvent retarder les longues tâches ou interrompre l'enregistrement écran éteint. Touchez \"Utilisation de la batterie\" dans \"Paramètres\", puis choisissez Non restreinte (ou Autoriser l'activité en arrière-plan) pour la batterie dans la page d'informations de l'application qui s'ouvre."
+    },
+    {
+      "q": "Raisons pour lesquelles certaines applications sont muettes dans le son interne",
+      "a": "Une application peut interdire aux autres de capturer le son qu'elle lit; elle reste alors muette dans le son interne. Utilisez \"Micro\" pour enregistrer ces sons."
+    }
+  ],
+  "instruction_p_more": "Les écrans, les autorisations et les scripts équivalents sont détaillés dans la section [3-Slate Studio](https://docs.autojs6.com/#/threeSlateStudio) de la documentation AutoJs6."
 }

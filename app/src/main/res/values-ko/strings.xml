@@ -236,8 +236,12 @@
     <string name="record_storage_message">녹음은 공유 저장소의 Music 폴더에 저장됩니다. 모든 파일 접근을 허용한 뒤 다시 녹음을 시작하세요.</string>
     <string name="record_title">녹음</string>
     <string name="record_toolbox_summary">마이크, 내부 오디오 또는 둘을 섞어 녹음하고 M4A 또는 WAV로 저장합니다</string>
-    <string name="release_history_title">버전 기록</string>
-    <string name="release_history_unavailable">버전 기록을 불러올 수 없습니다</string>
+    <string name="release_history">릴리스 기록</string>
+    <string name="release_history_collapse_all">모두 접기</string>
+    <string name="release_history_collapsed">접힘</string>
+    <string name="release_history_expand_all">모두 펼치기</string>
+    <string name="release_history_expanded">펼쳐짐</string>
+    <string name="release_history_unavailable">릴리스 기록을 불러올 수 없습니다</string>
     <string name="result_gone">이 작업 기록은 지워졌습니다</string>
     <string name="result_info">미디어 정보</string>
     <string name="result_more">표시하지 않은 파일: %1$d개</string>
@@ -317,7 +321,7 @@
     <string name="settings_output_folder_reset">기본 폴더</string>
     <string name="settings_permission_granted">허용됨</string>
     <string name="settings_permissions">권한과 백그라운드</string>
-    <string name="settings_release_history_summary">플러그인에 포함된 릴리스 기록 보기</string>
+    <string name="settings_release_history_summary">앱에 포함된 릴리스 기록을 확인합니다</string>
     <string name="settings_save_failed">설정을 저장할 수 없습니다</string>
     <string name="settings_storage_missing">허용 안 됨: 스크립트와 도구 상자가 공유 저장소의 경로를 읽거나 쓸 수 없습니다. 탭하여 허용</string>
     <string name="settings_storage_permission">모든 파일 접근</string>

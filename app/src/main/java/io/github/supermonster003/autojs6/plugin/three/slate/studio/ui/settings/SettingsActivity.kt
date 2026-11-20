@@ -69,7 +69,7 @@ import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.components
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.components.SwitchRow
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.components.ThemeColorDialog
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.library.MediaLibrary
-import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.release.ReleaseHistoryActivity
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.release.openReleaseHistory
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.update.AppUpdateController
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.update.AppUpdateStore
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.update.UpdateDialogs
@@ -235,8 +235,8 @@ class SettingsActivity : StandaloneActivity() {
                         summary = stringResource(R.string.settings_version_value, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE, stringResource(R.string.plugin_version_date)),
                         icon = R.drawable.ic_info_24, showChevron = false, modifier = Modifier.testTag("slate.settings.version"))
                     Hairline()
-                    SettingsRow(stringResource(R.string.release_history_title), summary = stringResource(R.string.settings_release_history_summary), icon = R.drawable.ic_history_24,
-                        onClick = { startActivity(Intent(this@SettingsActivity, ReleaseHistoryActivity::class.java)) }, modifier = Modifier.testTag("slate.settings.releaseHistory"))
+                    SettingsRow(stringResource(R.string.release_history), summary = stringResource(R.string.settings_release_history_summary), icon = R.drawable.ic_history_24,
+                        onClick = { openReleaseHistory() }, modifier = Modifier.testTag("slate.settings.releaseHistory"))
                     Hairline()
                     SettingsRow(stringResource(R.string.update_check), summary = stringResource(R.string.settings_update_summary), icon = R.drawable.ic_update_24,
                         onClick = updates::checkManually, modifier = Modifier.testTag("slate.settings.update"))
@@ -255,7 +255,7 @@ class SettingsActivity : StandaloneActivity() {
         }
         Dialogs()
         UpdateDialogs(updates, onOpenRelease = { url -> open(Intent(Intent.ACTION_VIEW, Uri.parse(url))) },
-            onReleaseHistory = { startActivity(Intent(this, ReleaseHistoryActivity::class.java)) })
+            onReleaseHistory = { openReleaseHistory() })
     }
 
     @Composable

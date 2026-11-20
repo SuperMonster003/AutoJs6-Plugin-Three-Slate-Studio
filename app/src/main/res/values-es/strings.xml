@@ -236,7 +236,11 @@
     <string name="record_storage_message">Las grabaciones se guardan en la carpeta Music del almacenamiento compartido. Permite el acceso a todos los archivos y vuelve a iniciar la grabación.</string>
     <string name="record_title">Grabar audio</string>
     <string name="record_toolbox_summary">Graba el micrófono, el sonido de otras aplicaciones o ambos, en M4A o WAV</string>
-    <string name="release_history_title">Historial de versiones</string>
+    <string name="release_history">Historial de versiones</string>
+    <string name="release_history_collapse_all">Contraer todo</string>
+    <string name="release_history_collapsed">Contraído</string>
+    <string name="release_history_expand_all">Expandir todo</string>
+    <string name="release_history_expanded">Expandido</string>
     <string name="release_history_unavailable">No se pudo cargar el historial de versiones</string>
     <string name="result_gone">Este registro de tarea se ha borrado</string>
     <string name="result_info">Información del medio</string>
@@ -317,7 +321,7 @@
     <string name="settings_output_folder_reset">Carpetas predeterminadas</string>
     <string name="settings_permission_granted">Concedido</string>
     <string name="settings_permissions">Permisos y segundo plano</string>
-    <string name="settings_release_history_summary">Leer el historial de versiones incluido en el complemento</string>
+    <string name="settings_release_history_summary">Consultar el historial de versiones incluido en la aplicación</string>
     <string name="settings_save_failed">No se pudo guardar el ajuste</string>
     <string name="settings_storage_missing">No concedido: los scripts y las herramientas no pueden leer ni escribir en el almacenamiento compartido; toca para concederlo</string>
     <string name="settings_storage_permission">Acceso a todos los archivos</string>

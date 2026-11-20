@@ -390,7 +390,7 @@ internal fun UpdateDialogs(controller: AppUpdateController, onOpenRelease: (Stri
                 confirmText = stringResource(R.string.update_view_release),
                 onConfirm = { close(open = true) },
                 dismissText = stringResource(R.string.update_later),
-                neutralText = stringResource(R.string.release_history_title),
+                neutralText = stringResource(R.string.release_history),
                 onNeutral = {
                     if (ignore) controller.ignore(release.tag)
                     controller.dismiss()

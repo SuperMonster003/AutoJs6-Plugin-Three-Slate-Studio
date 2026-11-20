@@ -236,8 +236,12 @@
     <string name="record_storage_message">Recordings are saved in the Music folder of the shared storage. Allow all files access, then start the recording again.</string>
     <string name="record_title">Record audio</string>
     <string name="record_toolbox_summary">Record the microphone, other apps\' sound or both, saved as M4A or WAV</string>
-    <string name="release_history_title">Version history</string>
-    <string name="release_history_unavailable">Unable to load the version history</string>
+    <string name="release_history">Release history</string>
+    <string name="release_history_collapse_all">Collapse all</string>
+    <string name="release_history_collapsed">Collapsed</string>
+    <string name="release_history_expand_all">Expand all</string>
+    <string name="release_history_expanded">Expanded</string>
+    <string name="release_history_unavailable">Unable to load the release history</string>
     <string name="result_gone">This task record has been cleared</string>
     <string name="result_info">Media information</string>
     <string name="result_more">Files not listed: %1$d</string>
@@ -317,7 +321,7 @@
     <string name="settings_output_folder_reset">Default folders</string>
     <string name="settings_permission_granted">Granted</string>
     <string name="settings_permissions">Permissions and background</string>
-    <string name="settings_release_history_summary">Read the release history included with the plugin</string>
+    <string name="settings_release_history_summary">Read the release history included with this app</string>
     <string name="settings_save_failed">Could not save the setting</string>
     <string name="settings_storage_missing">Not granted: scripts and the toolbox cannot read or write shared storage paths; tap to grant</string>
     <string name="settings_storage_permission">All files access</string>

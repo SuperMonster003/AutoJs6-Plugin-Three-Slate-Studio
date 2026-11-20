@@ -47,7 +47,7 @@ import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.components
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.library.DetailScreen
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.library.LibraryScreen
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.record.RecordScreen
-import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.release.ReleaseHistoryActivity
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.release.openReleaseHistory
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.settings.SettingsActivity
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.tasks.StudioTasks
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.ui.tasks.TasksScreen
@@ -181,7 +181,7 @@ class HomeActivity : StandaloneActivity() {
             }
         }
         UpdateDialogs(updates, onOpenRelease = { url -> runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } },
-            onReleaseHistory = { startActivity(Intent(this, ReleaseHistoryActivity::class.java)) })
+            onReleaseHistory = { openReleaseHistory() })
     }
 
     @Composable

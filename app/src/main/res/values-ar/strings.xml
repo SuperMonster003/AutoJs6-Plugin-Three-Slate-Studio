@@ -236,7 +236,11 @@
     <string name="record_storage_message">تُحفظ التسجيلات في مجلد Music في التخزين المشترك. اسمح بالوصول إلى كل الملفات ثم ابدأ التسجيل من جديد.</string>
     <string name="record_title">تسجيل الصوت</string>
     <string name="record_toolbox_summary">تسجيل الميكروفون أو صوت التطبيقات الأخرى أو كليهما معا وحفظه بتنسيق M4A أو WAV</string>
-    <string name="release_history_title">سجل الإصدارات</string>
+    <string name="release_history">سجل الإصدارات</string>
+    <string name="release_history_collapse_all">طيّ الكل</string>
+    <string name="release_history_collapsed">مطوي</string>
+    <string name="release_history_expand_all">توسيع الكل</string>
+    <string name="release_history_expanded">موسَّع</string>
     <string name="release_history_unavailable">تعذر تحميل سجل الإصدارات</string>
     <string name="result_gone">تم مسح سجل هذه المهمة</string>
     <string name="result_info">معلومات الوسائط</string>
@@ -317,7 +321,7 @@
     <string name="settings_output_folder_reset">المجلدات الافتراضية</string>
     <string name="settings_permission_granted">ممنوح</string>
     <string name="settings_permissions">الأذونات والخلفية</string>
-    <string name="settings_release_history_summary">قراءة سجل الإصدارات المضمن في الإضافة</string>
+    <string name="settings_release_history_summary">عرض سجل الإصدارات المضمن في التطبيق</string>
     <string name="settings_save_failed">تعذر حفظ الإعداد</string>
     <string name="settings_storage_missing">غير ممنوح: لا يمكن للسكربتات والأدوات قراءة مسارات التخزين المشترك أو الكتابة فيها; انقر للمنح</string>
     <string name="settings_storage_permission">الوصول إلى جميع الملفات</string>

@@ -4,6 +4,12 @@
 
 ******
 
+# v1.0.1
+
+###### 2026/11/20
+
+* `Mejora` La página Historial de versiones ahora se expande y contrae por versión: una versión contraída muestra su fecha y el número de entradas por categoría, una expandida nombra cada categoría una sola vez; todas las versiones se pueden expandir o contraer a la vez y la más reciente se abre expandida; la página lleva el nombre del complemento como subtítulo
+
 # v1.0.0
 
 ###### 2026/11/08

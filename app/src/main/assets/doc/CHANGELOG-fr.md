@@ -4,6 +4,12 @@
 
 ******
 
+# v1.0.1
+
+###### 2026/11/20
+
+* `Amélioration` La page Historique des versions se développe et se réduit désormais par version: une version réduite affiche sa date et le nombre d'entrées par catégorie, une version développée ne nomme chaque catégorie qu'une fois; toutes les versions peuvent être développées ou réduites d'un coup, et la plus récente s'ouvre développée; la page a pour sous-titre le nom du plugin
+
 # v1.0.0
 
 ###### 2026/11/08
