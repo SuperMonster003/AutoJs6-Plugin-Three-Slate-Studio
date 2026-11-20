@@ -33,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -40,13 +41,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
@@ -155,6 +162,40 @@ internal fun loadReleaseHistory(candidates: List<String>, loader: (String) -> St
         if (entries.isNotEmpty()) return entries
     }
     return emptyList()
+}
+
+/** A link of a release note, as the range of its text in [ReleaseHistoryInline.text] (Q160 A). zh-CN: 发行说明里的一个链接, 以其文字在 [ReleaseHistoryInline.text] 中的区间表示. */
+internal data class ReleaseHistoryLink(val start: Int, val end: Int, val url: String)
+
+/** The text of a release note without the link markup, with its links. zh-CN: 去掉链接标记后的发行说明文字及其链接. */
+internal data class ReleaseHistoryInline(val text: String, val links: List<ReleaseHistoryLink>)
+
+/**
+ * Turns the markdown links of a release note (`[text](https://...)`) into their text (plugin-center Q160 A). A pair of
+ * `_` around a link (the italic spelling of the issue links) and a pair of backticks around its text go too, so
+ * `` _[`issue #575`](url)_ `` reads "issue #575". Only http and https links count; a note without one stays as it is.
+ * zh-CN: 把发行说明里的 Markdown 链接 (`[文字](https://...)`) 换成其文字 (plugin-center Q160 A); 链接外成对的 `_` (issue 链接的斜体写法) 与文字外成对的反引号
+ * 一并去掉. 只认 http 与 https 链接; 没有链接的说明原样保留.
+ */
+internal object ReleaseHistoryInlineParser {
+    private val LINK_PATTERN = Regex("""([_`]?)\[(`?)([^\]]+?)\2\]\((https?://[^\s)]+)\)\1""")
+
+    fun parse(text: String): ReleaseHistoryInline {
+        val matches = LINK_PATTERN.findAll(text).toList()
+        if (matches.isEmpty()) return ReleaseHistoryInline(text, emptyList())
+        val plain = StringBuilder()
+        val links = mutableListOf<ReleaseHistoryLink>()
+        var last = 0
+        for (match in matches) {
+            plain.append(text, last, match.range.first)
+            val start = plain.length
+            plain.append(match.groupValues[3])
+            links.add(ReleaseHistoryLink(start, plain.length, match.groupValues[4]))
+            last = match.range.last + 1
+        }
+        plain.append(text, last, text.length)
+        return ReleaseHistoryInline(plain.toString(), links)
+    }
 }
 
 /**
@@ -334,13 +375,29 @@ private fun CategoryChip(tag: String, count: Int?, modifier: Modifier = Modifier
 
 /**
  * An item with a drawn bullet dot centered on its first line; wrapped lines align with the text, not the dot.
- * zh-CN: 带绘制圆点的条目, 圆点垂直居中于第一行; 折行与正文对齐, 不回到圆点下方.
+ * Markdown links in the text show as link text in the primary color, underlined, and open in the browser (Q160 A).
+ * zh-CN: 带绘制圆点的条目, 圆点垂直居中于第一行; 折行与正文对齐, 不回到圆点下方. 正文里的 Markdown 链接显示为主色带下划线的
+ * 链接文字, 点按在浏览器中打开 (Q160 A).
  */
 @Composable
 private fun BulletItem(text: String, modifier: Modifier = Modifier) {
     val style = MaterialTheme.typography.bodyMedium
     val firstLine: Dp = with(LocalDensity.current) { if (style.lineHeight.isSpecified) style.lineHeight.toDp() else 20.dp }
     val dotColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val inline = remember(text) { ReleaseHistoryInlineParser.parse(text) }
+    val uriHandler = LocalUriHandler.current
+    val linkColor = MaterialTheme.colorScheme.primary
+    val body = remember(inline, linkColor, uriHandler) {
+        buildAnnotatedString {
+            append(inline.text)
+            val styles = TextLinkStyles(SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline))
+            // Our own listener: with the default one, a device without a browser crashes the page (IllegalArgumentException).
+            // zh-CN: 自己的监听器: 用默认的那个, 没有浏览器的设备会让页面崩溃 (IllegalArgumentException).
+            inline.links.forEach { link ->
+                addLink(LinkAnnotation.Url(link.url, styles) { runCatching { uriHandler.openUri(link.url) } }, link.start, link.end)
+            }
+        }
+    }
     Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
         Box(modifier = Modifier.width(ReleaseHistoryDefaults.bulletSlot).height(firstLine), contentAlignment = Alignment.CenterStart) {
             Box(
@@ -350,6 +407,6 @@ private fun BulletItem(text: String, modifier: Modifier = Modifier) {
                     .background(dotColor, CircleShape),
             )
         }
-        Text(text, style = style, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+        Text(body, style = style, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
     }
 }
