@@ -65,7 +65,10 @@ jobs:
           disable-animations: true
           # The emulator runner executes every script line as a separate shell command, so a backslash continuation would
           # become a literal Gradle task name; keep each command on one line (3-Block Compose lesson).
+          # A freshly booted emulator may show "System UI isn't responding", whose dialog takes the window focus that the
+          # device tests wait for; hide_error_dialogs keeps such dialogs from appearing.
           script: |
+            adb shell settings put global hide_error_dialogs 1
             ./gradlew :app:connectedDebugAndroidTest -Pautojs.gradle.build.number.auto.increment.enabled=false -Pautojs.gradle.build.time.update.enabled=false --console=plain --stacktrace
 
       - name: Upload instrumentation reports

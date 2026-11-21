@@ -1,7 +1,9 @@
 package io.github.supermonster003.autojs6.plugin.three.slate.studio
 
 import android.app.Activity
+import android.content.Intent
 import android.os.ParcelFileDescriptor
+import android.util.Log
 import android.view.KeyEvent
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
@@ -179,27 +181,47 @@ class ReleaseHistoryPageTest {
         return generateSequence(node) { it.parent }.firstNotNullOfOrNull { it.config.getOrNull(SemanticsProperties.TestTag) } ?: UNTAGGED
     }
 
+    /** Runs [command] as the shell user (it connects UiAutomation) and returns its output. zh-CN: 以 shell 用户运行 [command] 并返回输出 (会连接 UiAutomation). */
+    private fun shell(command: String): String =
+        ParcelFileDescriptor.AutoCloseInputStream(instrumentation.uiAutomation.executeShellCommand(command)).bufferedReader().use { it.readText() }
+
     /**
-     * The window with input focus as `dumpsys window` reports it; for failure messages only (it connects UiAutomation).
-     * zh-CN: `dumpsys window` 报告的输入焦点窗口; 只用于失败消息 (会连接 UiAutomation).
+     * The focused window and app as `dumpsys window` reports them, for diagnostics only. API 33 and 35 leave
+     * mCurrentFocus out of `dumpsys window windows`, so the whole dump is read.
+     * zh-CN: `dumpsys window` 报告的焦点窗口与应用, 只用于诊断. API 33 与 35 的 `dumpsys window windows` 不含 mCurrentFocus, 所以读整份输出.
      */
     private fun focusedWindow(): String = runCatching {
-        ParcelFileDescriptor.AutoCloseInputStream(instrumentation.uiAutomation.executeShellCommand("dumpsys window windows"))
-            .bufferedReader().useLines { lines -> lines.map(String::trim).filter { it.startsWith("mCurrentFocus=") }.distinct().joinToString() }
+        shell("dumpsys window").lineSequence().map(String::trim)
+            .filter { it.startsWith("mCurrentFocus=") || it.startsWith("mFocusedApp=") }.distinct().joinToString()
             .ifEmpty { "mCurrentFocus not in dumpsys" }
     }.getOrElse { "dumpsys failed: $it" }
 
+    private fun windowFocused(scenario: ActivityScenario<*>): Boolean = try {
+        var focused = false
+        compose.waitUntil(TIMEOUT) { scenario.onActivity { focused = it.hasWindowFocus() }; focused }
+        true
+    } catch (timeout: ComposeTimeoutException) {
+        false
+    }
+
     /**
-     * Keys go to the focused window: while a system dialog (an ANR, say) has focus, every Tab would be lost (plugin-center Q137).
-     * zh-CN: 按键送往有焦点的窗口: 系统对话框 (例如 ANR) 占着焦点时 Tab 都会丢失 (plugin-center Q137).
+     * Keys go to the focused window: while a system dialog has focus (an ANR or crash dialog of another app on a slow
+     * emulator, say), every Tab would be lost (plugin-center Q137). When focus does not come, the test closes system
+     * dialogs (error dialogs take that as "wait" or "close") and brings the page back to the front, once, before it gives up.
+     * zh-CN: 按键送往焦点窗口: 系统对话框 (例如慢模拟器上其他应用的 ANR 或崩溃对话框) 持有焦点时, 每次 Tab 都会丢失 (plugin-center Q137). 等不到焦点时
+     * 关闭系统对话框 (错误对话框视之为 "等待" 或 "关闭") 并把页面带回前台, 只做一次, 仍等不到才失败.
      */
     private fun awaitWindowFocus(scenario: ActivityScenario<*>, visited: List<String> = emptyList()) {
-        var focused = false
-        try {
-            compose.waitUntil(TIMEOUT) { scenario.onActivity { focused = it.hasWindowFocus() }; focused }
-        } catch (timeout: ComposeTimeoutException) {
-            fail("the page has no window focus after $TIMEOUT ms; visited: $visited; ${focusedWindow()}")
+        if (windowFocused(scenario)) return
+        val before = focusedWindow()
+        Log.w(LOG_TAG, "no window focus after $TIMEOUT ms ($before), closing system dialogs")
+        shell("am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS")
+        scenario.onActivity { it.startActivity(Intent(it, it.javaClass).addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) }
+        if (!windowFocused(scenario)) {
+            fail("the page has no window focus after $TIMEOUT ms, nor after closing system dialogs; visited: $visited; " +
+                "before: $before; after: ${focusedWindow()}")
         }
+        Log.i(LOG_TAG, "window focus is back: ${focusedWindow()}")
     }
 
     /** Presses Tab until focus returns to a control seen before; every focused control must be on screen. zh-CN: 按 Tab 直到焦点回到见过的控件. */
@@ -217,6 +239,7 @@ class ReleaseHistoryPageTest {
     }
 
     private companion object {
+        const val LOG_TAG = "ReleaseHistoryTest"
         const val TIMEOUT = 15_000L
         const val MAX_TABS = 60
         const val UNTAGGED = "(untagged)"
