@@ -230,7 +230,11 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.navigation.compose)
     debugImplementation(libs.compose.ui.tooling)
-    debugImplementation(libs.compose.ui.test.manifest)
+    // No ui-test-manifest: the Compose tests that set their own content run in ComposeTestActivity, a non-exported
+    // activity of the debug source set, while ui-test-manifest would merge an exported
+    // androidx.activity.ComponentActivity into the debug APK.
+    // zh-CN: 不引入 ui-test-manifest: 自行设置内容的 Compose 测试运行在 debug 源集里不导出的 ComposeTestActivity 中, 而
+    // ui-test-manifest 会往 debug APK 合并一个导出的 androidx.activity.ComponentActivity.
 
     // Media3 (roadmap D25, D29): processing with Transformer / Effect / Muxer, previews with ExoPlayer / UI.
     implementation(libs.media3.common)

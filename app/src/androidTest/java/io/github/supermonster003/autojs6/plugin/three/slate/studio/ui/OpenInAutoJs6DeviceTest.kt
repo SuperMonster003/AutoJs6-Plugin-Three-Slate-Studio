@@ -3,7 +3,6 @@ package io.github.supermonster003.autojs6.plugin.three.slate.studio.ui
 import android.graphics.Bitmap
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.remember
@@ -21,6 +20,7 @@ import androidx.compose.ui.test.printToLog
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import io.github.supermonster003.autojs6.plugin.three.slate.studio.ComposeTestActivity
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.codegen.AutoJs6Scripts
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.codegen.CodeGenerator
 import io.github.supermonster003.autojs6.plugin.three.slate.studio.codegen.GeneratedScript
@@ -116,7 +116,7 @@ class OpenInAutoJs6DeviceTest {
         requireHost()
         val script = CodeGenerator.composeScript(timeline(CLIPS), "/sdcard/Movies/3-Slate Studio/open-in-autojs6.mp4")
         assertEquals(AutoJs6Scripts.Transport.ContentUri, AutoJs6Scripts.transportOf(script.code))
-        ActivityScenario.launch(ComponentActivity::class.java).use { scenario ->
+        ActivityScenario.launch(ComposeTestActivity::class.java).use { scenario ->
             // The same button the result pages use. zh-CN: 与结果页相同的按钮.
             scenario.onActivity { it.setContent { OpenInAutoJs6Button(script, remember { SnackbarHostState() }) } }
             val since = System.currentTimeMillis()
